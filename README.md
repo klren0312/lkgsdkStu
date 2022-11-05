@@ -106,7 +106,5 @@ lookingGlassWebXR.update({
 })
 ```
 
-## Contributions
-The Looking Glass WebXR Library is open source and originally developed by [Kai Ninomiya](https://kai.graphics). We're excited to continue working in and supporting open-source technology!
-
-If you'd like to contribute, please feel free to make a Pull Request!
+## Contributing
+The Looking Glass WebXR Library is open source and originally developed by [Kai Ninomiya](https://kai.graphics). We're excited to support the open-source community! If you'd like to contribute, please feel free to make a pull request. 
