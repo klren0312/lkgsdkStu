@@ -14,12 +14,10 @@
  * limitations under the License.
  */
 
-import XRWebGLLayer, {
-	PRIVATE as XRWebGLLayer_PRIVATE,
-} from "@lookingglass/webxr-polyfill/src/api/XRWebGLLayer"
-import { makeControls } from "./LookingGlassControls"
+import XRWebGLLayer, { PRIVATE as XRWebGLLayer_PRIVATE } from "@lookingglass/webxr-polyfill/src/api/XRWebGLLayer"
 import { Shader } from "holoplay-core"
 import { getLookingGlassConfig } from "./LookingGlassConfig"
+import { makeControls } from "./LookingGlassControls"
 
 export const PRIVATE = Symbol("LookingGlassXRWebGLLayer")
 
@@ -54,17 +52,7 @@ export default class LookingGlassXRWebGLLayer extends XRWebGLLayer {
 			const oldTextureBinding = gl.getParameter(gl.TEXTURE_BINDING_2D)
 			{
 				gl.bindTexture(gl.TEXTURE_2D, texture)
-				gl.texImage2D(
-					gl.TEXTURE_2D,
-					0,
-					gl.RGBA,
-					cfg.framebufferWidth,
-					cfg.framebufferHeight,
-					0,
-					gl.RGBA,
-					gl.UNSIGNED_BYTE,
-					null
-				)
+				gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, cfg.framebufferWidth, cfg.framebufferHeight, 0, gl.RGBA, gl.UNSIGNED_BYTE, null)
 				gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR)
 			}
 			gl.bindTexture(gl.TEXTURE_2D, oldTextureBinding)
@@ -73,12 +61,7 @@ export default class LookingGlassXRWebGLLayer extends XRWebGLLayer {
 				const oldRenderbufferBinding = gl.getParameter(gl.RENDERBUFFER_BINDING)
 				{
 					gl.bindRenderbuffer(gl.RENDERBUFFER, depthStencil)
-					gl.renderbufferStorage(
-						gl.RENDERBUFFER,
-						dsConfig.format,
-						cfg.framebufferWidth,
-						cfg.framebufferHeight
-					)
+					gl.renderbufferStorage(gl.RENDERBUFFER, dsConfig.format, cfg.framebufferWidth, cfg.framebufferHeight)
 				}
 				gl.bindRenderbuffer(gl.RENDERBUFFER, oldRenderbufferBinding)
 			}
@@ -217,10 +200,7 @@ export default class LookingGlassXRWebGLLayer extends XRWebGLLayer {
 			// Make sure the default framebuffer has the correct size (undo any resizing
 			// the host page did, and updating for the latest calibration value).
 			// But store off any resizing the host page DID do, so we can restore it on exit.
-			if (
-				appCanvas.width !== cfg.calibration.screenW.value ||
-				appCanvas.height !== cfg.calibration.screenH.value
-			) {
+			if (appCanvas.width !== cfg.calibration.screenW.value || appCanvas.height !== cfg.calibration.screenH.value) {
 				origWidth = appCanvas.width
 				origHeight = appCanvas.height
 				appCanvas.width = cfg.calibration.screenW.value

@@ -15,15 +15,14 @@ We've tested our WebXR Library with the following WebGL frameworks. If you use o
 ## Demos
 We've got some demos setup for [three.js](https://docs.lookingglassfactory.com/developer-tools/webxr/three.js), [react-three-fiber](https://docs.lookingglassfactory.com/developer-tools/webxr/react-three-fiber), and [Spline](https://docs.lookingglassfactory.com/developer-tools/webxr/spline)!
 
-## Using WebXR
-To view a WebXR project on your Looking Glass you'll need to click the "View in XR" button. 
-This will open up a small pop-up window. 
-Drag this over to your Looking Glass display and then double click to have the hologram display properly. 
+### How it works
+To view a WebXR project on your Looking Glass, visit one of the demos and then click the `Enter Looking Glass` button. This will open up a small pop-up window. 
+Drag this window over to your Looking Glass display and then double click to have the hologram display properly. 
 
-On MacOS systems you must have chrome or Firefox be in windowed mode, and not running in Fullscreen. Running in full screen will cause the window to open in a new tab instead of a new window. 
+*Note:* On MacOS systems you must have Chrome or Firefox be in windowed mode, and not running in Fullscreen. Running in full screen will cause the window to open in a new tab instead of a new window. 
 
 ## Installation
-Since Looking Glass WebXR is engine agnostic there are a few settings that will be the same regardless of what 3D engine you're working with. 
+
 
 ### Using NPM/Yarn
 You can import the Looking Glass WebXR library by running the following command in your web project.
@@ -35,9 +34,13 @@ or, if you use the yarn package manager.
 ```sh
 yarn install @lookingglass/webxr
 ```
+### Import the library
 
-### Using a script tag
-You can also use a `<script>` tag, like shown in the following examples: 
+To get started import `LookingGlassWebXRPolyfill`
+```ts
+import { LookingGlassWebXRPolyfill } from "@lookingglass/webxr"
+```
+or you can also use a `<script>` tag: 
 
 ```html
 <script type="module">
@@ -45,14 +48,18 @@ You can also use a `<script>` tag, like shown in the following examples:
 </script>
 ```
 
+## Initialize LookingGlassWebXRPolyfill
 
-### Developing with the Looking Glass WebXR Library
-
-This library is published on npm you can install it by running `npm install @lookingglass/webxr` just install the library and copy/paste the following snippet into your WebXR project and you're good to go! 
+After you have the library properly installed and imported into your project, all you have to do is is instantiate `LookingGlassWebXRPolyfill` and you're done!
 
 ```ts
 import { LookingGlassWebXRPolyfill } from "@lookingglass/webxr"
 
+new LookingGlassWebXRPolyfill()
+```
+
+You should now see an "Enter Looking Glass" button in your scene. You can optionally pass in your own defaults for all the view controls:
+```ts
 new LookingGlassWebXRPolyfill({
   tileHeight: 512,
   numViews: 45,
@@ -63,15 +70,10 @@ new LookingGlassWebXRPolyfill({
 })
 ```
 
-There's just a single function you'll need to import:
-```ts
-import { LookingGlassWebXRPolyfill } from "@lookingglass/webxr"
-```
+Since Looking Glass WebXR is engine agnostic there are a few settings that will be the same regardless of what 3D engine you're working with. Here are all the possible properties you can pass into `LookingGlassWebXRPolyfill`:
 
-Once you've imported the packages you'll need to define the LookingGlassWebXRPolyfill.
-The LookingGlassConfig controls the holographic camera and has the following properties:
 - `tileHeight` - defines the height of the individual quilt view, the width is then set based on the aspect ratio of the connected device.
-- `numViews`  - defines the number of views to be rendered
+- `numViews`   - defines the number of views to be rendered
 - `targetX`    - defines the position of the camera on the X-axis
 - `targetY`    - defines the position of the camera on the Y-axis
 - `targetZ`    - defines the position of the camera on the Z-axis
@@ -82,8 +84,29 @@ The LookingGlassConfig controls the holographic camera and has the following pro
 - `depthiness` - modifies to the view frustum to increase or decrease the perceived depth of the scene.
 - `inlineView` - changes how the original canvas on your main web page is displayed, can show the encoded subpixel matrix, a single centered view, or a quilt view.
 
-The `LookingGlassWebXRPolyfill` implements the WebXR override and allows you to target Looking Glass displays.
+## Updating the view
 
+In some cases you may need to update the view controls after instatiating:
 
+```ts
+const lookingGlassWebXR = new LookingGlassWebXRPolyfill({
+  tileHeight: 512,
+  numViews: 45,
+  targetY: 0,
+  targetZ: 0,
+  targetDiam: 3,
+  fovy: (14 * Math.PI) / 180
+})
 
-### The Looking Glass WebXR Library is open source and originally developed by [Kai Ninomiya](https://kai.graphics). We're excited to continue working in and supporting open-source technology!
+// ...
+
+// Use the update() method
+lookingGlassWebXR.update({
+  numViews: 80
+})
+```
+
+## Contributions
+The Looking Glass WebXR Library is open source and originally developed by [Kai Ninomiya](https://kai.graphics). We're excited to continue working in and supporting open-source technology!
+
+If you'd like to contribute, please feel free to make a Pull Request!

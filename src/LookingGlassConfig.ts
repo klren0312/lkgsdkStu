@@ -16,47 +16,97 @@
 
 import * as HoloPlayCore from "holoplay-core"
 
-const DefaultCalibration = {
-	configVersion: "1.0",
-	pitch: { value: 45 },
-	slope: { value: -5 },
-	center: { value: -0.5 },
-	viewCone: { value: 40 },
-	invView: { value: 1 },
-	verticalAngle: { value: 0 },
-	DPI: { value: 338 },
-	screenW: { value: 250 },
-	screenH: { value: 250 },
-	flipImageX: { value: 0 },
-	flipImageY: { value: 0 },
-	flipSubp: { value: 0 },
-}
-
 export const DefaultEyeHeight: number = 1.6
-const DefaultConfig = {
-	tileHeight: 512,
-	numViews: 45,
-	trackballX: 0,
-	trackballY: 0,
-	targetX: 0,
-	targetY: DefaultEyeHeight,
-	targetZ: -0.5,
-	targetDiam: 2.0,
-	fovy: (13.0 / 180) * Math.PI,
-	depthiness: 1.25,
-	inlineView: 1,
+
+type Value = {
+	value: number
 }
 
-export type CalibrationType = typeof DefaultCalibration
-export type ConfigType = typeof DefaultConfig
+export type CalibrationArgs = {
+	configVersion: string
+	pitch: Value
+	slope: Value
+	center: Value
+	viewCone: Value
+	invView: Value
+	verticalAngle: Value
+	DPI: Value
+	screenW: Value
+	screenH: Value
+	flipImageX: Value
+	flipImageY: Value
+	flipSubp: Value
+}
+
+export type ViewControlArgs = {
+	/** 
+	 * defines the height of the individual quilt view, the width is then set based on the aspect ratio of the connected device. 
+	 * @default 512
+	 */
+	tileHeight: number
+	/** 
+	 * defines the number of views to be rendered 
+	 * @default 45
+	 */
+	numViews: number
+	/** defines the rotation of the camera on the X-axis */
+	trackballX: number
+	/** defines the rotation of the camera on the Y-axis */
+	trackballY: number
+	/** defines the position of the camera on the x-axis */
+	targetX: number
+	/** defines the position of the camera on the Y-axis */
+	targetY: number
+	/** defines the position of the camera on the Z-axis */
+	targetZ: number
+	/** defines the size of the camera, this makes your scene bigger or smaller without changing the focus. */
+	targetDiam: number
+	/** defines the vertical FOV of your camera (defined in radians) */
+	fovy: number
+	/** modifies to the view frustum to increase or decrease the perceived depth of the scene. */
+	depthiness: number
+	/** changes how the original canvas on your main web page is displayed, can show the encoded subpixel matrix, a single centered view, or a quilt view. */
+	inlineView: number
+}
+
+type LookingGlassConfigEvent = "on-config-changed"
 
 export class LookingGlassConfig extends EventTarget {
-	private _calibration: CalibrationType = deepFreeze(DefaultCalibration)
-	private _config: ConfigType = deepFreeze(DefaultConfig)
+	// Calibration defaults
+	private _calibration: CalibrationArgs = {
+		configVersion: "1.0",
+		pitch: { value: 45 },
+		slope: { value: -5 },
+		center: { value: -0.5 },
+		viewCone: { value: 40 },
+		invView: { value: 1 },
+		verticalAngle: { value: 0 },
+		DPI: { value: 338 },
+		screenW: { value: 250 },
+		screenH: { value: 250 },
+		flipImageX: { value: 0 },
+		flipImageY: { value: 0 },
+		flipSubp: { value: 0 },
+	}
 
-	constructor(cfg?: Partial<ConfigType>) {
+	// Config defaults
+	private _viewControls: ViewControlArgs = {
+		tileHeight: 512,
+		numViews: 45,
+		trackballX: 0,
+		trackballY: 0,
+		targetX: 0,
+		targetY: DefaultEyeHeight,
+		targetZ: -0.5,
+		targetDiam: 2.0,
+		fovy: (13.0 / 180) * Math.PI,
+		depthiness: 1.25,
+		inlineView: 1,
+	}
+
+	constructor(cfg?: Partial<ViewControlArgs>) {
 		super()
-		this._config = { ...this._config, ...cfg }
+		this._viewControls = { ...this._viewControls, ...cfg }
 		this.syncCalibration()
 	}
 
@@ -78,15 +128,19 @@ export class LookingGlassConfig extends EventTarget {
 		)
 	}
 
+	public addEventListener(type: LookingGlassConfigEvent, callback: EventListenerOrEventListenerObject | null, options?: boolean | AddEventListenerOptions | undefined): void {
+		super.addEventListener(type, callback, options)
+	}
+
 	private onConfigChange() {
 		this.dispatchEvent(new Event("on-config-changed"))
 	}
 
-	public get calibration(): CalibrationType {
+	public get calibration(): CalibrationArgs {
 		return this._calibration
 	}
 
-	public set calibration(value: Partial<CalibrationType>) {
+	public set calibration(value: Partial<CalibrationArgs>) {
 		this._calibration = {
 			...this._calibration,
 			...value,
@@ -94,14 +148,10 @@ export class LookingGlassConfig extends EventTarget {
 		this.onConfigChange()
 	}
 
-	public get config(): ConfigType {
-		return this._config
-	}
-
-	public set config(value: Partial<ConfigType> | undefined) {
+	public updateViewControls(value: Partial<ViewControlArgs> | undefined) {
 		if (value != undefined) {
-			this._config = {
-				...this._config,
+			this._viewControls = {
+				...this._viewControls,
 				...value,
 			}
 			this.onConfigChange()
@@ -114,11 +164,11 @@ export class LookingGlassConfig extends EventTarget {
 	 * defines the height of the individual quilt view, the width is then set based on the aspect ratio of the connected device.
 	 */
 	public get tileHeight(): number {
-		return this._config.tileHeight
+		return this._viewControls.tileHeight
 	}
 
 	set tileHeight(v: number) {
-		this._config.tileHeight = v
+		this._viewControls.tileHeight = v
 		this.onConfigChange()
 	}
 
@@ -126,11 +176,11 @@ export class LookingGlassConfig extends EventTarget {
 	 * defines the number of views to be rendered
 	 */
 	get numViews() {
-		return this._config.numViews
+		return this._viewControls.numViews
 	}
 
 	set numViews(v) {
-		this._config.numViews = v
+		this._viewControls.numViews = v
 		this.onConfigChange()
 	}
 
@@ -138,11 +188,11 @@ export class LookingGlassConfig extends EventTarget {
 	 * defines the position of the camera on the X-axis
 	 */
 	get targetX() {
-		return this._config.targetX
+		return this._viewControls.targetX
 	}
 
 	set targetX(v) {
-		this._config.targetX = v
+		this._viewControls.targetX = v
 		this.onConfigChange()
 	}
 
@@ -150,11 +200,11 @@ export class LookingGlassConfig extends EventTarget {
 	 * defines the position of the camera on the Y-axis
 	 */
 	get targetY() {
-		return this._config.targetY
+		return this._viewControls.targetY
 	}
 
 	set targetY(v) {
-		this._config.targetY = v
+		this._viewControls.targetY = v
 		this.onConfigChange()
 	}
 
@@ -162,11 +212,11 @@ export class LookingGlassConfig extends EventTarget {
 	 * defines the position of the camera on the X-axis
 	 */
 	get targetZ() {
-		return this._config.targetZ
+		return this._viewControls.targetZ
 	}
 
 	set targetZ(v) {
-		this._config.targetZ = v
+		this._viewControls.targetZ = v
 		this.onConfigChange()
 	}
 
@@ -174,11 +224,11 @@ export class LookingGlassConfig extends EventTarget {
 	 * defines the rotation of the camera on the X-axis
 	 */
 	get trackballX() {
-		return this._config.trackballX
+		return this._viewControls.trackballX
 	}
 
 	set trackballX(v) {
-		this._config.trackballX = v
+		this._viewControls.trackballX = v
 		this.onConfigChange()
 	}
 
@@ -186,11 +236,11 @@ export class LookingGlassConfig extends EventTarget {
 	 * defines the rotation of the camera on the Y-axis
 	 */
 	get trackballY() {
-		return this._config.trackballY
+		return this._viewControls.trackballY
 	}
 
 	set trackballY(v) {
-		this._config.trackballY = v
+		this._viewControls.trackballY = v
 		this.onConfigChange()
 	}
 
@@ -198,11 +248,11 @@ export class LookingGlassConfig extends EventTarget {
 	 * defines the size of the camera, this makes your scene bigger or smaller without changing the focus.
 	 */
 	get targetDiam() {
-		return this._config.targetDiam
+		return this._viewControls.targetDiam
 	}
 
 	set targetDiam(v) {
-		this._config.targetDiam = v
+		this._viewControls.targetDiam = v
 		this.onConfigChange()
 	}
 
@@ -210,11 +260,11 @@ export class LookingGlassConfig extends EventTarget {
 	 * defines the vertical FOV of your camera (defined in radians)
 	 */
 	get fovy() {
-		return this._config.fovy
+		return this._viewControls.fovy
 	}
 
 	set fovy(v) {
-		this._config.fovy = v
+		this._viewControls.fovy = v
 		this.onConfigChange()
 	}
 
@@ -222,11 +272,11 @@ export class LookingGlassConfig extends EventTarget {
 	 * modifies to the view frustum to increase or decrease the perceived depth of the scene.
 	 */
 	get depthiness() {
-		return this._config.depthiness
+		return this._viewControls.depthiness
 	}
 
 	set depthiness(v) {
-		this._config.depthiness = v
+		this._viewControls.depthiness = v
 		this.onConfigChange()
 	}
 
@@ -234,11 +284,11 @@ export class LookingGlassConfig extends EventTarget {
 	 * changes how the original canvas on your main web page is displayed, can show the encoded subpixel matrix, a single centered view, or a quilt view.
 	 */
 	get inlineView() {
-		return this._config.inlineView
+		return this._viewControls.inlineView
 	}
 
 	set inlineView(v) {
-		this._config.inlineView = v
+		this._viewControls.inlineView = v
 		this.onConfigChange()
 	}
 
@@ -286,37 +336,24 @@ export class LookingGlassConfig extends EventTarget {
 
 	public get pitch() {
 		const screenInches = this._calibration.screenW.value / this._calibration.DPI.value
-		return (
-			this._calibration.pitch.value * screenInches * Math.cos(Math.atan(1.0 / this._calibration.slope.value))
-		)
+		return this._calibration.pitch.value * screenInches * Math.cos(Math.atan(1.0 / this._calibration.slope.value))
 	}
 }
 
 let globalLkgConfig: LookingGlassConfig | null = null
-export function getLookingGlassConfig(config?: Partial<ConfigType>) {
+
+/** The global LookingGlassConfig */
+export function getLookingGlassConfig() {
 	if (globalLkgConfig == null) {
-		globalLkgConfig = new LookingGlassConfig(config)
-	} else {
-		globalLkgConfig.config = config
+		globalLkgConfig = new LookingGlassConfig()
 	}
 	return globalLkgConfig
 }
 
-function deepFreeze<T extends object>(o: T): T {
-	Object.freeze(o)
-	if (o === undefined) {
-		return o
+/** Update the global LookingGlassConfig's viewControls */
+export function updateLookingGlassConfig(viewControls: Partial<ViewControlArgs> | undefined) {
+	const lkgConfig = getLookingGlassConfig()
+	if (viewControls != undefined) {
+		lkgConfig.updateViewControls(viewControls)
 	}
-
-	Object.getOwnPropertyNames(o).forEach(function (prop) {
-		if (
-			o[prop] !== null &&
-			(typeof o[prop] === "object" || typeof o[prop] === "function") &&
-			!Object.isFrozen(o[prop])
-		) {
-			deepFreeze(o[prop])
-		}
-	})
-
-	return o
 }

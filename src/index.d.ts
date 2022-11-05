@@ -10,8 +10,10 @@ declare module "@lookingglass/webxr-polyfill/src/WebXRPolyfill" {
 }
 
 declare module "@lookingglass/webxr-polyfill/src/devices/XRDevice" {
+	type XRDeviceEventTypes = "@@webxr-polyfill/vr-present-start" | "@@webxr-polyfill/vr-present-end"
 	export default class XRDevice extends EventTarget {
 		constructor(global: any): void;
+		public addEventListener(type: XRDeviceEventTypes, callback: EventListenerOrEventListenerObject | null, options?: boolean | AddEventListenerOptions | undefined): void;
 		public dispatchEvent: (...args: any) => void;
 		public global: any;
 		public sessions: any;
@@ -39,12 +41,4 @@ declare module "holoplay-core" {
 	}
 
 	export function Shader(config: any): any;
-}
-
-declare module "@lookingglass/webxr-polyfill" {
-	export namespace HoloPlayCore {}
-
-	export class Client {
-		constructor(...args: any): void;
-	}
 }
