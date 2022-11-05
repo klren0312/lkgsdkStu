@@ -38,14 +38,20 @@ export type CalibrationArgs = {
 	flipSubp: Value
 }
 
+export enum InlineView {
+	Swizzeld = 0,
+	Center = 1,
+	Quilt = 2,
+}
+
 export type ViewControlArgs = {
-	/** 
-	 * defines the height of the individual quilt view, the width is then set based on the aspect ratio of the connected device. 
+	/**
+	 * defines the height of the individual quilt view, the width is then set based on the aspect ratio of the connected device.
 	 * @default 512
 	 */
 	tileHeight: number
-	/** 
-	 * defines the number of views to be rendered 
+	/**
+	 * defines the number of views to be rendered
 	 * @default 45
 	 */
 	numViews: number
@@ -65,8 +71,11 @@ export type ViewControlArgs = {
 	fovy: number
 	/** modifies to the view frustum to increase or decrease the perceived depth of the scene. */
 	depthiness: number
-	/** changes how the original canvas on your main web page is displayed, can show the encoded subpixel matrix, a single centered view, or a quilt view. */
-	inlineView: number
+	/** 
+	 * changes how the original canvas on your main web page is displayed, can show the encoded subpixel matrix, a single centered view, or a quilt view. 
+	 * @default InlineView.Center
+	 */
+	inlineView: InlineView
 }
 
 type LookingGlassConfigEvent = "on-config-changed"
@@ -101,7 +110,7 @@ export class LookingGlassConfig extends EventTarget {
 		targetDiam: 2.0,
 		fovy: (13.0 / 180) * Math.PI,
 		depthiness: 1.25,
-		inlineView: 1,
+		inlineView: InlineView.Center,
 	}
 
 	constructor(cfg?: Partial<ViewControlArgs>) {
@@ -128,7 +137,11 @@ export class LookingGlassConfig extends EventTarget {
 		)
 	}
 
-	public addEventListener(type: LookingGlassConfigEvent, callback: EventListenerOrEventListenerObject | null, options?: boolean | AddEventListenerOptions | undefined): void {
+	public addEventListener(
+		type: LookingGlassConfigEvent,
+		callback: EventListenerOrEventListenerObject | null,
+		options?: boolean | AddEventListenerOptions | undefined
+	): void {
 		super.addEventListener(type, callback, options)
 	}
 
@@ -168,8 +181,7 @@ export class LookingGlassConfig extends EventTarget {
 	}
 
 	set tileHeight(v: number) {
-		this._viewControls.tileHeight = v
-		this.onConfigChange()
+		this.updateViewControls({ tileHeight: v })
 	}
 
 	/**
@@ -180,8 +192,7 @@ export class LookingGlassConfig extends EventTarget {
 	}
 
 	set numViews(v) {
-		this._viewControls.numViews = v
-		this.onConfigChange()
+		this.updateViewControls({ numViews: v })
 	}
 
 	/**
@@ -192,8 +203,7 @@ export class LookingGlassConfig extends EventTarget {
 	}
 
 	set targetX(v) {
-		this._viewControls.targetX = v
-		this.onConfigChange()
+		this.updateViewControls({ targetX: v })
 	}
 
 	/**
@@ -204,8 +214,7 @@ export class LookingGlassConfig extends EventTarget {
 	}
 
 	set targetY(v) {
-		this._viewControls.targetY = v
-		this.onConfigChange()
+		this.updateViewControls({ targetY: v })
 	}
 
 	/**
@@ -216,8 +225,7 @@ export class LookingGlassConfig extends EventTarget {
 	}
 
 	set targetZ(v) {
-		this._viewControls.targetZ = v
-		this.onConfigChange()
+		this.updateViewControls({ targetZ: v })
 	}
 
 	/**
@@ -228,8 +236,7 @@ export class LookingGlassConfig extends EventTarget {
 	}
 
 	set trackballX(v) {
-		this._viewControls.trackballX = v
-		this.onConfigChange()
+		this.updateViewControls({ trackballX: v })
 	}
 
 	/**
@@ -240,8 +247,7 @@ export class LookingGlassConfig extends EventTarget {
 	}
 
 	set trackballY(v) {
-		this._viewControls.trackballY = v
-		this.onConfigChange()
+		this.updateViewControls({ trackballY: v })
 	}
 
 	/**
@@ -252,8 +258,7 @@ export class LookingGlassConfig extends EventTarget {
 	}
 
 	set targetDiam(v) {
-		this._viewControls.targetDiam = v
-		this.onConfigChange()
+		this.updateViewControls({ targetDiam: v })
 	}
 
 	/**
@@ -264,8 +269,7 @@ export class LookingGlassConfig extends EventTarget {
 	}
 
 	set fovy(v) {
-		this._viewControls.fovy = v
-		this.onConfigChange()
+		this.updateViewControls({ fovy: v })
 	}
 
 	/**
@@ -276,8 +280,7 @@ export class LookingGlassConfig extends EventTarget {
 	}
 
 	set depthiness(v) {
-		this._viewControls.depthiness = v
-		this.onConfigChange()
+		this.updateViewControls({ depthiness: v })
 	}
 
 	/**
@@ -288,8 +291,7 @@ export class LookingGlassConfig extends EventTarget {
 	}
 
 	set inlineView(v) {
-		this._viewControls.inlineView = v
-		this.onConfigChange()
+		this.updateViewControls({ inlineView: v })
 	}
 
 	// Computed
