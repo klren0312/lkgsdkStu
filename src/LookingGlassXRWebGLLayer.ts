@@ -17,7 +17,7 @@
 import XRWebGLLayer, { PRIVATE as XRWebGLLayer_PRIVATE } from "@lookingglass/webxr-polyfill/src/api/XRWebGLLayer"
 import { Shader } from "holoplay-core"
 import { getLookingGlassConfig } from "./LookingGlassConfig"
-import { makeControls } from "./LookingGlassControls"
+import { initLookingGlassControlGUI } from "./LookingGlassControls"
 
 export const PRIVATE = Symbol("LookingGlassXRWebGLLayer")
 
@@ -31,7 +31,7 @@ export default class LookingGlassXRWebGLLayer extends XRWebGLLayer {
 		lkgCanvas.addEventListener("dblclick", function () {
 			this.requestFullscreen()
 		})
-		const controls = makeControls(lkgCanvas)
+		const controls = initLookingGlassControlGUI(lkgCanvas)
 
 		const cfg = getLookingGlassConfig()
 

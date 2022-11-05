@@ -1,7 +1,7 @@
 import { getLookingGlassConfig } from "./LookingGlassConfig"
 
 //lkgCanvas is defined in LookingGlassXRWebGLLayer.js, it is required when calling this function
-export function makeControls(lkgCanvas) {
+export function initLookingGlassControlGUI(lkgCanvas: HTMLCanvasElement) {
 	const cfg = getLookingGlassConfig()
 
 	const styleElement = document.createElement("style")
