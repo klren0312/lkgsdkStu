@@ -13,71 +13,66 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-declare const DefaultCalibration: {
-    configVersion: string;
-    pitch: {
-        value: number;
-    };
-    slope: {
-        value: number;
-    };
-    center: {
-        value: number;
-    };
-    viewCone: {
-        value: number;
-    };
-    invView: {
-        value: number;
-    };
-    verticalAngle: {
-        value: number;
-    };
-    DPI: {
-        value: number;
-    };
-    screenW: {
-        value: number;
-    };
-    screenH: {
-        value: number;
-    };
-    flipImageX: {
-        value: number;
-    };
-    flipImageY: {
-        value: number;
-    };
-    flipSubp: {
-        value: number;
-    };
-};
 export declare const DefaultEyeHeight: number;
-declare const DefaultConfig: {
+declare type Value = {
+    value: number;
+};
+export declare type CalibrationArgs = {
+    configVersion: string;
+    pitch: Value;
+    slope: Value;
+    center: Value;
+    viewCone: Value;
+    invView: Value;
+    verticalAngle: Value;
+    DPI: Value;
+    screenW: Value;
+    screenH: Value;
+    flipImageX: Value;
+    flipImageY: Value;
+    flipSubp: Value;
+};
+export declare type ViewControlArgs = {
+    /**
+     * defines the height of the individual quilt view, the width is then set based on the aspect ratio of the connected device.
+     * @default 512
+     */
     tileHeight: number;
+    /**
+     * defines the number of views to be rendered
+     * @default 45
+     */
     numViews: number;
+    /** defines the rotation of the camera on the X-axis */
     trackballX: number;
+    /** defines the rotation of the camera on the Y-axis */
     trackballY: number;
+    /** defines the position of the camera on the x-axis */
     targetX: number;
+    /** defines the position of the camera on the Y-axis */
     targetY: number;
+    /** defines the position of the camera on the Z-axis */
     targetZ: number;
+    /** defines the size of the camera, this makes your scene bigger or smaller without changing the focus. */
     targetDiam: number;
+    /** defines the vertical FOV of your camera (defined in radians) */
     fovy: number;
+    /** modifies to the view frustum to increase or decrease the perceived depth of the scene. */
     depthiness: number;
+    /** changes how the original canvas on your main web page is displayed, can show the encoded subpixel matrix, a single centered view, or a quilt view. */
     inlineView: number;
 };
-export declare type CalibrationType = typeof DefaultCalibration;
-export declare type ConfigType = typeof DefaultConfig;
+declare type LookingGlassConfigEvent = "on-config-changed";
 export declare class LookingGlassConfig extends EventTarget {
     private _calibration;
-    private _config;
-    constructor(cfg?: Partial<ConfigType>);
+    private _viewControls;
+    constructor(cfg?: Partial<ViewControlArgs>);
     private syncCalibration;
+    addEventListener(type: LookingGlassConfigEvent, callback: EventListenerOrEventListenerObject | null, options?: boolean | AddEventListenerOptions | undefined): void;
     private onConfigChange;
-    get calibration(): CalibrationType;
-    set calibration(value: Partial<CalibrationType>);
-    get config(): ConfigType;
-    set config(value: Partial<ConfigType> | undefined);
+    get calibration(): CalibrationArgs;
+    set calibration(value: Partial<CalibrationArgs>);
+    updateViewControls(value: Partial<ViewControlArgs> | undefined): void;
     /**
      * defines the height of the individual quilt view, the width is then set based on the aspect ratio of the connected device.
      */
@@ -144,5 +139,8 @@ export declare class LookingGlassConfig extends EventTarget {
     get subp(): number;
     get pitch(): number;
 }
-export declare function getLookingGlassConfig(config?: Partial<ConfigType>): LookingGlassConfig;
+/** The global LookingGlassConfig */
+export declare function getLookingGlassConfig(): LookingGlassConfig;
+/** Update the global LookingGlassConfig's viewControls */
+export declare function updateLookingGlassConfig(viewControls: Partial<ViewControlArgs> | undefined): void;
 export {};

@@ -14,9 +14,27 @@
  * limitations under the License.
  */
 import WebXRPolyfill from "@lookingglass/webxr-polyfill/src/WebXRPolyfill";
-import { ConfigType } from "./LookingGlassConfig";
+import LookingGlassXRDevice from "./LookingGlassXRDevice";
+import { ViewControlArgs } from "./LookingGlassConfig";
 export declare class LookingGlassWebXRPolyfill extends WebXRPolyfill {
-    constructor(cfg?: Partial<ConfigType>);
-    get config(): Partial<ConfigType>;
-    set config(v: Partial<ConfigType>);
+    private vrButton;
+    device: LookingGlassXRDevice;
+    /** true when previewing on Looking Glass */
+    isPresenting: boolean;
+    constructor(cfg?: Partial<ViewControlArgs>);
+    private overrideDefaultVRButton;
+    private updateVRButtonUI;
+    update(cfg: Partial<ViewControlArgs>): void;
 }
+/**
+ * Get the global Looking Glass Config.
+ * @deprecated In order to migrate to the latest setup, pass the config into LookingGlassWebXRPolyfill
+ * ```
+ * new LookingGlassWebXRPolyfill({
+ * 	 tileHeight: 512,
+ *   numViews: 45,
+ *  ...
+ * })
+ * ```
+ */
+export declare const LookingGlassConfig: import("./LookingGlassConfig").LookingGlassConfig;
