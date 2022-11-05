@@ -264,7 +264,7 @@ function be(b) {
     title: "camera trackball y",
     fixRange: (i) => Math.max(-0.5 * Math.PI, Math.min(i, 0.5 * Math.PI)),
     stringify: (i) => `${(i / Math.PI * 180).toFixed()}&deg;`
-  }), M = s("targetX", { type: "range", min: -20, max: 20, step: 0.1 }, {
+  }), L = s("targetX", { type: "range", min: -20, max: 20, step: 0.1 }, {
     label: "target x",
     title: "target position x",
     fixRange: (i) => i,
@@ -274,7 +274,7 @@ function be(b) {
     title: "target position y",
     fixRange: (i) => i,
     stringify: (i) => i.toFixed(2) + " m"
-  }), L = s("targetZ", { type: "range", min: -20, max: 20, step: 0.1 }, {
+  }), M = s("targetZ", { type: "range", min: -20, max: 20, step: 0.1 }, {
     label: "target z",
     title: "target position z",
     fixRange: (i) => i,
@@ -312,7 +312,7 @@ function be(b) {
     const l = i.movementX, d = -i.movementY;
     if (i.buttons & 2 || i.buttons & 1 && (i.shiftKey || i.ctrlKey)) {
       const r = t.trackballX, v = t.trackballY, w = -Math.cos(r) * l + Math.sin(r) * Math.sin(v) * d, R = -Math.cos(v) * d, m = Math.sin(r) * l + Math.cos(r) * Math.sin(v) * d;
-      M((h) => h + w * t.targetDiam * 1e-3), B((h) => h + R * t.targetDiam * 1e-3), L((h) => h + m * t.targetDiam * 1e-3);
+      L((h) => h + w * t.targetDiam * 1e-3), B((h) => h + R * t.targetDiam * 1e-3), M((h) => h + m * t.targetDiam * 1e-3);
     } else
       i.buttons & 1 && (k((r) => r - l * 0.01), x((r) => r - d * 0.01));
   });
@@ -352,7 +352,7 @@ function be(b) {
     let i = p.d - p.a, l = p.w - p.s;
     i && l && (i *= Math.sqrt(0.5), l *= Math.sqrt(0.5));
     const d = t.trackballX, r = t.trackballY, v = Math.cos(d) * i - Math.sin(d) * Math.cos(r) * l, w = -Math.sin(r) * l, R = -Math.sin(d) * i - Math.cos(d) * Math.cos(r) * l;
-    M((m) => m + v * t.targetDiam * 0.03), B((m) => m + w * t.targetDiam * 0.03), L((m) => m + R * t.targetDiam * 0.03), requestAnimationFrame(E);
+    L((m) => m + v * t.targetDiam * 0.03), B((m) => m + w * t.targetDiam * 0.03), M((m) => m + R * t.targetDiam * 0.03), requestAnimationFrame(E);
   }
   return n;
 }
@@ -367,26 +367,26 @@ class pe extends he {
       this.requestFullscreen();
     });
     const o = be(a), c = A(), s = this[de].config, k = e.createTexture();
-    let x, M;
-    const B = e.createFramebuffer(), L = e.enable.bind(e), p = e.disable.bind(e), E = e.getExtension("OES_vertex_array_object"), P = 34229, i = E ? E.bindVertexArrayOES.bind(E) : e.bindVertexArray.bind(e), l = () => {
+    let x, L;
+    const B = e.createFramebuffer(), M = e.enable.bind(e), p = e.disable.bind(e), E = e.getExtension("OES_vertex_array_object"), P = 34229, i = E ? E.bindVertexArrayOES.bind(E) : e.bindVertexArray.bind(e), l = () => {
       const y = e.getParameter(e.TEXTURE_BINDING_2D);
       if (e.bindTexture(e.TEXTURE_2D, k), e.texImage2D(e.TEXTURE_2D, 0, e.RGBA, c.framebufferWidth, c.framebufferHeight, 0, e.RGBA, e.UNSIGNED_BYTE, null), e.texParameteri(e.TEXTURE_2D, e.TEXTURE_MIN_FILTER, e.LINEAR), e.bindTexture(e.TEXTURE_2D, y), x) {
         const F = e.getParameter(e.RENDERBUFFER_BINDING);
-        e.bindRenderbuffer(e.RENDERBUFFER, x), e.renderbufferStorage(e.RENDERBUFFER, M.format, c.framebufferWidth, c.framebufferHeight), e.bindRenderbuffer(e.RENDERBUFFER, F);
+        e.bindRenderbuffer(e.RENDERBUFFER, x), e.renderbufferStorage(e.RENDERBUFFER, L.format, c.framebufferWidth, c.framebufferHeight), e.bindRenderbuffer(e.RENDERBUFFER, F);
       }
     };
-    (s.depth || s.stencil) && (s.depth && s.stencil ? M = {
+    (s.depth || s.stencil) && (s.depth && s.stencil ? L = {
       format: e.DEPTH_STENCIL,
       attachment: e.DEPTH_STENCIL_ATTACHMENT
-    } : s.depth ? M = {
+    } : s.depth ? L = {
       format: e.DEPTH_COMPONENT16,
       attachment: e.DEPTH_ATTACHMENT
-    } : s.stencil && (M = {
+    } : s.stencil && (L = {
       format: e.STENCIL_INDEX8,
       attachment: e.STENCIL_ATTACHMENT
     }), x = e.createRenderbuffer()), l(), c.addEventListener("on-config-changed", l);
     const d = e.getParameter(e.FRAMEBUFFER_BINDING);
-    e.bindFramebuffer(e.FRAMEBUFFER, B), e.framebufferTexture2D(e.FRAMEBUFFER, e.COLOR_ATTACHMENT0, e.TEXTURE_2D, k, 0), (s.depth || s.stencil) && e.framebufferRenderbuffer(e.FRAMEBUFFER, M.attachment, e.RENDERBUFFER, x), e.bindFramebuffer(e.FRAMEBUFFER, d);
+    e.bindFramebuffer(e.FRAMEBUFFER, B), e.framebufferTexture2D(e.FRAMEBUFFER, e.COLOR_ATTACHMENT0, e.TEXTURE_2D, k, 0), (s.depth || s.stencil) && e.framebufferRenderbuffer(e.FRAMEBUFFER, L.attachment, e.RENDERBUFFER, x), e.bindFramebuffer(e.FRAMEBUFFER, d);
     const r = e.createProgram(), v = e.createShader(e.VERTEX_SHADER);
     e.attachShader(r, v);
     const w = e.createShader(e.FRAGMENT_SHADER);
@@ -437,7 +437,7 @@ class pe extends he {
         const ne = e.getParameter(e.TEXTURE_BINDING_2D);
         e.bindFramebuffer(e.FRAMEBUFFER, null), e.useProgram(r), i(N), e.activeTexture(e.TEXTURE0), e.bindTexture(e.TEXTURE_2D, k), e.disable(e.BLEND), e.disable(e.CULL_FACE), e.disable(e.DEPTH_TEST), e.disable(e.STENCIL_TEST), e.viewport(0, 0, e.drawingBufferWidth, e.drawingBufferHeight), e.uniform1i(h, 0), e.drawArrays(e.TRIANGLES, 0, 6), u == null || u.clearRect(0, 0, a.width, a.height), u == null || u.drawImage(I, 0, 0), c.inlineView !== 0 && (e.uniform1i(h, c.inlineView), e.drawArrays(e.TRIANGLES, 0, 6)), e.bindTexture(e.TEXTURE_2D, ne);
       }
-      e.activeTexture(ie), e.useProgram(te), e.bindRenderbuffer(e.RENDERBUFFER, ee), e.bindFramebuffer(e.FRAMEBUFFER, Q), e.viewport(...J), (Z ? L : p)(e.SCISSOR_TEST), ($ ? L : p)(e.STENCIL_TEST), (K ? L : p)(e.DEPTH_TEST), (D ? L : p)(e.BLEND), (F ? L : p)(e.CULL_FACE), i(y);
+      e.activeTexture(ie), e.useProgram(te), e.bindRenderbuffer(e.RENDERBUFFER, ee), e.bindFramebuffer(e.FRAMEBUFFER, Q), e.viewport(...J), (Z ? M : p)(e.SCISSOR_TEST), ($ ? M : p)(e.STENCIL_TEST), (K ? M : p)(e.DEPTH_TEST), (D ? M : p)(e.BLEND), (F ? M : p)(e.CULL_FACE), i(y);
     };
     let _;
     window.addEventListener("unload", () => {
@@ -514,8 +514,8 @@ class ve extends ce {
       const u = Math.tan(0.5 * a.fovy), o = 0.5 * a.targetDiam / u, c = o - a.targetDiam, s = this.basePoseMatrix;
       g.fromTranslation(s, [a.targetX, a.targetY, a.targetZ]), g.rotate(s, s, a.trackballX, [0, 1, 0]), g.rotate(s, s, -a.trackballY, [1, 0, 0]), g.translate(s, s, [0, 0, o]);
       for (let x = 0; x < a.numViews; ++x) {
-        const M = (x + 0.5) / a.numViews - 0.5, B = Math.tan(a.viewCone * M), L = o * B, p = this.LookingGlassInverseViewMatrices[x] = this.LookingGlassInverseViewMatrices[x] || g.create();
-        g.translate(p, s, [L, 0, 0]), g.invert(p, p);
+        const L = (x + 0.5) / a.numViews - 0.5, B = Math.tan(a.viewCone * L), M = o * B, p = this.LookingGlassInverseViewMatrices[x] = this.LookingGlassInverseViewMatrices[x] || g.create();
+        g.translate(p, s, [M, 0, 0]), g.invert(p, p);
         const E = Math.max(c + e.depthNear, 0.01), P = c + e.depthFar, i = E * u, l = i, d = -i, r = E * -B, v = a.aspect * i, w = r + v, R = r - v, m = this.LookingGlassProjectionMatrices[x] = this.LookingGlassProjectionMatrices[x] || g.create();
         g.set(m, 2 * E / (w - R), 0, 0, 0, 0, 2 * E / (l - d), 0, 0, (w + R) / (w - R), (l + d) / (l - d), -(P + E) / (P - E), -1, 0, 0, -2 * P * E / (P - E), 0);
       }

@@ -1,1 +1,1 @@
-export declare function makeControls(lkgCanvas: any): HTMLDivElement;
+export declare function initLookingGlassControlGUI(lkgCanvas: HTMLCanvasElement): HTMLDivElement;
