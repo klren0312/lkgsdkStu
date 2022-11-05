@@ -12,35 +12,32 @@ export function makeControls(lkgCanvas) {
 	c.id = "LookingGlassWebXRControls"
 	c.style.position = "fixed"
 	c.style.zIndex = "1000"
-	c.style.padding = "4px"
-	c.style.width = "315px"
-	c.style.height = "360px"
+	c.style.padding = "15px"
+	c.style.width = "320px"
 	c.style.maxWidth = "calc(100vw - 18px)"
 	c.style.maxHeight = "calc(100vh - 18px)"
 	c.style.whiteSpace = "nowrap"
-	c.style.overflowY = "scroll"
-	// c.style.scrollbarWidth = 'thin';
-	// c.style.scrollbarColor = 'thistle transparent';
 	c.style.background = "rgba(0, 0, 0, 0.6)"
 	c.style.color = "white"
-	c.style.padding = "2px"
-	c.style.border = "3px solid black"
-	c.style.right = "6px"
-	c.style.bottom = "6px"
+	c.style.borderRadius = "10px"
+	c.style.right = "15px"
+	c.style.bottom = "15px"
 
 	const title = document.createElement("div")
 	c.appendChild(title)
 	title.style.width = "100%"
 	title.style.textAlign = "center"
 	title.style.fontWeight = "bold"
-	title.innerText = "LookingGlass View Controls "
+	title.innerText = "Looking Glass Controls "
 
 	const help = document.createElement("div")
 	c.appendChild(help)
 	help.style.width = "100%"
 	help.style.whiteSpace = "normal"
-	help.style.textAlign = "center"
-	help.innerHTML = "Camera: click popup and use WASD, mouse left/right drag, and scroll."
+	help.style.color = "rgba(255,255,255,0.7)"
+	help.style.fontSize = "14px"
+	help.style.margin = "5px 0"
+	help.innerHTML = "Click the popup and use WASD, mouse left/right drag, and scroll."
 
 	const lrToggle = document.createElement("input")
 	title.appendChild(lrToggle)
@@ -55,10 +52,11 @@ export function makeControls(lkgCanvas) {
 	const controlListDiv = document.createElement("div")
 	c.appendChild(controlListDiv)
 
-	const addControl = (name, attrs, opts) => {
+	const addControl = (name: string, attrs: any, opts) => {
 		const stringify = opts.stringify
 
 		const controlLineDiv = document.createElement("div")
+		controlLineDiv.style.marginBottom = "8px"
 		controlListDiv.appendChild(controlLineDiv)
 
 		const controlID = name
@@ -68,9 +66,12 @@ export function makeControls(lkgCanvas) {
 		controlLineDiv.appendChild(label)
 		label.innerText = opts.label
 		label.setAttribute("for", controlID)
-		label.style.width = "80px"
+		label.style.width = "100px"
 		label.style.display = "inline-block"
 		label.style.textDecoration = "dotted underline 1px"
+		label.style.fontFamily = `"Courier New"`
+		label.style.fontSize = "13px"
+		label.style.fontWeight = "bold"
 		label.title = opts.title
 
 		if (attrs.type !== "checkbox") {
@@ -102,12 +103,7 @@ export function makeControls(lkgCanvas) {
 		}
 		control.oninput = () => {
 			// Only in oninput do we actually read the control's value.
-			const newValue =
-				attrs.type === "range"
-					? parseFloat(control.value)
-					: attrs.type === "checkbox"
-					? control.checked
-					: control.value
+			const newValue = attrs.type === "range" ? parseFloat(control.value) : attrs.type === "checkbox" ? control.checked : control.value
 			updateValue(newValue)
 		}
 
@@ -124,7 +120,7 @@ export function makeControls(lkgCanvas) {
 
 		if (attrs.type === "range") {
 			control.style.width = "110px"
-			control.style.height = "16px"
+			control.style.height = "8px"
 			control.onwheel = (ev) => {
 				updateExternally((oldValue) => oldValue + Math.sign(ev.deltaX - ev.deltaY) * attrs.step)
 			}
@@ -134,6 +130,9 @@ export function makeControls(lkgCanvas) {
 
 		if (stringify) {
 			const numberText = document.createElement("span")
+			numberText.style.fontFamily = `"Courier New"`
+			numberText.style.fontSize = "13px"
+			numberText.style.marginLeft = "3px"
 			controlLineDiv.appendChild(numberText)
 			updateNumberText = (v) => {
 				numberText.innerHTML = stringify(v)
@@ -157,7 +156,7 @@ export function makeControls(lkgCanvas) {
 		"numViews",
 		{ type: "range", min: 1, max: 145, step: 1 },
 		{
-			label: "# views",
+			label: "views",
 			title: "number of different viewing angles to render",
 			stringify: (v) => v.toFixed(),
 		}
