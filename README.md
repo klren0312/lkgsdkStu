@@ -1,5 +1,7 @@
 # Looking Glass WebXR Library
 
+![](public/webxr-banner.jpg)
+
 The Looking Glass WebXR Library provides a WebXR API for targeting [Looking Glass displays](https://lookingglassfactory.com/), this means that any 3D web framework that supports WebXR will work with the Looking Glass WebXR library. Ready to turn the internet holographic? Let's have some fun!
 
 Looking Glass WebXR works in Chromium based browsers and Firefox, though we recommend chrome-based browsers for best performance.

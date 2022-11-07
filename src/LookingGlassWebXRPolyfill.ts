@@ -52,6 +52,7 @@ export class LookingGlassWebXRPolyfill extends WebXRPolyfill {
 		})
 	}
 
+	/** If a "Enter VR" button exists, let's override it with our own copy */
 	private async overrideDefaultVRButton() {
 		this.vrButton = await waitForElement<HTMLButtonElement>("VRButton")
 
@@ -74,6 +75,7 @@ export class LookingGlassWebXRPolyfill extends WebXRPolyfill {
 		}
 	}
 
+	/** Refresh the current state of the VRButton */
 	private updateVRButtonUI() {
 		if (this.vrButton) {
 			if (this.isPresenting) {
