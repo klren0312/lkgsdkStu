@@ -1,8 +1,6 @@
 # Looking Glass WebXR Library
 
-**In order to use Looking Glass WebXR with your Looking Glass you must [install Looking Glass Bridge](https://lookingglassfactory.com/software/looking-glass-bridge).**
-
-The Looking Glass WebXR Library provides a WebXR API for targeting Looking Glass displays, this means that any 3D web framework that supports WebXR will work with the Looking Glass WebXR library. Ready to turn the internet holographic? Let's have some fun!
+The Looking Glass WebXR Library provides a WebXR API for targeting [Looking Glass displays](https://lookingglassfactory.com/), this means that any 3D web framework that supports WebXR will work with the Looking Glass WebXR library. Ready to turn the internet holographic? Let's have some fun!
 
 Looking Glass WebXR works in Chromium based browsers and Firefox, though we recommend chrome-based browsers for best performance.
 Safari is not currently supported.
@@ -12,10 +10,16 @@ We've tested our WebXR Library with the following WebGL frameworks. If you use o
 - Babylon.JS (`v5.0+`)
 - PlayCanvas
 
+## Requirements
+In order to use WebXR:
+- Plug in your [Looking Glass display](https://lookingglassfactory.com/) to your computer
+- [Install Looking Glass Bridge](https://lookingglassfactory.com/software/looking-glass-bridge) and make sure it's currently running.
 ## Demos
-We've got some demos setup for [three.js](https://docs.lookingglassfactory.com/developer-tools/webxr/three.js), [react-three-fiber](https://docs.lookingglassfactory.com/developer-tools/webxr/react-three-fiber), and [Spline](https://docs.lookingglassfactory.com/developer-tools/webxr/spline)!
+We put together some documentation and demos for [three.js](https://docs.lookingglassfactory.com/developer-tools/webxr/three.js), [react-three-fiber](https://docs.lookingglassfactory.com/developer-tools/webxr/react-three-fiber), and [Spline](https://docs.lookingglassfactory.com/developer-tools/webxr/spline). Check them out!
 
 ### How it works
+The `LookingGlassWebXRPolyfill` implements the WebXR override and allows you to target Looking Glass displays.
+
 To view a WebXR project on your Looking Glass, visit one of the demos and then click the `Enter Looking Glass` button. This will open up a small pop-up window. 
 Drag this window over to your Looking Glass display and then double click to have the hologram display properly. 
 
