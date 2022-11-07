@@ -14,12 +14,12 @@
  * limitations under the License.
  */
 
-import WebXRPolyfill from "@lookingglass/webxr-polyfill/src/WebXRPolyfill"
-import XRSystem from "@lookingglass/webxr-polyfill/src/api/XRSystem"
 import API from "@lookingglass/webxr-polyfill/src/api/index"
+import XRSystem from "@lookingglass/webxr-polyfill/src/api/XRSystem"
+import WebXRPolyfill from "@lookingglass/webxr-polyfill/src/WebXRPolyfill"
+import { getLookingGlassConfig, updateLookingGlassConfig, ViewControlArgs } from "./LookingGlassConfig"
 import LookingGlassXRDevice from "./LookingGlassXRDevice"
 import LookingGlassXRWebGLLayer from "./LookingGlassXRWebGLLayer"
-import { ViewControlArgs, getLookingGlassConfig, updateLookingGlassConfig } from "./LookingGlassConfig"
 
 export class LookingGlassWebXRPolyfill extends WebXRPolyfill {
 	private vrButton: HTMLButtonElement | undefined

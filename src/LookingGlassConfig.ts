@@ -39,7 +39,7 @@ export type CalibrationArgs = {
 }
 
 export enum InlineView {
-	Swizzeld = 0,
+	Swizzled = 0,
 	Center = 1,
 	Quilt = 2,
 }
