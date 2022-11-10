@@ -21,9 +21,13 @@
     "url": "git+https://github.com/Looking-Glass/looking-glass-webxr.git"
   },
   "scripts": {
-    "build": "vite build"
+    "dev": "vite build --mode dev && vite --mode dev",
+    "build": "vite build --mode build",
+    "production": "vite build --mode dev && vite build --mode build"
   },
   "devDependencies": {
+    "@rollup/plugin-replace": "^5.0.1",
+    "three": "^0.146.0",
     "vite": "^3.1.2"
   },
   "dependencies": {
