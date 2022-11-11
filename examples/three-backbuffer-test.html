@@ -49,9 +49,9 @@
 				renderer.setRenderTarget(null)
 
 				// User-land fix (must be before render)
-				const gl = renderer.getContext()
-				const session = renderer.xr.getSession()
-				gl.bindFramebuffer(gl.FRAMEBUFFER, session?.renderState?.baseLayer?.framebuffer ?? null)
+				// const gl = renderer.getContext()
+				// const session = renderer.xr.getSession()
+				// gl.bindFramebuffer(gl.FRAMEBUFFER, session?.renderState?.baseLayer?.framebuffer ?? null)
 
 				renderer.render(scene, camera)
 			})

@@ -1,8 +1,8 @@
 .threejs-iframe {
-    width: 400px;
-    height: 600px;
     border-radius: 20px;
     border: solid white 1px;
+    width: 400px;
+    height: 600px;
 }
 
 body {
@@ -11,7 +11,8 @@ body {
     color: #fff;
     font-size: 100%;
     line-height: 1;
-    margin: 0px;
+    margin-left: 32px;
+    margin-top: 16px;
   }
   
   h1 {
@@ -57,9 +58,17 @@ body {
   p {
     margin-bottom: 0px;
   }
+
+  .centered {
+    text-align: center;
+  }
   
   a {
+    display: block;
+    color: lightskyblue;
     text-decoration: underline;
+    margin-top: 8px;
+    margin-bottom: 0px;
   }
   
   ul {
@@ -91,8 +100,9 @@ body {
   }
 
   .box {
-    margin-left: 32px;
     display: flex;
     justify-content: left;
     gap: 32px;
+    width: 400px;
+    height: 600px;
   }

@@ -22,7 +22,7 @@
 			const config = LookingGlassConfig
 			config.tileHeight = 512
 			config.numViews = 45
-			config.targetY = 0
+			config.targetY = 1
 			config.targetZ = 0
 			config.targetDiam = 3
 			config.fovy = (14 * Math.PI) / 180
@@ -31,8 +31,9 @@
 			const scene = new THREE.Scene()
 
 			const cube = new THREE.Mesh(new THREE.BoxGeometry(2, 0.1, 0.1), new THREE.MeshStandardMaterial({ color: "red" }))
-
+			cube.position.set(0,1.3,0)
 			scene.add(cube)
+			scene.add(new THREE.GridHelper())
 
 			scene.add(new THREE.AmbientLight(0xaaaaaa))
 			const directionalLight = new THREE.DirectionalLight(0xffffff)
@@ -43,8 +44,8 @@
 			document.body.append(renderer.domElement)
 			renderer.xr.enabled = true
 
-			const camera = new THREE.PerspectiveCamera()
-			camera.position.z = 3
+			const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight)
+			camera.position.set(0, 1.3, 3)
 
 			renderer.setAnimationLoop(() => {
 				cube.rotation.z += 0.01
