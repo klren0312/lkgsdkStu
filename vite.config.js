@@ -1,7 +1,8 @@
-import { resolve } from "path"
-import path from "path"
-import { defineConfig } from "vite"
 import replace from "@rollup/plugin-replace"
+import typescript from "@rollup/plugin-typescript"
+import path, { resolve } from "path"
+import { typescriptPaths } from "rollup-plugin-typescript-paths"
+import { defineConfig } from "vite"
 
 export default defineConfig(({ mode }) => {
 	// if dev, we want to bundle the dependencies into the webXR library so it can be used in script tags.
@@ -10,7 +11,7 @@ export default defineConfig(({ mode }) => {
 			build: {
 				minify: false,
 				lib: {
-					entry: resolve(__dirname, "src/LookingGlassWebXRPolyfill.js"),
+					entry: resolve(__dirname, "src/LookingGlassWebXRPolyfill.ts"),
 					name: "Looking Glass WebXR",
 					// the proper extensions will be added
 					fileName: "@lookingglass/bundle/webxr",
@@ -38,7 +39,7 @@ export default defineConfig(({ mode }) => {
 			build: {
 				minify: true,
 				lib: {
-					entry: resolve(__dirname, "src/LookingGlassWebXRPolyfill.js"),
+					entry: resolve(__dirname, "src/LookingGlassWebXRPolyfill.ts"),
 					name: "Looking Glass WebXR",
 					// the proper extensions will be added
 					fileName: "@lookingglass/webxr",
@@ -65,6 +66,16 @@ export default defineConfig(({ mode }) => {
 						},
 					},
 				},
+				plugins: [
+					typescriptPaths({
+						preserveExtensions: true,
+					}),
+					typescript({
+						sourceMap: false,
+						declaration: true,
+						outDir: "dist",
+					}),
+				],
 			},
 		}
 	}
