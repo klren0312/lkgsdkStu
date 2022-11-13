@@ -5570,7 +5570,7 @@ class GamepadXRInputSource {
     return new XRPose(new XRRigidTransform(this.outputMatrix), this.emulatedPosition);
   }
 }
-const TEST_ENV$1 = process.env.NODE_ENV === "test";
+const TEST_ENV = false;
 const EXTRA_PRESENTATION_ATTRIBUTES = {
   highRefreshRate: true
 };
@@ -5590,7 +5590,7 @@ class Session$2 {
     this.baseLayer = null;
     this.id = ++SESSION_ID$2;
     this.modifiedCanvasLayer = false;
-    if (this.outputContext && !TEST_ENV$1) {
+    if (this.outputContext && !TEST_ENV) {
       const renderContextType = polyfillOptions.renderContextType || "2d";
       this.renderContext = this.outputContext.canvas.getContext(renderContextType);
     }
@@ -5637,7 +5637,7 @@ class WebVRDevice extends XRDevice {
         source: canvas,
         attributes: EXTRA_PRESENTATION_ATTRIBUTES
       }]).then(() => {
-        if (!TEST_ENV$1 && !this.global.document.body.contains(canvas)) {
+        if (!this.global.document.body.contains(canvas)) {
           session.modifiedCanvasLayer = true;
           this.global.document.body.appendChild(canvas);
           applyCanvasStylesForMinimalRendering(canvas);
@@ -5680,7 +5680,7 @@ class WebVRDevice extends XRDevice {
     let immersive = mode == "immersive-vr";
     if (immersive) {
       const canvas = this.global.document.createElement("canvas");
-      if (!TEST_ENV$1) {
+      {
         canvas.getContext("webgl");
       }
       await this.display.requestPresent([{
@@ -5751,9 +5751,6 @@ class WebVRDevice extends XRDevice {
         }
       }
     }
-    if (TEST_ENV$1) {
-      return;
-    }
     if (!session.immersive && session.baseLayer) {
       const canvas = session.baseLayer.context.canvas;
       perspective$1(
@@ -5775,7 +5772,7 @@ class WebVRDevice extends XRDevice {
       const iCanvas = session.baseLayer.context.canvas;
       const iWidth = mirroring ? iCanvas.width / 2 : iCanvas.width;
       const iHeight = iCanvas.height;
-      if (!TEST_ENV$1) {
+      {
         const oCanvas = session.outputContext.canvas;
         const oWidth = oCanvas.width;
         const oHeight = oCanvas.height;
@@ -5959,7 +5956,6 @@ class CardboardXRDevice extends WebVRDevice {
     };
   }
 }
-const TEST_ENV = process.env.NODE_ENV === "test";
 let SESSION_ID$1 = 0;
 class Session$1 {
   constructor(mode, enabledFeatures) {
@@ -6007,9 +6003,6 @@ class InlineDevice extends XRDevice {
     window.cancelAnimationFrame(handle);
   }
   onFrameStart(sessionId, renderState) {
-    if (TEST_ENV) {
-      return;
-    }
     const session = this.sessions.get(sessionId);
     if (session.baseLayer) {
       const canvas = session.baseLayer.context.canvas;
@@ -6131,7 +6124,7 @@ class WebXRPolyfill {
         global2[className] = API[className];
       }
     }
-    if (process.env.NODE_ENV !== "test") {
+    {
       polyfillMakeXRCompatible(global2.WebGLRenderingContext);
       {
         polyfillGetContext(global2.HTMLCanvasElement);
@@ -6809,6 +6802,12 @@ function Shader(cfg) {
 `;
 }
 const DefaultEyeHeight = 1.6;
+var InlineView;
+(function(InlineView2) {
+  InlineView2[InlineView2["Swizzled"] = 0] = "Swizzled";
+  InlineView2[InlineView2["Center"] = 1] = "Center";
+  InlineView2[InlineView2["Quilt"] = 2] = "Quilt";
+})(InlineView || (InlineView = {}));
 class LookingGlassConfig$1 extends EventTarget {
   constructor(cfg) {
     super();
@@ -6838,27 +6837,24 @@ class LookingGlassConfig$1 extends EventTarget {
       targetDiam: 2,
       fovy: 13 / 180 * Math.PI,
       depthiness: 1.25,
-      inlineView: 1
+      inlineView: InlineView.Center
     });
     this._viewControls = { ...this._viewControls, ...cfg };
     this.syncCalibration();
   }
   syncCalibration() {
-    new Client(
-      (msg) => {
-        if (msg.devices.length < 1) {
-          console.error("No Looking Glass devices found!");
-          return;
-        }
-        if (msg.devices.length > 1) {
-          console.warn("More than one Looking Glass device found... using the first one");
-        }
-        this.calibration = msg.devices[0].calibration;
-      },
-      (err) => {
-        console.error("Error creating Looking Glass client:", err);
+    new Client((msg) => {
+      if (msg.devices.length < 1) {
+        console.error("No Looking Glass devices found!");
+        return;
       }
-    );
+      if (msg.devices.length > 1) {
+        console.warn("More than one Looking Glass device found... using the first one");
+      }
+      this.calibration = msg.devices[0].calibration;
+    }, (err) => {
+      console.error("Error creating Looking Glass client:", err);
+    });
   }
   addEventListener(type, callback, options) {
     super.addEventListener(type, callback, options);
@@ -7350,123 +7346,83 @@ function initLookingGlassControlGUI(lkgCanvas) {
     }
     return updateExternally;
   };
-  addControl(
-    "tileHeight",
-    { type: "range", min: 160, max: 455, step: 1 },
-    {
-      label: "resolution",
-      title: "resolution of each view",
-      stringify: (v) => `${(v * cfg.aspect).toFixed()}&times;${v.toFixed()}`
+  addControl("tileHeight", { type: "range", min: 160, max: 455, step: 1 }, {
+    label: "resolution",
+    title: "resolution of each view",
+    stringify: (v) => `${(v * cfg.aspect).toFixed()}&times;${v.toFixed()}`
+  });
+  addControl("numViews", { type: "range", min: 1, max: 145, step: 1 }, {
+    label: "views",
+    title: "number of different viewing angles to render",
+    stringify: (v) => v.toFixed()
+  });
+  const setTrackballX = addControl("trackballX", {
+    type: "range",
+    min: -Math.PI,
+    max: 1.0001 * Math.PI,
+    step: 0.5 / 180 * Math.PI
+  }, {
+    label: "trackball x",
+    title: "camera trackball x",
+    fixRange: (v) => (v + Math.PI * 3) % (Math.PI * 2) - Math.PI,
+    stringify: (v) => `${(v / Math.PI * 180).toFixed()}&deg;`
+  });
+  const setTrackballY = addControl("trackballY", {
+    type: "range",
+    min: -0.5 * Math.PI,
+    max: 0.5001 * Math.PI,
+    step: 1 / 180 * Math.PI
+  }, {
+    label: "trackball y",
+    title: "camera trackball y",
+    fixRange: (v) => Math.max(-0.5 * Math.PI, Math.min(v, 0.5 * Math.PI)),
+    stringify: (v) => `${(v / Math.PI * 180).toFixed()}&deg;`
+  });
+  const setTargetX = addControl("targetX", { type: "range", min: -20, max: 20, step: 0.1 }, {
+    label: "target x",
+    title: "target position x",
+    fixRange: (v) => v,
+    stringify: (v) => v.toFixed(2) + " m"
+  });
+  const setTargetY = addControl("targetY", { type: "range", min: -20, max: 20, step: 0.1 }, {
+    label: "target y",
+    title: "target position y",
+    fixRange: (v) => v,
+    stringify: (v) => v.toFixed(2) + " m"
+  });
+  const setTargetZ = addControl("targetZ", { type: "range", min: -20, max: 20, step: 0.1 }, {
+    label: "target z",
+    title: "target position z",
+    fixRange: (v) => v,
+    stringify: (v) => v.toFixed(2) + " m"
+  });
+  addControl("fovy", {
+    type: "range",
+    min: 1 / 180 * Math.PI,
+    max: 120.1 / 180 * Math.PI,
+    step: 1 / 180 * Math.PI
+  }, {
+    label: "fov",
+    title: "perspective fov (degrades stereo effect)",
+    fixRange: (v) => Math.max(1 / 180 * Math.PI, Math.min(v, 120.1 / 180 * Math.PI)),
+    stringify: (v) => {
+      const xdeg = v / Math.PI * 180;
+      const ydeg = Math.atan(Math.tan(v / 2) * cfg.aspect) * 2 / Math.PI * 180;
+      return `${xdeg.toFixed()}&deg;&times;${ydeg.toFixed()}&deg;`;
     }
-  );
-  addControl(
-    "numViews",
-    { type: "range", min: 1, max: 145, step: 1 },
-    {
-      label: "views",
-      title: "number of different viewing angles to render",
-      stringify: (v) => v.toFixed()
-    }
-  );
-  const setTrackballX = addControl(
-    "trackballX",
-    {
-      type: "range",
-      min: -Math.PI,
-      max: 1.0001 * Math.PI,
-      step: 0.5 / 180 * Math.PI
-    },
-    {
-      label: "trackball x",
-      title: "camera trackball x",
-      fixRange: (v) => (v + Math.PI * 3) % (Math.PI * 2) - Math.PI,
-      stringify: (v) => `${(v / Math.PI * 180).toFixed()}&deg;`
-    }
-  );
-  const setTrackballY = addControl(
-    "trackballY",
-    {
-      type: "range",
-      min: -0.5 * Math.PI,
-      max: 0.5001 * Math.PI,
-      step: 1 / 180 * Math.PI
-    },
-    {
-      label: "trackball y",
-      title: "camera trackball y",
-      fixRange: (v) => Math.max(-0.5 * Math.PI, Math.min(v, 0.5 * Math.PI)),
-      stringify: (v) => `${(v / Math.PI * 180).toFixed()}&deg;`
-    }
-  );
-  const setTargetX = addControl(
-    "targetX",
-    { type: "range", min: -20, max: 20, step: 0.1 },
-    {
-      label: "target x",
-      title: "target position x",
-      fixRange: (v) => v,
-      stringify: (v) => v.toFixed(2) + " m"
-    }
-  );
-  const setTargetY = addControl(
-    "targetY",
-    { type: "range", min: -20, max: 20, step: 0.1 },
-    {
-      label: "target y",
-      title: "target position y",
-      fixRange: (v) => v,
-      stringify: (v) => v.toFixed(2) + " m"
-    }
-  );
-  const setTargetZ = addControl(
-    "targetZ",
-    { type: "range", min: -20, max: 20, step: 0.1 },
-    {
-      label: "target z",
-      title: "target position z",
-      fixRange: (v) => v,
-      stringify: (v) => v.toFixed(2) + " m"
-    }
-  );
-  addControl(
-    "fovy",
-    {
-      type: "range",
-      min: 1 / 180 * Math.PI,
-      max: 120.1 / 180 * Math.PI,
-      step: 1 / 180 * Math.PI
-    },
-    {
-      label: "fov",
-      title: "perspective fov (degrades stereo effect)",
-      fixRange: (v) => Math.max(1 / 180 * Math.PI, Math.min(v, 120.1 / 180 * Math.PI)),
-      stringify: (v) => {
-        const xdeg = v / Math.PI * 180;
-        const ydeg = Math.atan(Math.tan(v / 2) * cfg.aspect) * 2 / Math.PI * 180;
-        return `${xdeg.toFixed()}&deg;&times;${ydeg.toFixed()}&deg;`;
-      }
-    }
-  );
-  addControl(
-    "depthiness",
-    { type: "range", min: 0, max: 2, step: 0.01 },
-    {
-      label: "depthiness",
-      title: 'exaggerates depth by multiplying the width of the view cone (as reported by the firmware) - can somewhat compensate for depthiness lost using higher fov. 1.25 seems to be most physically accurate on Looking Glass 8.9".',
-      fixRange: (v) => Math.max(0, v),
-      stringify: (v) => `${v.toFixed(2)}x`
-    }
-  );
-  addControl(
-    "inlineView",
-    { type: "range", min: 0, max: 2, step: 1 },
-    {
-      label: "inline view",
-      title: "what to show inline on the original canvas (swizzled = no overwrite)",
-      fixRange: (v) => Math.max(0, Math.min(v, 2)),
-      stringify: (v) => v === 0 ? "swizzled" : v === 1 ? "center" : v === 2 ? "quilt" : "?"
-    }
-  );
+  });
+  addControl("depthiness", { type: "range", min: 0, max: 2, step: 0.01 }, {
+    label: "depthiness",
+    title: 'exaggerates depth by multiplying the width of the view cone (as reported by the firmware) - can somewhat compensate for depthiness lost using higher fov. 1.25 seems to be most physically accurate on Looking Glass 8.9".',
+    fixRange: (v) => Math.max(0, v),
+    stringify: (v) => `${v.toFixed(2)}x`
+  });
+  addControl("inlineView", { type: "range", min: 0, max: 2, step: 1 }, {
+    label: "inline view",
+    title: "what to show inline on the original canvas (swizzled = no overwrite)",
+    fixRange: (v) => Math.max(0, Math.min(v, 2)),
+    stringify: (v) => v === 0 ? "swizzled" : v === 1 ? "center" : v === 2 ? "quilt" : "?"
+  });
   lkgCanvas.oncontextmenu = (ev) => {
     ev.preventDefault();
   };
@@ -7885,38 +7841,14 @@ class LookingGlassXRDevice extends XRDevice {
         const halfXRange = cfg.aspect * halfYRange;
         const r = midpointX + halfXRange, l = midpointX - halfXRange;
         const mProj = this.LookingGlassProjectionMatrices[i] = this.LookingGlassProjectionMatrices[i] || create();
-        set(
-          mProj,
-          2 * n / (r - l),
-          0,
-          0,
-          0,
-          0,
-          2 * n / (t - b),
-          0,
-          0,
-          (r + l) / (r - l),
-          (t + b) / (t - b),
-          -(f + n) / (f - n),
-          -1,
-          0,
-          0,
-          -2 * f * n / (f - n),
-          0
-        );
+        set(mProj, 2 * n / (r - l), 0, 0, 0, 0, 2 * n / (t - b), 0, 0, (r + l) / (r - l), (t + b) / (t - b), -(f + n) / (f - n), -1, 0, 0, -2 * f * n / (f - n), 0);
       }
       const baseLayerPrivate = session.baseLayer[PRIVATE];
       baseLayerPrivate.clearFramebuffer();
     } else {
       const gl = session.baseLayer.context;
       const aspect = gl.drawingBufferWidth / gl.drawingBufferHeight;
-      perspective(
-        this.inlineProjectionMatrix,
-        renderState.inlineVerticalFieldOfView,
-        aspect,
-        renderState.depthNear,
-        renderState.depthFar
-      );
+      perspective(this.inlineProjectionMatrix, renderState.inlineVerticalFieldOfView, aspect, renderState.depthNear, renderState.depthFar);
       fromTranslation(this.basePoseMatrix, [0, DefaultEyeHeight, 0]);
       invert(this.inlineInverseViewMatrix, this.basePoseMatrix);
     }

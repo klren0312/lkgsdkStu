@@ -32,35 +32,70 @@ export declare type CalibrationArgs = {
     flipImageY: Value;
     flipSubp: Value;
 };
+export declare enum InlineView {
+    /** Show the encoded subpixel matrix */
+    Swizzled = 0,
+    /** A single centered view */
+    Center = 1,
+    /** The quilt view */
+    Quilt = 2
+}
 export declare type ViewControlArgs = {
     /**
-     * defines the height of the individual quilt view, the width is then set based on the aspect ratio of the connected device.
+     * Defines the height of the individual quilt view, the width is then set based on the aspect ratio of the connected device.
      * @default 512
      */
     tileHeight: number;
     /**
-     * defines the number of views to be rendered
+     * Defines the number of views to be rendered
      * @default 45
      */
     numViews: number;
-    /** defines the rotation of the camera on the X-axis */
+    /**
+     * Defines the rotation of the camera on the X-axis
+     * @default 0
+     */
     trackballX: number;
-    /** defines the rotation of the camera on the Y-axis */
+    /**
+     * Defines the rotation of the camera on the Y-axis
+     * @default 0
+     */
     trackballY: number;
-    /** defines the position of the camera on the x-axis */
+    /**
+     * Defines the position of the camera on the x-axis
+     * @default 0
+     */
     targetX: number;
-    /** defines the position of the camera on the Y-axis */
+    /**
+     * Defines the position of the camera on the Y-axis
+     * @default 1.6 (or `DefaultEyeHeight`)
+     */
     targetY: number;
-    /** defines the position of the camera on the Z-axis */
+    /**
+     * Defines the position of the camera on the Z-axis
+     * @default -0.5
+     */
     targetZ: number;
-    /** defines the size of the camera, this makes your scene bigger or smaller without changing the focus. */
+    /**
+     * Defines the size of the camera, this makes your scene bigger or smaller without changing the focus.
+     * @default 2.0
+     */
     targetDiam: number;
-    /** defines the vertical FOV of your camera (defined in radians) */
+    /**
+     * Defines the vertical FOV of your camera (defined in radians)
+     * @default (13.0 / 180) * Math.PI
+     */
     fovy: number;
-    /** modifies to the view frustum to increase or decrease the perceived depth of the scene. */
+    /**
+     * Modifies to the view frustum to increase or decrease the perceived depth of the scene.
+     * @default 1.25
+     */
     depthiness: number;
-    /** changes how the original canvas on your main web page is displayed, can show the encoded subpixel matrix, a single centered view, or a quilt view. */
-    inlineView: number;
+    /**
+     * Changes how the original canvas on your main web page is displayed, can show the encoded subpixel matrix, a single centered view, or a quilt view.
+     * @default InlineView.Center
+     */
+    inlineView: InlineView;
 };
 declare type LookingGlassConfigEvent = "on-config-changed";
 export declare class LookingGlassConfig extends EventTarget {
@@ -126,8 +161,8 @@ export declare class LookingGlassConfig extends EventTarget {
     /**
      * changes how the original canvas on your main web page is displayed, can show the encoded subpixel matrix, a single centered view, or a quilt view.
      */
-    get inlineView(): number;
-    set inlineView(v: number);
+    get inlineView(): InlineView;
+    set inlineView(v: InlineView);
     get aspect(): number;
     get tileWidth(): number;
     get framebufferWidth(): number;

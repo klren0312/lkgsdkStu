@@ -14,15 +14,17 @@
  * limitations under the License.
  */
 import WebXRPolyfill from "@lookingglass/webxr-polyfill/src/WebXRPolyfill";
-import LookingGlassXRDevice from "./LookingGlassXRDevice";
 import { ViewControlArgs } from "./LookingGlassConfig";
+import LookingGlassXRDevice from "./LookingGlassXRDevice";
 export declare class LookingGlassWebXRPolyfill extends WebXRPolyfill {
     private vrButton;
     device: LookingGlassXRDevice;
     /** true when previewing on Looking Glass */
     isPresenting: boolean;
     constructor(cfg?: Partial<ViewControlArgs>);
+    /** If a "Enter VR" button exists, let's override it with our own copy */
     private overrideDefaultVRButton;
+    /** Refresh the current state of the VRButton */
     private updateVRButtonUI;
     update(cfg: Partial<ViewControlArgs>): void;
 }

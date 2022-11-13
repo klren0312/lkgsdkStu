@@ -28,7 +28,7 @@ export default defineConfig(({ mode }) => {
 					// the proper extensions will be added
 					fileName: "@lookingglass/bundle/webxr",
 				},
-				emptyOutDir: true,
+				emptyOutDir: false,
 				rollupOptions: {
 					output: {
 						sourcemapExcludeSources: true,
@@ -58,7 +58,7 @@ export default defineConfig(({ mode }) => {
 					// the proper extensions will be added
 					fileName: "@lookingglass/webxr",
 				},
-				emptyOutDir: true,
+				emptyOutDir: false,
 				rollupOptions: {
 					// make sure to externalize deps that shouldn't be bundled
 					// into your library
