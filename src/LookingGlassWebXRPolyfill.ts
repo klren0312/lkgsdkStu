@@ -76,8 +76,10 @@ export class LookingGlassWebXRPolyfill extends WebXRPolyfill {
 	}
 
 	/** Refresh the current state of the VRButton */
-	private updateVRButtonUI() {
+	private async updateVRButtonUI() {
 		if (this.vrButton) {
+			// Hack: Need to delay slightly in order to properly update
+			await delay(100)
 			if (this.isPresenting) {
 				this.vrButton.innerHTML = "EXIT LOOKING GLASS"
 			}
@@ -119,6 +121,10 @@ async function waitForElement<T extends HTMLElement>(id: string): Promise<T> {
 			reject(`id:${id} not found`)
 		}, 5000)
 	})
+}
+
+function delay(ms: number) {
+	return new Promise( resolve => setTimeout(resolve, ms) );
 }
 
 /**
