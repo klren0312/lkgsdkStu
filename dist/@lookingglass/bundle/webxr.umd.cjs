@@ -8013,8 +8013,9 @@ host this content on a secure origin for the best user experience.
         this.updateVRButtonUI();
       }
     }
-    updateVRButtonUI() {
+    async updateVRButtonUI() {
       if (this.vrButton) {
+        await delay(100);
         if (this.isPresenting) {
           this.vrButton.innerHTML = "EXIT LOOKING GLASS";
         } else {
@@ -8048,6 +8049,9 @@ host this content on a secure origin for the best user experience.
         reject(`id:${id} not found`);
       }, 5e3);
     });
+  }
+  function delay(ms) {
+    return new Promise((resolve) => setTimeout(resolve, ms));
   }
   const LookingGlassConfig = getLookingGlassConfig();
   exports2.LookingGlassConfig = LookingGlassConfig;

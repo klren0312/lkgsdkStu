@@ -35,7 +35,7 @@ You can import the Looking Glass WebXR library by running the following command 
 
 ```sh
 npm install @lookingglass/webxr
-````
+```
 or, if you use the yarn package manager. 
 ```sh
 yarn install @lookingglass/webxr
@@ -50,7 +50,7 @@ or you can also use a `<script>` tag:
 
 ```html
 <script type="module">
-  import { LookingGlassWebXRPolyfill } from "https://unpkg.com/@lookingglass/webxr@0.1.9/dist/@lookingglass/webxr.js"
+  import { LookingGlassWebXRPolyfill } from "https://unpkg.com/@lookingglass/webxr@0.3.0/dist/@lookingglass/bundle/webxr.js"
 </script>
 ```
 

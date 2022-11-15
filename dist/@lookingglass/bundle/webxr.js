@@ -8009,8 +8009,9 @@ class LookingGlassWebXRPolyfill extends WebXRPolyfill {
       this.updateVRButtonUI();
     }
   }
-  updateVRButtonUI() {
+  async updateVRButtonUI() {
     if (this.vrButton) {
+      await delay(100);
       if (this.isPresenting) {
         this.vrButton.innerHTML = "EXIT LOOKING GLASS";
       } else {
@@ -8044,6 +8045,9 @@ async function waitForElement(id) {
       reject(`id:${id} not found`);
     }, 5e3);
   });
+}
+function delay(ms) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
 }
 const LookingGlassConfig = getLookingGlassConfig();
 export {
