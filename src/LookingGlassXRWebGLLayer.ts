@@ -323,13 +323,3 @@ export default class LookingGlassXRWebGLLayer extends XRWebGLLayer {
 		return getLookingGlassConfig().framebufferHeight
 	}
 }
-
-function glslifyNumbers(strings, ...values) {
-	let s = strings[0]
-	for (let i = 1; i < strings.length; ++i) {
-		const v = values[i - 1]
-		s += typeof v === "number" ? v.toPrecision(10) : v
-		s += strings[i]
-	}
-	return s
-}
