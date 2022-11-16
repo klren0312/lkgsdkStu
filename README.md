@@ -111,6 +111,11 @@ lookingGlassWebXR.update({
   numViews: 80
 })
 ```
+You can also update the config values by importing `LookingGlassConfig` and declaring it as follows, this can be handy if you want to modify the camera from a separate file where you're declaring the polyfill in.
+```
+ let config = LookingGlassConfig
+ config.trackballX = Math.PI / 2
+```
 
 ## Contributing
 The Looking Glass WebXR Library is open source and originally developed by [Kai Ninomiya](https://kai.graphics). We're excited to support the open-source community! If you'd like to contribute, please feel free to make a pull request. 
