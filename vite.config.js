@@ -1,16 +1,29 @@
-import { resolve } from "path"
-import path from "path"
-import { defineConfig } from "vite"
 import replace from "@rollup/plugin-replace"
+import typescript from "@rollup/plugin-typescript"
+import path, { resolve } from "path"
+import { typescriptPaths } from "rollup-plugin-typescript-paths"
+import { defineConfig } from "vite"
+
+const plugins = [
+	typescriptPaths({
+		preserveExtensions: true,
+	}),
+	typescript({
+		sourceMap: false,
+		declaration: true,
+		outDir: "dist",
+	}),
+]
 
 export default defineConfig(({ mode }) => {
 	// if dev, we want to bundle the dependencies into the webXR library so it can be used in script tags.
 	if (mode === "dev") {
 		return {
+			publicDir: false,
 			build: {
 				minify: false,
 				lib: {
-					entry: resolve(__dirname, "src/LookingGlassWebXRPolyfill.js"),
+					entry: resolve(__dirname, "src/LookingGlassWebXRPolyfill.ts"),
 					name: "Looking Glass WebXR",
 					// the proper extensions will be added
 					fileName: "@lookingglass/bundle/webxr",
@@ -22,23 +35,25 @@ export default defineConfig(({ mode }) => {
 						// Provide global variables to use in the UMD build
 						// for externalized deps
 					},
+					// specically fix an issue when bundling the webxr-polyfill library
+					plugins: [
+						...plugins,
+						replace({
+							"process.env.NODE_ENV": JSON.stringify("production"),
+						}),
+					],
 				},
-				// specically fix an issue when bundling the webxr-polyfill library
-				plugins: [
-					replace({
-						"process.env.NODE_ENV": JSON.stringify("production"),
-					}),
-				],
 			},
 		}
 	}
 	// if build, build the normal non-bundled version of the library. This is the version installed from npm
 	else if (mode === "build") {
 		return {
+			publicDir: false,
 			build: {
 				minify: true,
 				lib: {
-					entry: resolve(__dirname, "src/LookingGlassWebXRPolyfill.js"),
+					entry: resolve(__dirname, "src/LookingGlassWebXRPolyfill.ts"),
 					name: "Looking Glass WebXR",
 					// the proper extensions will be added
 					fileName: "@lookingglass/webxr",
@@ -64,6 +79,7 @@ export default defineConfig(({ mode }) => {
 							"holoplay-core/dist/holoplaycore.module.js": "holoPlayCore",
 						},
 					},
+					plugins,
 				},
 			},
 		}

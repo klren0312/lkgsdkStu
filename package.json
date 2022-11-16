@@ -12,7 +12,7 @@
       "require": "./dist/@lookingglass/webxr.umd.cjs"
     }
   },
-  "version": "0.2.1",
+  "version": "0.3.0",
   "license": "Apache-2.0",
   "private": false,
   "description": "Unofficial WebXR implementation for HoloPlay holographic displays, such as Looking Glass.",
@@ -26,6 +26,10 @@
     "production": "vite build --mode dev && vite build --mode build"
   },
   "devDependencies": {
+    "@rollup/plugin-typescript": "^9.0.2",
+    "rollup-plugin-typescript-paths": "^1.4.0",
+    "tslib": "^2.4.1",
+    "typescript": "^4.8.4",
     "@rollup/plugin-replace": "^5.0.1",
     "three": "^0.146.0",
     "vite": "^3.1.2"
