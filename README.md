@@ -112,7 +112,7 @@ lookingGlassWebXR.update({
 })
 ```
 You can also update the config values by importing `LookingGlassConfig` and declaring it as follows, this can be handy if you want to modify the camera from a separate file where you're declaring the polyfill in.
-```
+```ts
  let config = LookingGlassConfig
  config.trackballX = Math.PI / 2
 ```
