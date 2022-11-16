@@ -129,13 +129,9 @@ function delay(ms: number) {
 
 /**
  * Get the global Looking Glass Config.
- * @deprecated In order to migrate to the latest setup, pass the config into LookingGlassWebXRPolyfill
- * ```
- * new LookingGlassWebXRPolyfill({
- * 	 tileHeight: 512,
- *   numViews: 45,
- *  ...
- * })
+ * This can be used to update any config value in realtime by setting it like follows
+ * let config = LookingGlassConfig
+ * config.trackballX = Math.PI / 2
  * ```
  */
 export const LookingGlassConfig = getLookingGlassConfig()

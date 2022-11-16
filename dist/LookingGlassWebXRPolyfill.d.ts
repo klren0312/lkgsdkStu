@@ -30,13 +30,9 @@ export declare class LookingGlassWebXRPolyfill extends WebXRPolyfill {
 }
 /**
  * Get the global Looking Glass Config.
- * @deprecated In order to migrate to the latest setup, pass the config into LookingGlassWebXRPolyfill
- * ```
- * new LookingGlassWebXRPolyfill({
- * 	 tileHeight: 512,
- *   numViews: 45,
- *  ...
- * })
+ * This can be used to update any config value in realtime by setting it like follows
+ * let config = LookingGlassConfig
+ * config.trackballX = Math.PI / 2
  * ```
  */
 export declare const LookingGlassConfig: import("./LookingGlassConfig").LookingGlassConfig;
