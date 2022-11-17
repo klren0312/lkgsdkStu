@@ -36,6 +36,7 @@ export type CalibrationArgs = {
 	flipImageX: Value
 	flipImageY: Value
 	flipSubp: Value
+	serial: string
 }
 
 export enum InlineView {
@@ -123,6 +124,7 @@ export class LookingGlassConfig extends EventTarget {
 		flipImageX: { value: 0 },
 		flipImageY: { value: 0 },
 		flipSubp: { value: 0 },
+		serial: "LKG-DEFAULT-#####"
 	}
 
 	// Config defaults
@@ -139,6 +141,7 @@ export class LookingGlassConfig extends EventTarget {
 		depthiness: 1.25,
 		inlineView: InlineView.Center,
 	}
+	LookingGlassDetected: any
 
 	constructor(cfg?: Partial<ViewControlArgs>) {
 		super()
@@ -150,17 +153,14 @@ export class LookingGlassConfig extends EventTarget {
 		const client = new HoloPlayCore.Client(
 			(msg) => {
 				if (msg.devices.length < 1) {
-					console.error("No Looking Glass devices found!")
+					console.log("No Looking Glass devices found")
 					return
 				}
 				if (msg.devices.length > 1) {
-					console.warn("More than one Looking Glass device found... using the first one")
+					console.log("More than one Looking Glass device found... using the first one")
 				}
 				this.calibration = msg.devices[0].calibration
 			},
-			(err) => {
-				console.error("Error creating Looking Glass client:", err)
-			}
 		)
 	}
 

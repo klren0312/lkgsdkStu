@@ -31,6 +31,7 @@ export declare type CalibrationArgs = {
     flipImageX: Value;
     flipImageY: Value;
     flipSubp: Value;
+    serial: string;
 };
 export declare enum InlineView {
     /** Show the encoded subpixel matrix */
@@ -101,6 +102,7 @@ declare type LookingGlassConfigEvent = "on-config-changed";
 export declare class LookingGlassConfig extends EventTarget {
     private _calibration;
     private _viewControls;
+    LookingGlassDetected: any;
     constructor(cfg?: Partial<ViewControlArgs>);
     private syncCalibration;
     addEventListener(type: LookingGlassConfigEvent, callback: EventListenerOrEventListenerObject | null, options?: boolean | AddEventListenerOptions | undefined): void;
