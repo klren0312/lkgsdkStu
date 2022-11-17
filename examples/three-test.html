@@ -19,7 +19,7 @@
 			import { VRButton } from "three/examples/jsm/webxr/VRButton.js"
 			import { LookingGlassWebXRPolyfill } from "../dist/@lookingglass/bundle/webxr.js"
 
-			new LookingGlassWebXRPolyfill({
+			LookingGlassWebXRPolyfill.init({
 				tileHeight: 512,
 				numViews: 45, 
 				targetY: 1,
@@ -41,6 +41,7 @@
 			scene.add(directionalLight)
 
 			const renderer = new THREE.WebGLRenderer({ antialias: true })
+			renderer.gl.makeXRCompatible()
 			document.body.append(renderer.domElement)
 			renderer.xr.enabled = true
 

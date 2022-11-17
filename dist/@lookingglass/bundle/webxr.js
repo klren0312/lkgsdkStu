@@ -6824,7 +6824,8 @@ class LookingGlassConfig$1 extends EventTarget {
       screenH: { value: 250 },
       flipImageX: { value: 0 },
       flipImageY: { value: 0 },
-      flipSubp: { value: 0 }
+      flipSubp: { value: 0 },
+      serial: "LKG-DEFAULT-#####"
     });
     __publicField(this, "_viewControls", {
       tileHeight: 512,
@@ -6839,21 +6840,20 @@ class LookingGlassConfig$1 extends EventTarget {
       depthiness: 1.25,
       inlineView: InlineView.Center
     });
+    __publicField(this, "LookingGlassDetected");
     this._viewControls = { ...this._viewControls, ...cfg };
     this.syncCalibration();
   }
   syncCalibration() {
     new Client((msg) => {
       if (msg.devices.length < 1) {
-        console.error("No Looking Glass devices found!");
+        console.log("No Looking Glass devices found");
         return;
       }
       if (msg.devices.length > 1) {
-        console.warn("More than one Looking Glass device found... using the first one");
+        console.log("More than one Looking Glass device found... using the first one");
       }
       this.calibration = msg.devices[0].calibration;
-    }, (err) => {
-      console.error("Error creating Looking Glass client:", err);
     });
   }
   addEventListener(type, callback, options) {
@@ -7978,6 +7978,27 @@ class LookingGlassWebXRPolyfill extends WebXRPolyfill {
     __publicField(this, "device");
     __publicField(this, "isPresenting", false);
     updateLookingGlassConfig(cfg);
+    this.loadPolyfill();
+  }
+  static async init(cfg) {
+    const success = await LookingGlassWebXRPolyfill.detectLookingGlassDevice();
+    if (success) {
+      new LookingGlassWebXRPolyfill(cfg);
+    }
+  }
+  static async detectLookingGlassDevice() {
+    return new Promise((resolve) => {
+      new Client(async (msg) => {
+        console.log(msg, "message from core");
+        if (msg.devices.length > 0) {
+          resolve(true);
+        } else {
+          resolve(false);
+        }
+      });
+    });
+  }
+  async loadPolyfill() {
     this.overrideDefaultVRButton();
     console.warn('Looking Glass WebXR "polyfill" overriding native WebXR API.');
     for (const className in API) {
@@ -7986,6 +8007,7 @@ class LookingGlassWebXRPolyfill extends WebXRPolyfill {
     this.global.XRWebGLLayer = LookingGlassXRWebGLLayer;
     this.injected = true;
     this.device = new LookingGlassXRDevice(this.global);
+    console.log(this.device, "device");
     this.xr = new XRSystem(Promise.resolve(this.device));
     Object.defineProperty(this.global.navigator, "xr", {
       value: this.xr,
@@ -7994,7 +8016,7 @@ class LookingGlassWebXRPolyfill extends WebXRPolyfill {
   }
   async overrideDefaultVRButton() {
     this.vrButton = await waitForElement("VRButton");
-    if (this.vrButton) {
+    if (this.vrButton && this.device) {
       this.device.addEventListener("@@webxr-polyfill/vr-present-start", () => {
         this.isPresenting = true;
         this.updateVRButtonUI();
