@@ -67,7 +67,6 @@ export class LookingGlassWebXRPolyfill extends WebXRPolyfill {
 		this.injected = true
 
 		this.device = new LookingGlassXRDevice(this.global)
-		console.log(this.device, "device")
 		this.xr = new XRSystem(Promise.resolve(this.device))
 		Object.defineProperty(this.global.navigator, "xr", {
 			value: this.xr,

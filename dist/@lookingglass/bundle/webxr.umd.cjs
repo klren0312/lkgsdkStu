@@ -7725,12 +7725,17 @@ host this content on a secure origin for the best user experience.
           lkgCanvas.width = cfg.calibration.screenW.value;
           lkgCanvas.height = cfg.calibration.screenH.value;
           document.body.appendChild(controls);
-          popup = window.open("", void 0, "width=640,height=360");
-          popup.document.title = "Looking Glass Window (fullscreen me on Looking Glass!)";
-          popup.document.body.style.background = "black";
-          popup.document.body.appendChild(lkgCanvas);
-          console.assert(onbeforeunload);
-          popup.onbeforeunload = onbeforeunload;
+          const screenPlacement = "getScreenDetails" in window;
+          if (screenPlacement) {
+            this.placeWindow(popup, lkgCanvas, cfg);
+          } else {
+            popup = window.open("", void 0, "width=640,height=360");
+            popup.document.title = "Looking Glass Window (fullscreen me on Looking Glass!)";
+            popup.document.body.style.background = "black";
+            popup.document.body.appendChild(lkgCanvas);
+            console.assert(onbeforeunload);
+            popup.onbeforeunload = onbeforeunload;
+          }
         } else {
           (_a = controls.parentElement) == null ? void 0 : _a.removeChild(controls);
           appCanvas.width = origWidth;
@@ -7747,6 +7752,31 @@ host this content on a secure origin for the best user experience.
         blitTextureToDefaultFramebufferIfNeeded,
         moveCanvasToWindow
       };
+    }
+    async placeWindow(popup, lkgCanvas, config) {
+      const screenDetails = await window.getScreenDetails();
+      console.log(screenDetails, "cached screen details");
+      const LKG = screenDetails.screens.filter((screen2) => screen2.label.includes("LKG"))[0];
+      console.log(LKG);
+      console.log("monitor ID", LKG.label, "serial number", config._calibration.serial);
+      const features = [
+        `left=${LKG.left}`,
+        `top=${-1 * LKG.availtop}`,
+        `width=${LKG.width}`,
+        `height=${LKG.height}`,
+        `menubar=no`,
+        `toolbar=no`,
+        `location=no`,
+        `status=no`,
+        `resizable=yes`,
+        `scrollbars=no`,
+        `fullscreenEnabled=true`
+      ].join(",");
+      popup = window.open("", "new", features);
+      console.log(popup);
+      popup.document.body.style.background = "black";
+      popup.document.body.appendChild(lkgCanvas);
+      await lkgCanvas.requestFullscreen();
     }
     get framebuffer() {
       return this[PRIVATE].LookingGlassEnabled ? this[PRIVATE].framebuffer : null;
@@ -8011,7 +8041,6 @@ host this content on a secure origin for the best user experience.
       this.global.XRWebGLLayer = LookingGlassXRWebGLLayer;
       this.injected = true;
       this.device = new LookingGlassXRDevice(this.global);
-      console.log(this.device, "device");
       this.xr = new XRSystem(Promise.resolve(this.device));
       Object.defineProperty(this.global.navigator, "xr", {
         value: this.xr,
