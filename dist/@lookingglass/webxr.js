@@ -466,7 +466,7 @@ class we extends me {
     console.log(r), console.log("monitor ID", r.label, "serial number", n._calibration.serial);
     const c = [
       `left=${r.left}`,
-      `top=${-1 * r.availtop}`,
+      `top=${r.top}`,
       `width=${r.width}`,
       `height=${r.height}`,
       "menubar=no",

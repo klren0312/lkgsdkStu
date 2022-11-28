@@ -7761,7 +7761,7 @@ host this content on a secure origin for the best user experience.
       console.log("monitor ID", LKG.label, "serial number", config._calibration.serial);
       const features = [
         `left=${LKG.left}`,
-        `top=${-1 * LKG.availtop}`,
+        `top=${LKG.top}`,
         `width=${LKG.width}`,
         `height=${LKG.height}`,
         `menubar=no`,
