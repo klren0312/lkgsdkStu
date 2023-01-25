@@ -3,7 +3,6 @@ import typescript from "@rollup/plugin-typescript"
 import path, { resolve } from "path"
 import { typescriptPaths } from "rollup-plugin-typescript-paths"
 import { defineConfig } from "vite"
-
 const plugins = [
 	typescriptPaths({
 		preserveExtensions: true,
@@ -19,6 +18,10 @@ export default defineConfig(({ mode }) => {
 	// if dev, we want to bundle the dependencies into the webXR library so it can be used in script tags.
 	if (mode === "dev") {
 		return {
+			server: {
+				port: 5173,
+				https: false,
+			},
 			publicDir: false,
 			build: {
 				minify: false,
