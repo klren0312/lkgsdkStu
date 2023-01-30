@@ -22,8 +22,7 @@
   "scripts": {
     "dev": "vite build --mode dev && vite --mode dev",
     "build": "vite build --mode build",
-    "production": "vite build --mode dev && vite build --mode build",
-    "ssl": "local-ssl-proxy --source 4000 --target 5173 --hostname 127.0.0.1"
+    "production": "vite build --mode dev && vite build --mode build"
   },
   "devDependencies": {
     "@babylonjs/core": "^5.43.2",
@@ -31,7 +30,6 @@
     "@babylonjs/materials": "^5.43.2",
     "@rollup/plugin-replace": "^5.0.1",
     "@rollup/plugin-typescript": "^9.0.2",
-    "local-ssl-proxy": "^1.3.0",
     "rollup-plugin-typescript-paths": "^1.4.0",
     "three": "^0.146.0",
     "tslib": "^2.4.1",
