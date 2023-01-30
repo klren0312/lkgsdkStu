@@ -92,13 +92,15 @@
 			rMat.diffuseColor = new Color3(1.0, 0, 0)
 			sphere.material = rMat
 
-			// start an xr session after 1 second, the delay is important. 
-            setTimeout(async() => {
-			const xrHelper = await WebXRExperienceHelper.CreateAsync(scene);
-            const sessionManager = await xrHelper.enterXRAsync("immersive-vr", "local-floor")
-            console.log("Delayed for 1 second.");
-            }, "1000")
-
+			// add a button element and have it call a function to start an XR session
+			const button = document.createElement('button')
+			button.className = "xrbutton"
+			button.textContent = 'ENTER LOOKING GLASS'
+			app?.appendChild(button)
+			button.addEventListener('click', async () => {
+				const xrHelper = await WebXRExperienceHelper.CreateAsync(scene);
+            	const sessionManager = await xrHelper.enterXRAsync("immersive-vr", "local-floor")
+			})
 			// Run render loop
 			babylonEngine.runRenderLoop(() => {
 			  scene.render()
