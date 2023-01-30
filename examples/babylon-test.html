@@ -29,7 +29,7 @@
 			import { Scene } from '@babylonjs/core/scene.js'
 			import { StandardMaterial } from '@babylonjs/core/Materials/standardMaterial.js'
 			import { Vector3 } from '@babylonjs/core/Maths/math.vector.js'
-			import { WebXRDefaultExperience } from '@babylonjs/core/XR/webXRDefaultExperience.js'
+			import { WebXRSessionManager } from '@babylonjs/core/XR/WebxrSessionManager.js'
 
 			// Required for EnvironmentHelper
 			import '@babylonjs/core/Materials/Textures/Loaders'
@@ -84,10 +84,20 @@
 			rMat.diffuseColor = new Color3(1.0, 0, 0)
 			sphere.material = rMat
 
-			// Setup default WebXR experience
-			// Use the enviroment floor to enable teleportation
-			WebXRDefaultExperience.CreateAsync(scene, {
-			})
+
+            setTimeout(async() => {
+            const sessionManager = new WebXRSessionManager(scene)
+            const supported = await WebXRSessionManager.IsSessionSupportedAsync('inline');
+            if (supported) {
+                // xr available, session supported
+                console.log('mango')
+                sessionManager.initializeSessionAsync();
+            }
+            else {
+                console.log('banana')
+            }
+            console.log("Delayed for 1 second.");
+            }, "1000")
 
 			// Run render loop
 			babylonEngine.runRenderLoop(() => {
