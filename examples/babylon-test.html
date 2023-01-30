@@ -98,14 +98,6 @@
 			const xrHelper = await WebXRExperienceHelper.CreateAsync(scene);
             const sessionManager = await xrHelper.enterXRAsync("immersive-vr", "local-floor")
             const supported = await WebXRSessionManager.IsSessionSupportedAsync('immersive-vr');
-            if (supported) {
-                // xr available, session supported
-                console.log('mango')
-                sessionManager.initializeSessionAsync();
-            }
-            else {
-                console.log('banana')
-            }
             console.log("Delayed for 1 second.");
             }, "1000")
 
