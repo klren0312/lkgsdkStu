@@ -97,7 +97,6 @@
             setTimeout(async() => {
 			const xrHelper = await WebXRExperienceHelper.CreateAsync(scene);
             const sessionManager = await xrHelper.enterXRAsync("immersive-vr", "local-floor")
-            const supported = await WebXRSessionManager.IsSessionSupportedAsync('immersive-vr');
             console.log("Delayed for 1 second.");
             }, "1000")
 
