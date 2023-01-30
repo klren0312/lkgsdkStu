@@ -38,6 +38,7 @@
 			import { StandardMaterial } from '@babylonjs/core/Materials/standardMaterial.js'
 			import { Vector3 } from '@babylonjs/core/Maths/math.vector.js'
 			import { WebXRSessionManager } from '@babylonjs/core/XR/WebxrSessionManager.js'
+			import { WebXRExperienceHelper } from '@babylonjs/core/XR/WebxrExperienceHelper.js'
 
 			// Required for EnvironmentHelper
 			import '@babylonjs/core/Materials/Textures/Loaders'
@@ -94,8 +95,9 @@
 
 
             setTimeout(async() => {
-            const sessionManager = new WebXRSessionManager(scene)
-            const supported = await WebXRSessionManager.IsSessionSupportedAsync('inline');
+			const xrHelper = await WebXRExperienceHelper.CreateAsync(scene);
+            const sessionManager = await xrHelper.enterXRAsync("immersive-vr", "local-floor")
+            const supported = await WebXRSessionManager.IsSessionSupportedAsync('immersive-vr');
             if (supported) {
                 // xr available, session supported
                 console.log('mango')
