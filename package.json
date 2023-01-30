@@ -38,7 +38,6 @@
   },
   "dependencies": {
     "@lookingglass/webxr-polyfill": "^0.1.1",
-    "@vitejs/plugin-basic-ssl": "^1.0.1",
     "gl-matrix": "^2.8.1",
     "holoplay-core": "^0.0.9"
   },
