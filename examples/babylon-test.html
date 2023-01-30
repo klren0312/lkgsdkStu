@@ -92,7 +92,7 @@
 			rMat.diffuseColor = new Color3(1.0, 0, 0)
 			sphere.material = rMat
 
-
+			// start an xr session after 1 second, the delay is important. 
             setTimeout(async() => {
 			const xrHelper = await WebXRExperienceHelper.CreateAsync(scene);
             const sessionManager = await xrHelper.enterXRAsync("immersive-vr", "local-floor")
