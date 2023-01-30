@@ -11,11 +11,19 @@
 
 			canvas {
 				display: block;
+					width: 100vw;
+				height: 100vh;
+			}
+
+			#app {
+				width: 100vw;
+				height: 100vh;
+				overflow: hidden;
 			}
 		</style>
         <link rel="stylesheet" href="../index.css" />
 	</head>
-	<body>
+	<body style="margin:0;">
     <div id="app">
 		<script type="module">
 			import { LookingGlassWebXRPolyfill } from "../dist/@lookingglass/bundle/webxr.js"
