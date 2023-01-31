@@ -335,8 +335,8 @@ export default class LookingGlassXRWebGLLayer extends XRWebGLLayer {
 		const features = [
 			`left=${LKG.left}`,
 			`top=${LKG.top}`,
-			`width=${LKG.width + 16}`,
-			`height=${LKG.height + 62}`,
+			`width=${LKG.width}`,
+			`height=${LKG.height}`,
 			`menubar=no`,
 			`toolbar=no`,
 			`location=no`,
@@ -349,7 +349,6 @@ export default class LookingGlassXRWebGLLayer extends XRWebGLLayer {
 		console.log(config.tilt, 'adjusted slope')
 		popup = window.open("", "new", features)
 		console.log(popup)
-		console.log(popup.width, popup.height, popup.document.body.width, popup.document.body.height)
 		popup.document.body.style.background = "black"
 		popup.document.body.appendChild(lkgCanvas)
 		await lkgCanvas.requestFullscreen()
