@@ -324,7 +324,7 @@ export default class LookingGlassXRWebGLLayer extends XRWebGLLayer {
 			moveCanvasToWindow,
 		}
 	}
-
+	// if chromium, use the Screen Placement API to automatically place the window in the correct location, compensate for address bar
 	private async placeWindow(popup, lkgCanvas: HTMLCanvasElement, config: any) {
 		const screenDetails = await window.getScreenDetails()
 		console.log(screenDetails, "cached screen details")
@@ -335,8 +335,8 @@ export default class LookingGlassXRWebGLLayer extends XRWebGLLayer {
 		const features = [
 			`left=${LKG.left}`,
 			`top=${LKG.top}`,
-			`width=${LKG.width}`,
-			`height=${LKG.height}`,
+			`width=${LKG.width + 16}`,
+			`height=${LKG.height + 62}`,
 			`menubar=no`,
 			`toolbar=no`,
 			`location=no`,
@@ -345,9 +345,11 @@ export default class LookingGlassXRWebGLLayer extends XRWebGLLayer {
 			`scrollbars=no`,
 			`fullscreenEnabled=true`,
 		].join(",")
+		console.log(config.calibration.slope.value, 'raw slope')
+		console.log(config.tilt, 'adjusted slope')
 		popup = window.open("", "new", features)
-		config._calibration.slope = popup.document.body.height / (LKG.width * config._calibration.slope)
 		console.log(popup)
+		console.log(popup.width, popup.height, popup.document.body.width, popup.document.body.height)
 		popup.document.body.style.background = "black"
 		popup.document.body.appendChild(lkgCanvas)
 		await lkgCanvas.requestFullscreen()
