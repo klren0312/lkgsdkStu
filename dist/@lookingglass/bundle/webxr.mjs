@@ -6824,7 +6824,8 @@ class LookingGlassConfig$1 extends EventTarget {
       screenH: { value: 250 },
       flipImageX: { value: 0 },
       flipImageY: { value: 0 },
-      flipSubp: { value: 0 }
+      flipSubp: { value: 0 },
+      serial: "LKG-DEFAULT-#####"
     });
     __publicField(this, "_viewControls", {
       tileHeight: 512,
@@ -6839,21 +6840,20 @@ class LookingGlassConfig$1 extends EventTarget {
       depthiness: 1.25,
       inlineView: InlineView.Center
     });
+    __publicField(this, "LookingGlassDetected");
     this._viewControls = { ...this._viewControls, ...cfg };
     this.syncCalibration();
   }
   syncCalibration() {
     new Client((msg) => {
       if (msg.devices.length < 1) {
-        console.error("No Looking Glass devices found!");
+        console.log("No Looking Glass devices found");
         return;
       }
       if (msg.devices.length > 1) {
-        console.warn("More than one Looking Glass device found... using the first one");
+        console.log("More than one Looking Glass device found... using the first one");
       }
       this.calibration = msg.devices[0].calibration;
-    }, (err) => {
-      console.error("Error creating Looking Glass client:", err);
     });
   }
   addEventListener(type, callback, options) {
@@ -7721,12 +7721,17 @@ class LookingGlassXRWebGLLayer extends XRWebGLLayer {
         lkgCanvas.width = cfg.calibration.screenW.value;
         lkgCanvas.height = cfg.calibration.screenH.value;
         document.body.appendChild(controls);
-        popup = window.open("", void 0, "width=640,height=360");
-        popup.document.title = "Looking Glass Window (fullscreen me on Looking Glass!)";
-        popup.document.body.style.background = "black";
-        popup.document.body.appendChild(lkgCanvas);
-        console.assert(onbeforeunload);
-        popup.onbeforeunload = onbeforeunload;
+        const screenPlacement = "getScreenDetails" in window;
+        if (screenPlacement) {
+          this.placeWindow(popup, lkgCanvas, cfg);
+        } else {
+          popup = window.open("", void 0, "width=640,height=360");
+          popup.document.title = "Looking Glass Window (fullscreen me on Looking Glass!)";
+          popup.document.body.style.background = "black";
+          popup.document.body.appendChild(lkgCanvas);
+          console.assert(onbeforeunload);
+          popup.onbeforeunload = onbeforeunload;
+        }
       } else {
         (_a = controls.parentElement) == null ? void 0 : _a.removeChild(controls);
         appCanvas.width = origWidth;
@@ -7743,6 +7748,32 @@ class LookingGlassXRWebGLLayer extends XRWebGLLayer {
       blitTextureToDefaultFramebufferIfNeeded,
       moveCanvasToWindow
     };
+  }
+  async placeWindow(popup, lkgCanvas, config) {
+    const screenDetails = await window.getScreenDetails();
+    console.log(screenDetails, "cached screen details");
+    const LKG = screenDetails.screens.filter((screen2) => screen2.label.includes("LKG"))[0];
+    console.log(LKG);
+    console.log("monitor ID", LKG.label, "serial number", config._calibration.serial);
+    const features = [
+      `left=${LKG.left}`,
+      `top=${LKG.top}`,
+      `width=${LKG.width}`,
+      `height=${LKG.height}`,
+      `menubar=no`,
+      `toolbar=no`,
+      `location=no`,
+      `status=no`,
+      `resizable=yes`,
+      `scrollbars=no`,
+      `fullscreenEnabled=true`
+    ].join(",");
+    popup = window.open("", "new", features);
+    config._calibration.slope = popup.document.body.height / (LKG.width * config._calibration.slope) * config._calibration.flipImageX;
+    console.log(popup);
+    popup.document.body.style.background = "black";
+    popup.document.body.appendChild(lkgCanvas);
+    await lkgCanvas.requestFullscreen();
   }
   get framebuffer() {
     return this[PRIVATE].LookingGlassEnabled ? this[PRIVATE].framebuffer : null;
@@ -7978,6 +8009,27 @@ class LookingGlassWebXRPolyfill extends WebXRPolyfill {
     __publicField(this, "device");
     __publicField(this, "isPresenting", false);
     updateLookingGlassConfig(cfg);
+    this.loadPolyfill();
+  }
+  static async init(cfg) {
+    const success = await LookingGlassWebXRPolyfill.detectLookingGlassDevice();
+    if (success) {
+      new LookingGlassWebXRPolyfill(cfg);
+    }
+  }
+  static async detectLookingGlassDevice() {
+    return new Promise((resolve) => {
+      new Client(async (msg) => {
+        console.log(msg, "message from core");
+        if (msg.devices.length > 0) {
+          resolve(true);
+        } else {
+          resolve(false);
+        }
+      });
+    });
+  }
+  async loadPolyfill() {
     this.overrideDefaultVRButton();
     console.warn('Looking Glass WebXR "polyfill" overriding native WebXR API.');
     for (const className in API) {
@@ -7994,7 +8046,7 @@ class LookingGlassWebXRPolyfill extends WebXRPolyfill {
   }
   async overrideDefaultVRButton() {
     this.vrButton = await waitForElement("VRButton");
-    if (this.vrButton) {
+    if (this.vrButton && this.device) {
       this.device.addEventListener("@@webxr-polyfill/vr-present-start", () => {
         this.isPresenting = true;
         this.updateVRButtonUI();

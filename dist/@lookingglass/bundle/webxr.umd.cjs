@@ -6830,6 +6830,8 @@ host this content on a secure origin for the best user experience.
         flipImageY: { value: 0 },
         flipSubp: { value: 0 },
         serial: "LKG-DEFAULT-#####"
+        flipSubp: { value: 0 },
+        serial: "LKG-DEFAULT-#####"
       });
       __publicField(this, "_viewControls", {
         tileHeight: 512,
@@ -6852,9 +6854,11 @@ host this content on a secure origin for the best user experience.
       new Client((msg) => {
         if (msg.devices.length < 1) {
           console.log("No Looking Glass devices found");
+          console.log("No Looking Glass devices found");
           return;
         }
         if (msg.devices.length > 1) {
+          console.log("More than one Looking Glass device found... using the first one");
           console.log("More than one Looking Glass device found... using the first one");
         }
         this.calibration = msg.devices[0].calibration;
@@ -8012,6 +8016,27 @@ host this content on a secure origin for the best user experience.
       __publicField(this, "device");
       __publicField(this, "isPresenting", false);
       updateLookingGlassConfig(cfg);
+      this.loadPolyfill();
+    }
+    static async init(cfg) {
+      const success = await LookingGlassWebXRPolyfill.detectLookingGlassDevice();
+      if (success) {
+        new LookingGlassWebXRPolyfill(cfg);
+      }
+    }
+    static async detectLookingGlassDevice() {
+      return new Promise((resolve) => {
+        new Client(async (msg) => {
+          console.log(msg, "message from core");
+          if (msg.devices.length > 0) {
+            resolve(true);
+          } else {
+            resolve(false);
+          }
+        });
+      });
+    }
+    async loadPolyfill() {
       this.loadPolyfill();
     }
     static async init(cfg) {

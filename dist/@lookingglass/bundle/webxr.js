@@ -6826,6 +6826,8 @@ class LookingGlassConfig$1 extends EventTarget {
       flipImageY: { value: 0 },
       flipSubp: { value: 0 },
       serial: "LKG-DEFAULT-#####"
+      flipSubp: { value: 0 },
+      serial: "LKG-DEFAULT-#####"
     });
     __publicField(this, "_viewControls", {
       tileHeight: 512,

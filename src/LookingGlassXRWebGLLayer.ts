@@ -325,7 +325,7 @@ export default class LookingGlassXRWebGLLayer extends XRWebGLLayer {
 		}
 	}
 
-	private async placeWindow(popup, lkgCanvas: HTMLCanvasElement, config: LookingGlassConfig) {
+	private async placeWindow(popup, lkgCanvas: HTMLCanvasElement, config: any) {
 		const screenDetails = await window.getScreenDetails()
 		console.log(screenDetails, "cached screen details")
 		//temporary, grab the first monitor ID with "LKG" Todo: make more robust
