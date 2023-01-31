@@ -325,7 +325,7 @@ export default class LookingGlassXRWebGLLayer extends XRWebGLLayer {
 		}
 	}
 
-	private async placeWindow(popup, lkgCanvas: HTMLCanvasElement, config: any) {
+	private async placeWindow(popup, lkgCanvas: HTMLCanvasElement, config: LookingGlassConfig) {
 		const screenDetails = await window.getScreenDetails()
 		console.log(screenDetails, "cached screen details")
 		//temporary, grab the first monitor ID with "LKG" Todo: make more robust
@@ -346,6 +346,7 @@ export default class LookingGlassXRWebGLLayer extends XRWebGLLayer {
 			`fullscreenEnabled=true`,
 		].join(",")
 		popup = window.open("", "new", features)
+		config._calibration.slope = popup.document.body.height / (LKG.width * config._calibration.slope)
 		console.log(popup)
 		popup.document.body.style.background = "black"
 		popup.document.body.appendChild(lkgCanvas)
