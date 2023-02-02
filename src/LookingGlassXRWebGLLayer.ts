@@ -31,6 +31,8 @@ export default class LookingGlassXRWebGLLayer extends XRWebGLLayer {
 		lkgCanvas.addEventListener("dblclick", function () {
 			this.requestFullscreen()
 		})
+		lkgCanvas.style.marginLeft = "-8px"
+		lkgCanvas.style.marginRight = "-8px"
 		const controls = initLookingGlassControlGUI(lkgCanvas)
 
 		const cfg = getLookingGlassConfig()
