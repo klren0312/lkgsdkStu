@@ -142,7 +142,6 @@ export default class LookingGlassXRWebGLLayer extends XRWebGLLayer {
 		const recompileProgram = () => {
 			// use shader from holoplay-core.js
 			const fsSource = Shader(cfg)
-			console.log(Shader(cfg), 'this is the shader')
 			if (fsSource === lastGeneratedFSSource) return
 			lastGeneratedFSSource = fsSource
 

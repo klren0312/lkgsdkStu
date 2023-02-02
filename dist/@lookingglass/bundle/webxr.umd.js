@@ -6783,7 +6783,7 @@ host this content on a secure origin for the best user experience.
   }
   void main() {
     if (u_viewType == 2) { // "quilt" view
-      gl_FragColor = vec4(v_texcoord.x, 0, v_texcoord.y, 1);
+      gl_FragColor = texture2D(u_texture, v_texcoord);
       return;
     }
     if (u_viewType == 1) { // middle view
@@ -6856,8 +6856,6 @@ host this content on a secure origin for the best user experience.
           console.warn("More than one Looking Glass device found... using the first one");
         }
         this.calibration = msg.devices[0].calibration;
-        this.calibration.screenH.value = 4096;
-        this.calibration.screenW.value = 4096;
       }, (err) => {
         console.error("Error creating Looking Glass client:", err);
       });
@@ -6960,8 +6958,8 @@ host this content on a secure origin for the best user experience.
       return Math.round(this.tileHeight * this.aspect);
     }
     get framebufferWidth() {
-      this.tileWidth * this.tileHeight * this.numViews;
-      return 4096;
+      const numPixels = this.tileWidth * this.tileHeight * this.numViews;
+      return 2 ** Math.ceil(Math.log2(Math.max(Math.sqrt(numPixels), this.tileWidth)));
     }
     get quiltWidth() {
       return Math.floor(this.framebufferWidth / this.tileWidth);
@@ -6970,7 +6968,7 @@ host this content on a secure origin for the best user experience.
       return Math.ceil(this.numViews / this.quiltWidth);
     }
     get framebufferHeight() {
-      return 4096;
+      return 2 ** Math.ceil(Math.log2(this.quiltHeight * this.tileHeight));
     }
     get viewCone() {
       return this._calibration.viewCone.value * this.depthiness / 180 * Math.PI;
@@ -7597,7 +7595,6 @@ host this content on a secure origin for the best user experience.
       let u_viewType;
       const recompileProgram = () => {
         const fsSource = Shader(cfg);
-        console.log(Shader(cfg), "this is the shader");
         if (fsSource === lastGeneratedFSSource)
           return;
         lastGeneratedFSSource = fsSource;
