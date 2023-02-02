@@ -6779,7 +6779,7 @@ function Shader(cfg) {
   }
   void main() {
     if (u_viewType == 2) { // "quilt" view
-      gl_FragColor = texture2D(u_texture, v_texcoord);
+      gl_FragColor = vec4(v_texcoord.x, 0, v_texcoord.y, 1);
       return;
     }
     if (u_viewType == 1) { // middle view
@@ -6852,6 +6852,8 @@ class LookingGlassConfig$1 extends EventTarget {
         console.warn("More than one Looking Glass device found... using the first one");
       }
       this.calibration = msg.devices[0].calibration;
+      this.calibration.screenH.value = 4096;
+      this.calibration.screenW.value = 4096;
     }, (err) => {
       console.error("Error creating Looking Glass client:", err);
     });
@@ -6954,8 +6956,8 @@ class LookingGlassConfig$1 extends EventTarget {
     return Math.round(this.tileHeight * this.aspect);
   }
   get framebufferWidth() {
-    const numPixels = this.tileWidth * this.tileHeight * this.numViews;
-    return 2 ** Math.ceil(Math.log2(Math.max(Math.sqrt(numPixels), this.tileWidth)));
+    this.tileWidth * this.tileHeight * this.numViews;
+    return 4096;
   }
   get quiltWidth() {
     return Math.floor(this.framebufferWidth / this.tileWidth);
@@ -6964,7 +6966,7 @@ class LookingGlassConfig$1 extends EventTarget {
     return Math.ceil(this.numViews / this.quiltWidth);
   }
   get framebufferHeight() {
-    return 2 ** Math.ceil(Math.log2(this.quiltHeight * this.tileHeight));
+    return 4096;
   }
   get viewCone() {
     return this._calibration.viewCone.value * this.depthiness / 180 * Math.PI;
@@ -7520,23 +7522,6 @@ class LookingGlassXRWebGLLayer extends XRWebGLLayer {
     const OES_VAO = gl.getExtension("OES_vertex_array_object");
     const GL_VERTEX_ARRAY_BINDING = 34229;
     const glBindVertexArray = OES_VAO ? OES_VAO.bindVertexArrayOES.bind(OES_VAO) : gl.bindVertexArray.bind(gl);
-    const allocateFramebufferAttachments = () => {
-      const oldTextureBinding = gl.getParameter(gl.TEXTURE_BINDING_2D);
-      {
-        gl.bindTexture(gl.TEXTURE_2D, texture);
-        gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, cfg.framebufferWidth, cfg.framebufferHeight, 0, gl.RGBA, gl.UNSIGNED_BYTE, null);
-        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
-      }
-      gl.bindTexture(gl.TEXTURE_2D, oldTextureBinding);
-      if (depthStencil) {
-        const oldRenderbufferBinding = gl.getParameter(gl.RENDERBUFFER_BINDING);
-        {
-          gl.bindRenderbuffer(gl.RENDERBUFFER, depthStencil);
-          gl.renderbufferStorage(gl.RENDERBUFFER, dsConfig.format, cfg.framebufferWidth, cfg.framebufferHeight);
-        }
-        gl.bindRenderbuffer(gl.RENDERBUFFER, oldRenderbufferBinding);
-      }
-    };
     if (config.depth || config.stencil) {
       if (config.depth && config.stencil) {
         dsConfig = {
@@ -7556,6 +7541,23 @@ class LookingGlassXRWebGLLayer extends XRWebGLLayer {
       }
       depthStencil = gl.createRenderbuffer();
     }
+    const allocateFramebufferAttachments = () => {
+      const oldTextureBinding = gl.getParameter(gl.TEXTURE_BINDING_2D);
+      {
+        gl.bindTexture(gl.TEXTURE_2D, texture);
+        gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, cfg.framebufferWidth, cfg.framebufferHeight, 0, gl.RGBA, gl.UNSIGNED_BYTE, null);
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+      }
+      gl.bindTexture(gl.TEXTURE_2D, oldTextureBinding);
+      if (depthStencil) {
+        const oldRenderbufferBinding = gl.getParameter(gl.RENDERBUFFER_BINDING);
+        {
+          gl.bindRenderbuffer(gl.RENDERBUFFER, depthStencil);
+          gl.renderbufferStorage(gl.RENDERBUFFER, dsConfig.format, cfg.framebufferWidth, cfg.framebufferHeight);
+        }
+        gl.bindRenderbuffer(gl.RENDERBUFFER, oldRenderbufferBinding);
+      }
+    };
     allocateFramebufferAttachments();
     cfg.addEventListener("on-config-changed", allocateFramebufferAttachments);
     const oldFramebufferBinding = gl.getParameter(gl.FRAMEBUFFER_BINDING);
@@ -7591,6 +7593,7 @@ class LookingGlassXRWebGLLayer extends XRWebGLLayer {
     let u_viewType;
     const recompileProgram = () => {
       const fsSource = Shader(cfg);
+      console.log(Shader(cfg), "this is the shader");
       if (fsSource === lastGeneratedFSSource)
         return;
       lastGeneratedFSSource = fsSource;
@@ -7611,7 +7614,7 @@ class LookingGlassXRWebGLLayer extends XRWebGLLayer {
       const oldProgram = gl.getParameter(gl.CURRENT_PROGRAM);
       {
         gl.useProgram(program);
-        gl.uniform1i(u_texture, 0);
+        gl.uniform1i(u_texture, texture);
       }
       gl.useProgram(oldProgram);
     };

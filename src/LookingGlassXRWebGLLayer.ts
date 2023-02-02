@@ -40,6 +40,7 @@ export default class LookingGlassXRWebGLLayer extends XRWebGLLayer {
 		const config = this[XRWebGLLayer_PRIVATE].config
 		const texture = gl.createTexture()
 		let depthStencil, dsConfig
+		// define a pointer to a framebuffer
 		const framebuffer = gl.createFramebuffer()
 		const glEnable = gl.enable.bind(gl)
 		const glDisable = gl.disable.bind(gl)
@@ -48,25 +49,7 @@ export default class LookingGlassXRWebGLLayer extends XRWebGLLayer {
 		const GL_VERTEX_ARRAY_BINDING = 0x85b5
 		const glBindVertexArray = OES_VAO ? OES_VAO.bindVertexArrayOES.bind(OES_VAO) : gl.bindVertexArray.bind(gl)
 
-		const allocateFramebufferAttachments = () => {
-			const oldTextureBinding = gl.getParameter(gl.TEXTURE_BINDING_2D)
-			{
-				gl.bindTexture(gl.TEXTURE_2D, texture)
-				gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, cfg.framebufferWidth, cfg.framebufferHeight, 0, gl.RGBA, gl.UNSIGNED_BYTE, null)
-				gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR)
-			}
-			gl.bindTexture(gl.TEXTURE_2D, oldTextureBinding)
-
-			if (depthStencil) {
-				const oldRenderbufferBinding = gl.getParameter(gl.RENDERBUFFER_BINDING)
-				{
-					gl.bindRenderbuffer(gl.RENDERBUFFER, depthStencil)
-					gl.renderbufferStorage(gl.RENDERBUFFER, dsConfig.format, cfg.framebufferWidth, cfg.framebufferHeight)
-				}
-				gl.bindRenderbuffer(gl.RENDERBUFFER, oldRenderbufferBinding)
-			}
-		}
-
+		// create the definition for the depth stencil buffer
 		if (config.depth || config.stencil) {
 			if (config.depth && config.stencil) {
 				dsConfig = {
@@ -86,13 +69,43 @@ export default class LookingGlassXRWebGLLayer extends XRWebGLLayer {
 			}
 			depthStencil = gl.createRenderbuffer()
 		}
+
+		// sets up the texture based on the quilt height and width
+		const allocateFramebufferAttachments = () => {
+			// create variable to store the current texture binding
+			const oldTextureBinding = gl.getParameter(gl.TEXTURE_BINDING_2D)
+			{
+				// bind the current working texture to the `texture` variable 
+				gl.bindTexture(gl.TEXTURE_2D, texture)
+				// initialize the texture with the current framebuffer width and height
+				gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, cfg.framebufferWidth, cfg.framebufferHeight, 0, gl.RGBA, gl.UNSIGNED_BYTE, null)
+				// set the filtering to linear
+				gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR)
+			}
+			// returns the current texture binding
+			gl.bindTexture(gl.TEXTURE_2D, oldTextureBinding)
+			
+			// do the same thing as above, but for the depth and stencil buffers. 
+			if (depthStencil) {
+				const oldRenderbufferBinding = gl.getParameter(gl.RENDERBUFFER_BINDING)
+				{
+					gl.bindRenderbuffer(gl.RENDERBUFFER, depthStencil)
+					gl.renderbufferStorage(gl.RENDERBUFFER, dsConfig.format, cfg.framebufferWidth, cfg.framebufferHeight)
+				}
+				gl.bindRenderbuffer(gl.RENDERBUFFER, oldRenderbufferBinding)
+			}
+		}
 		allocateFramebufferAttachments()
 		cfg.addEventListener("on-config-changed", allocateFramebufferAttachments)
 
+		// gets the current framebuffer, sets the current framebuffer, then copies from the texture to the frame buffer, then write the depth/stencil if exist, then return the framebuffer to the original one
 		const oldFramebufferBinding = gl.getParameter(gl.FRAMEBUFFER_BINDING)
 		{
+			//set currently used framebuffer to the one we just created
 			gl.bindFramebuffer(gl.FRAMEBUFFER, framebuffer)
+			//selects the current frame buffer, then write the texture to the framebuffer
 			gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, texture, 0)
+			//if depth or stencil pass exist, do it again for those passes
 			if (config.depth || config.stencil) {
 				gl.framebufferRenderbuffer(gl.FRAMEBUFFER, dsConfig.attachment, gl.RENDERBUFFER, depthStencil)
 			}
@@ -124,9 +137,12 @@ export default class LookingGlassXRWebGLLayer extends XRWebGLLayer {
 		let lastGeneratedFSSource
 		let a_location
 		let u_viewType
+
+		// recompile the fragment shader if the config changes
 		const recompileProgram = () => {
 			// use shader from holoplay-core.js
 			const fsSource = Shader(cfg)
+			console.log(Shader(cfg), 'this is the shader')
 			if (fsSource === lastGeneratedFSSource) return
 			lastGeneratedFSSource = fsSource
 
@@ -150,10 +166,11 @@ export default class LookingGlassXRWebGLLayer extends XRWebGLLayer {
 			const oldProgram = gl.getParameter(gl.CURRENT_PROGRAM)
 			{
 				gl.useProgram(program)
-				gl.uniform1i(u_texture, 0) // Always use texture unit 0 for u_texture
+				gl.uniform1i(u_texture, texture) // Always use texture unit 0 for u_texture // todo: why
 			}
 			gl.useProgram(oldProgram)
 		}
+
 		cfg.addEventListener("on-config-changed", recompileProgram)
 
 		const vao = OES_VAO ? OES_VAO.createVertexArrayOES() : gl.createVertexArray()

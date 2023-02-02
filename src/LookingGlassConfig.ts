@@ -157,6 +157,8 @@ export class LookingGlassConfig extends EventTarget {
 					console.warn("More than one Looking Glass device found... using the first one")
 				}
 				this.calibration = msg.devices[0].calibration
+				this.calibration.screenH.value = 4096
+				this.calibration.screenW.value = 4096
 			},
 			(err) => {
 				console.error("Error creating Looking Glass client:", err)
@@ -333,7 +335,8 @@ export class LookingGlassConfig extends EventTarget {
 
 	public get framebufferWidth() {
 		const numPixels = this.tileWidth * this.tileHeight * this.numViews
-		return 2 ** Math.ceil(Math.log2(Math.max(Math.sqrt(numPixels), this.tileWidth)))
+		// return 2 ** Math.ceil(Math.log2(Math.max(Math.sqrt(numPixels), this.tileWidth)))
+		return 4096
 	}
 
 	public get quiltWidth() {
@@ -345,7 +348,8 @@ export class LookingGlassConfig extends EventTarget {
 	}
 
 	public get framebufferHeight() {
-		return 2 ** Math.ceil(Math.log2(this.quiltHeight * this.tileHeight))
+		// return 2 ** Math.ceil(Math.log2(this.quiltHeight * this.tileHeight))
+		return 4096
 	}
 
 	public get viewCone() {
