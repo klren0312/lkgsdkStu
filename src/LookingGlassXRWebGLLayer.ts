@@ -22,7 +22,7 @@ import { initLookingGlassControlGUI } from "./LookingGlassControls"
 export const PRIVATE = Symbol("LookingGlassXRWebGLLayer")
 
 export default class LookingGlassXRWebGLLayer extends XRWebGLLayer {
-	constructor(session, gl, layerInit) {
+	constructor(session: any, gl: WebGL2RenderingContext, layerInit: any) {
 		super(session, gl, layerInit)
 
 		const lkgCanvas = document.createElement("canvas")
@@ -165,7 +165,7 @@ export default class LookingGlassXRWebGLLayer extends XRWebGLLayer {
 			const oldProgram = gl.getParameter(gl.CURRENT_PROGRAM)
 			{
 				gl.useProgram(program)
-				gl.uniform1i(u_texture, texture) // Always use texture unit 0 for u_texture // todo: why
+				gl.uniform1i(u_texture, 0) // Always use texture unit 0 for u_texture // todo: why
 			}
 			gl.useProgram(oldProgram)
 		}
@@ -217,10 +217,14 @@ export default class LookingGlassXRWebGLLayer extends XRWebGLLayer {
 			// the host page did, and updating for the latest calibration value).
 			// But store off any resizing the host page DID do, so we can restore it on exit.
 			if (appCanvas.width !== cfg.calibration.screenW.value || appCanvas.height !== cfg.calibration.screenH.value) {
+				console.log('warning, the canvas is not the correct size!')
+				console.log('app',appCanvas.width, 'width',appCanvas.height, 'height')
+				console.log('looking glass', lkgCanvas.width,'width', lkgCanvas.height,'height')
 				origWidth = appCanvas.width
 				origHeight = appCanvas.height
 				appCanvas.width = cfg.calibration.screenW.value
 				appCanvas.height = cfg.calibration.screenH.value
+				console.log('new width and height',appCanvas.width, 'width',appCanvas.height, 'height')
 			}
 
 			const oldVAO = gl.getParameter(GL_VERTEX_ARRAY_BINDING)

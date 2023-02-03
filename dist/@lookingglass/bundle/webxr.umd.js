@@ -7615,7 +7615,7 @@ host this content on a secure origin for the best user experience.
         const oldProgram = gl.getParameter(gl.CURRENT_PROGRAM);
         {
           gl.useProgram(program);
-          gl.uniform1i(u_texture, texture);
+          gl.uniform1i(u_texture, 0);
         }
         gl.useProgram(oldProgram);
       };
@@ -7653,10 +7653,14 @@ host this content on a secure origin for the best user experience.
         if (!this[PRIVATE].LookingGlassEnabled)
           return;
         if (appCanvas.width !== cfg.calibration.screenW.value || appCanvas.height !== cfg.calibration.screenH.value) {
+          console.log("warning, the canvas is not the correct size!");
+          console.log("app", appCanvas.width, "width", appCanvas.height, "height");
+          console.log("looking glass", lkgCanvas.width, "width", lkgCanvas.height, "height");
           origWidth = appCanvas.width;
           origHeight = appCanvas.height;
           appCanvas.width = cfg.calibration.screenW.value;
           appCanvas.height = cfg.calibration.screenH.value;
+          console.log("new width and height", appCanvas.width, "width", appCanvas.height, "height");
         }
         const oldVAO2 = gl.getParameter(GL_VERTEX_ARRAY_BINDING);
         const oldCullFace = gl.getParameter(gl.CULL_FACE);
