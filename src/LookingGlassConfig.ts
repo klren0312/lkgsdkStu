@@ -334,8 +334,7 @@ export class LookingGlassConfig extends EventTarget {
 	}
 
 	public get framebufferWidth() {
-		if (this._calibration.screenW.value < 8000) return 4096
-		else return 8192
+		return 4096
 	}
 
 	public get quiltColumns() {
@@ -347,8 +346,7 @@ export class LookingGlassConfig extends EventTarget {
 	}
 
 	public get framebufferHeight() {
-		if (this._calibration.screenW.value < 8000) return 4096
-		else return 8192
+		return 4096
 	}
 
 	public get viewCone() {

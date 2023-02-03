@@ -6856,6 +6856,8 @@ host this content on a secure origin for the best user experience.
           console.warn("More than one Looking Glass device found... using the first one");
         }
         this.calibration = msg.devices[0].calibration;
+        this.calibration.screenH.value = 4096;
+        this.calibration.screenW.value = 4096;
       }, (err) => {
         console.error("Error creating Looking Glass client:", err);
       });
@@ -6958,17 +6960,22 @@ host this content on a secure origin for the best user experience.
       return Math.round(this.tileHeight * this.aspect);
     }
     get framebufferWidth() {
-      const numPixels = this.tileWidth * this.tileHeight * this.numViews;
-      return 2 ** Math.ceil(Math.log2(Math.max(Math.sqrt(numPixels), this.tileWidth)));
+      if (this._calibration.screenW.value < 8e3)
+        return 4096;
+      else
+        return 8192;
     }
-    get quiltWidth() {
+    get quiltColumns() {
       return Math.floor(this.framebufferWidth / this.tileWidth);
     }
-    get quiltHeight() {
-      return Math.ceil(this.numViews / this.quiltWidth);
+    get quiltRows() {
+      return Math.ceil(this.numViews / this.quiltColumns);
     }
     get framebufferHeight() {
-      return 2 ** Math.ceil(Math.log2(this.quiltHeight * this.tileHeight));
+      if (this._calibration.screenW.value < 8e3)
+        return 4096;
+      else
+        return 8192;
     }
     get viewCone() {
       return this._calibration.viewCone.value * this.depthiness / 180 * Math.PI;

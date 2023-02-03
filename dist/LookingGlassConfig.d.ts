@@ -165,10 +165,10 @@ export declare class LookingGlassConfig extends EventTarget {
     set inlineView(v: InlineView);
     get aspect(): number;
     get tileWidth(): number;
-    get framebufferWidth(): number;
-    get quiltWidth(): number;
-    get quiltHeight(): number;
-    get framebufferHeight(): number;
+    get framebufferWidth(): 4096 | 8192;
+    get quiltColumns(): number;
+    get quiltRows(): number;
+    get framebufferHeight(): 4096 | 8192;
     get viewCone(): number;
     get tilt(): number;
     get subp(): number;
