@@ -1,5 +1,6 @@
 {
   "name": "@lookingglass/webxr",
+  "type": "module",
   "files": [
     "dist"
   ],
