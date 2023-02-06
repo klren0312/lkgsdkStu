@@ -6844,7 +6844,8 @@ host this content on a secure origin for the best user experience.
         fovy: 13 / 180 * Math.PI,
         depthiness: 1.25,
         inlineView: InlineView.Center,
-        capturing: false
+        capturing: false,
+        popup: null
       });
       __publicField(this, "LookingGlassDetected");
       this._viewControls = { ...this._viewControls, ...cfg };
@@ -6952,6 +6953,12 @@ host this content on a secure origin for the best user experience.
     }
     set capturing(v) {
       this.updateViewControls({ capturing: v });
+    }
+    get popup() {
+      return this._viewControls.popup;
+    }
+    set popup(v) {
+      this.updateViewControls({ popup: v });
     }
     get aspect() {
       return 0.75;
@@ -7244,11 +7251,9 @@ host this content on a secure origin for the best user experience.
     let stream;
     const video = document.getElementById("looking-glass-video");
     const recordButton = document.getElementById("recordbutton");
-    const playButton = document.getElementById("playbutton");
     const downloadButton = document.getElementById("downloadbutton");
     const screenshotbutton = document.getElementById("screenshotbutton");
     recordButton.onclick = toggleRecording;
-    playButton.onclick = play;
     downloadButton.onclick = downloadVideo;
     screenshotbutton.onclick = downloadImage;
     function handleSourceOpen(event) {
@@ -7284,7 +7289,6 @@ host this content on a secure origin for the best user experience.
         stopRecording();
         cfg.capturing = false;
         recordButton.textContent = "Record";
-        playButton.disabled = false;
         downloadButton.disabled = false;
       }
     }
@@ -7312,7 +7316,6 @@ host this content on a secure origin for the best user experience.
       }
       console.log("Created MediaRecorder", mediaRecorder, "with options", options);
       recordButton.textContent = "Stop Recording";
-      playButton.disabled = true;
       downloadButton.disabled = true;
       mediaRecorder.onstop = handleStop;
       mediaRecorder.ondataavailable = handleDataAvailable;
@@ -7323,9 +7326,6 @@ host this content on a secure origin for the best user experience.
       mediaRecorder.stop();
       console.log("Recorded Blobs: ", recordedBlobs);
       video.controls = true;
-    }
-    function play() {
-      video.play();
     }
     function downloadVideo() {
       const blob = new Blob(recordedBlobs, { type: "video/webm" });
@@ -7361,7 +7361,7 @@ host this content on a secure origin for the best user experience.
         }, "image/png");
         cfg.inlineView = currentInlineView;
         cfg.capturing = false;
-      }, 2e3);
+      }, 250);
     }
   }
   function initLookingGlassControlGUI(lkgCanvas, appCanvas) {
@@ -7395,10 +7395,6 @@ host this content on a secure origin for the best user experience.
     recordbutton.innerText = "Record";
     c.appendChild(recordbutton);
     recordbutton.id = "recordbutton";
-    const playbutton = document.createElement("button");
-    playbutton.innerText = "Play";
-    c.appendChild(playbutton);
-    playbutton.id = "playbutton";
     const downloadbutton = document.createElement("button");
     downloadbutton.innerText = "Download Video";
     c.appendChild(downloadbutton);
@@ -7744,14 +7740,10 @@ host this content on a secure origin for the best user experience.
         if (!this[PRIVATE].LookingGlassEnabled)
           return;
         if ((appCanvas.width !== cfg.calibration.screenW.value || appCanvas.height !== cfg.calibration.screenH.value) && !cfg.capturing) {
-          console.log("resizing canvas");
-          console.log("app", appCanvas.width, "width", appCanvas.height, "height");
-          console.log("looking glass", lkgCanvas.width, "width", lkgCanvas.height, "height");
           origWidth = appCanvas.width;
           origHeight = appCanvas.height;
           appCanvas.width = cfg.calibration.screenW.value;
           appCanvas.height = cfg.calibration.screenH.value;
-          console.log("new width and height", appCanvas.width, "width", appCanvas.height, "height");
         }
         const oldVAO2 = gl.getParameter(GL_VERTEX_ARRAY_BINDING);
         const oldCullFace = gl.getParameter(gl.CULL_FACE);
@@ -7807,42 +7799,41 @@ host this content on a secure origin for the best user experience.
         (oldCullFace ? glEnable : glDisable)(gl.CULL_FACE);
         glBindVertexArray(oldVAO2);
       };
-      let popup;
       window.addEventListener("unload", () => {
-        if (popup)
-          popup.close();
-        popup = void 0;
+        if (cfg.popup)
+          cfg.popup.close();
+        cfg.popup = void 0;
       });
       const moveCanvasToWindow = (enabled, onbeforeunload) => {
         var _a;
-        if (!!popup == enabled)
+        if (!!cfg.popup == enabled)
           return;
         if (enabled) {
           recompileProgram();
           lkgCanvas.style.position = "fixed";
           lkgCanvas.style.bottom = "0";
           lkgCanvas.style.left = "0";
-          lkgCanvas.width = 1536;
-          lkgCanvas.height = 2048;
+          lkgCanvas.width = cfg.calibration.screenW.value;
+          lkgCanvas.height = cfg.calibration.screenH.value;
           document.body.appendChild(controls);
           const screenPlacement = "getScreenDetails" in window;
           if (screenPlacement) {
-            this.placeWindow(popup, lkgCanvas, cfg);
+            this.placeWindow(lkgCanvas, cfg, enabled, onbeforeunload);
           } else {
-            popup = window.open("", void 0, "width=640,height=360");
-            popup.document.title = "Looking Glass Window (fullscreen me on Looking Glass!)";
-            popup.document.body.style.background = "black";
-            popup.document.body.appendChild(lkgCanvas);
+            cfg.popup = window.open("", void 0, "width=640,height=360");
+            cfg.popup.document.title = "Looking Glass Window (fullscreen me on Looking Glass!)";
+            cfg.popup.document.body.style.background = "black";
+            cfg.popup.document.body.appendChild(lkgCanvas);
             console.assert(onbeforeunload);
-            popup.onbeforeunload = onbeforeunload;
+            cfg.popup.onbeforeunload = onbeforeunload;
           }
         } else {
           (_a = controls.parentElement) == null ? void 0 : _a.removeChild(controls);
           appCanvas.width = origWidth;
           appCanvas.height = origHeight;
-          popup.onbeforeunload = void 0;
-          popup.close();
-          popup = void 0;
+          cfg.popup.onbeforeunload = void 0;
+          cfg.popup.close();
+          cfg.popup = void 0;
         }
       };
       this[PRIVATE] = {
@@ -7853,11 +7844,9 @@ host this content on a secure origin for the best user experience.
         moveCanvasToWindow
       };
     }
-    async placeWindow(popup, lkgCanvas, config) {
+    async placeWindow(lkgCanvas, config, enabled, onbeforeunload) {
       const screenDetails = await window.getScreenDetails();
-      console.log(screenDetails, "cached screen details");
       const LKG = screenDetails.screens.filter((screen2) => screen2.label.includes("LKG"))[0];
-      console.log(LKG);
       console.log("monitor ID", LKG.label, "serial number", config._calibration.serial);
       const features = [
         `left=${LKG.left}`,
@@ -7872,13 +7861,11 @@ host this content on a secure origin for the best user experience.
         `scrollbars=no`,
         `fullscreenEnabled=true`
       ].join(",");
-      console.log(config.calibration.slope.value, "raw slope");
-      console.log(config.tilt, "adjusted slope");
-      popup = window.open("", "new", features);
-      console.log(popup);
-      popup.document.body.style.background = "black";
-      popup.document.body.appendChild(lkgCanvas);
-      await lkgCanvas.requestFullscreen();
+      config.popup = window.open("", "new", features);
+      config.popup.document.body.style.background = "black";
+      config.popup.document.body.appendChild(lkgCanvas);
+      console.assert(onbeforeunload);
+      config.popup.onbeforeunload = onbeforeunload;
     }
     get framebuffer() {
       return this[PRIVATE].LookingGlassEnabled ? this[PRIVATE].framebuffer : null;

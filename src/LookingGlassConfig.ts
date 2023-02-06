@@ -111,6 +111,10 @@ export type ViewControlArgs = {
 	 * @default false
 	 */
 	capturing: boolean
+	/**
+	 * A reference to the popup window, only valid when created. 
+	 */
+	popup: typeof window | any
 }
 
 type LookingGlassConfigEvent = "on-config-changed"
@@ -147,7 +151,8 @@ export class LookingGlassConfig extends EventTarget {
 		fovy: (13.0 / 180) * Math.PI,
 		depthiness: 1.25,
 		inlineView: InlineView.Center,
-		capturing: false
+		capturing: false,
+		popup: null
 	}
 	LookingGlassDetected: any
 
@@ -329,6 +334,13 @@ export class LookingGlassConfig extends EventTarget {
 		this.updateViewControls({ capturing: v })
 	}
 
+	get popup() {
+		return this._viewControls.popup
+	}
+
+	set popup(v : typeof window) {
+		this.updateViewControls({ popup: v })
+	}
 	// Computed
 
 	public get aspect() {

@@ -78,7 +78,7 @@ export default class LookingGlassXRWebGLLayer extends XRWebGLLayer {
 			// create variable to store the current texture binding
 			const oldTextureBinding = gl.getParameter(gl.TEXTURE_BINDING_2D)
 			{
-				// bind the current working texture to the `texture` variable 
+				// bind the current working texture to the `texture` variable
 				gl.bindTexture(gl.TEXTURE_2D, texture)
 				// initialize the texture with the current framebuffer width and height
 				gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, cfg.framebufferWidth, cfg.framebufferHeight, 0, gl.RGBA, gl.UNSIGNED_BYTE, null)
@@ -87,8 +87,8 @@ export default class LookingGlassXRWebGLLayer extends XRWebGLLayer {
 			}
 			// returns the current texture binding
 			gl.bindTexture(gl.TEXTURE_2D, oldTextureBinding)
-			
-			// do the same thing as above, but for the depth and stencil buffers. 
+
+			// do the same thing as above, but for the depth and stencil buffers.
 			if (depthStencil) {
 				const oldRenderbufferBinding = gl.getParameter(gl.RENDERBUFFER_BINDING)
 				{
@@ -219,14 +219,10 @@ export default class LookingGlassXRWebGLLayer extends XRWebGLLayer {
 
 			// check the dimensions of the canvas and ensure that we're not capturing
 			if ((appCanvas.width !== cfg.calibration.screenW.value || appCanvas.height !== cfg.calibration.screenH.value) && !cfg.capturing) {
-				console.log('resizing canvas')
-				console.log('app',appCanvas.width, 'width',appCanvas.height, 'height')
-				console.log('looking glass', lkgCanvas.width,'width', lkgCanvas.height,'height')
 				origWidth = appCanvas.width
 				origHeight = appCanvas.height
 				appCanvas.width = cfg.calibration.screenW.value
 				appCanvas.height = cfg.calibration.screenH.value
-				console.log('new width and height',appCanvas.width, 'width',appCanvas.height, 'height')
 			}
 
 			const oldVAO = gl.getParameter(GL_VERTEX_ARRAY_BINDING)
@@ -265,8 +261,8 @@ export default class LookingGlassXRWebGLLayer extends XRWebGLLayer {
 					lkgCtx?.clearRect(0, 0, lkgCanvas.width, lkgCanvas.height)
 					// if we're not capturing, copy the quilt to the Looking Glass
 					if (!cfg.capturing) {
-					// draw the image from the source canvas which is the framebuffer width and height, to the device canvas which is the device width and height
-					lkgCtx?.drawImage(appCanvas, 0, 0, 1536, 2048, 0,0, 1536, 2048)
+						// draw the image from the source canvas which is the framebuffer width and height, to the device canvas which is the device width and height
+						lkgCtx?.drawImage(appCanvas, 0, 0, 1536, 2048, 0, 0, 1536, 2048)
 					}
 					// Render the quilt or centered inline view to the canvas
 					if (cfg.inlineView !== 0) {
@@ -274,11 +270,10 @@ export default class LookingGlassXRWebGLLayer extends XRWebGLLayer {
 						if (cfg.capturing && appCanvas.width !== cfg.framebufferWidth) {
 							appCanvas.width = cfg.framebufferWidth
 							appCanvas.height = cfg.framebufferHeight
-							gl.viewport(0,0,cfg.framebufferHeight, cfg.framebufferWidth)
+							gl.viewport(0, 0, cfg.framebufferHeight, cfg.framebufferWidth)
 						}
 						gl.uniform1i(u_viewType, cfg.inlineView)
 						gl.drawArrays(gl.TRIANGLES, 0, 6)
-					
 					}
 				}
 				gl.bindTexture(gl.TEXTURE_2D, oldTextureBinding)
@@ -296,23 +291,22 @@ export default class LookingGlassXRWebGLLayer extends XRWebGLLayer {
 			glBindVertexArray(oldVAO)
 		}
 
-		let popup
 		window.addEventListener("unload", () => {
-			if (popup) popup.close()
-			popup = undefined
+			if (cfg.popup) cfg.popup.close()
+			cfg.popup = undefined
 		})
+
 		const moveCanvasToWindow = (enabled, onbeforeunload) => {
-			if (!!popup == enabled) return
+			if (!!cfg.popup == enabled) return
 
 			if (enabled) {
 				recompileProgram()
-
 				lkgCanvas.style.position = "fixed"
 				lkgCanvas.style.bottom = "0"
 				lkgCanvas.style.left = "0"
 
-				lkgCanvas.width = 1536
-				lkgCanvas.height = 2048
+				lkgCanvas.width = cfg.calibration.screenW.value
+				lkgCanvas.height = cfg.calibration.screenH.value
 
 				document.body.appendChild(controls)
 				const screenPlacement = "getScreenDetails" in window
@@ -323,15 +317,15 @@ export default class LookingGlassXRWebGLLayer extends XRWebGLLayer {
 				if (screenPlacement) {
 					// use chrome's screen placement to automatically position the window.
 					// seems to have issues with full screen on MacOS
-					this.placeWindow(popup, lkgCanvas, cfg)
+					this.placeWindow(lkgCanvas, cfg, enabled, onbeforeunload)
 				} else {
 					// open a normal pop up window, user will need to move it to the Looking Glass
-					popup = window.open("", undefined, "width=640,height=360")
-					popup.document.title = "Looking Glass Window (fullscreen me on Looking Glass!)"
-					popup.document.body.style.background = "black"
-					popup.document.body.appendChild(lkgCanvas)
+					cfg.popup = window.open("", undefined, "width=640,height=360")
+					cfg.popup.document.title = "Looking Glass Window (fullscreen me on Looking Glass!)"
+					cfg.popup.document.body.style.background = "black"
+					cfg.popup.document.body.appendChild(lkgCanvas)
 					console.assert(onbeforeunload)
-					popup.onbeforeunload = onbeforeunload
+					cfg.popup.onbeforeunload = onbeforeunload
 				}
 				// destroy the window
 			} else {
@@ -340,9 +334,9 @@ export default class LookingGlassXRWebGLLayer extends XRWebGLLayer {
 				appCanvas.width = origWidth
 				appCanvas.height = origHeight
 
-				popup.onbeforeunload = undefined
-				popup.close()
-				popup = undefined
+				cfg.popup.onbeforeunload = undefined
+				cfg.popup.close()
+				cfg.popup = undefined
 			}
 		}
 
@@ -355,12 +349,10 @@ export default class LookingGlassXRWebGLLayer extends XRWebGLLayer {
 		}
 	}
 	// if chromium, use the Screen Placement API to automatically place the window in the correct location, compensate for address bar
-	private async placeWindow(popup, lkgCanvas: HTMLCanvasElement, config: any) {
+	private async placeWindow(lkgCanvas: HTMLCanvasElement, config: any, enabled: any, onbeforeunload: any) {
 		const screenDetails = await window.getScreenDetails()
-		console.log(screenDetails, "cached screen details")
 		//temporary, grab the first monitor ID with "LKG" Todo: make more robust
 		const LKG = screenDetails.screens.filter((screen) => screen.label.includes("LKG"))[0]
-		console.log(LKG)
 		console.log("monitor ID", LKG.label, "serial number", config._calibration.serial)
 		const features = [
 			`left=${LKG.left}`,
@@ -375,13 +367,11 @@ export default class LookingGlassXRWebGLLayer extends XRWebGLLayer {
 			`scrollbars=no`,
 			`fullscreenEnabled=true`,
 		].join(",")
-		console.log(config.calibration.slope.value, 'raw slope')
-		console.log(config.tilt, 'adjusted slope')
-		popup = window.open("", "new", features)
-		console.log(popup)
-		popup.document.body.style.background = "black"
-		popup.document.body.appendChild(lkgCanvas)
-		await lkgCanvas.requestFullscreen()
+		config.popup = window.open("", "new", features)
+		config.popup.document.body.style.background = "black"
+		config.popup.document.body.appendChild(lkgCanvas)
+		console.assert(onbeforeunload)
+		config.popup.onbeforeunload = onbeforeunload
 	}
 
 	get framebuffer() {

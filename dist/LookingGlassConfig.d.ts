@@ -102,6 +102,10 @@ export declare type ViewControlArgs = {
      * @default false
      */
     capturing: boolean;
+    /**
+     * A reference to the popup window, only valid when created.
+     */
+    popup: typeof window | any;
 };
 declare type LookingGlassConfigEvent = "on-config-changed";
 export declare class LookingGlassConfig extends EventTarget {
@@ -170,6 +174,8 @@ export declare class LookingGlassConfig extends EventTarget {
     set inlineView(v: InlineView);
     get capturing(): boolean;
     set capturing(v: boolean);
+    get popup(): typeof window;
+    set popup(v: typeof window);
     get aspect(): number;
     get tileWidth(): number;
     get framebufferWidth(): number;
