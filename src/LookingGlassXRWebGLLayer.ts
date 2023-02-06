@@ -35,9 +35,6 @@ export default class LookingGlassXRWebGLLayer extends XRWebGLLayer {
 		lkgCanvas.addEventListener("dblclick", function () {
 			this.requestFullscreen()
 		})
-		// create a hidden canvas element to be used for high quality quilt captures (note for future, offscreen canvas is not supported in safari)
-		const quiltCanvas = new OffscreenCanvas(cfg.framebufferWidth, cfg.framebufferHeight)
-		const quiltCtx = quiltCanvas.getContext("2d", { alpha: false })
 
 		const controls = initLookingGlassControlGUI(lkgCanvas, appCanvas)
 
@@ -318,13 +315,25 @@ export default class LookingGlassXRWebGLLayer extends XRWebGLLayer {
 				lkgCanvas.height = 2048
 
 				document.body.appendChild(controls)
-
-				popup = window.open("", undefined, "width=640,height=360")
-				popup.document.title = "Looking Glass Window (fullscreen me on Looking Glass!)"
-				popup.document.body.style.background = "black"
-				popup.document.body.appendChild(lkgCanvas)
-				console.assert(onbeforeunload)
-				popup.onbeforeunload = onbeforeunload
+				const screenPlacement = "getScreenDetails" in window
+				try {
+				} catch {
+					console.log("user did not allow window placement, using normal popup instead")
+				}
+				if (screenPlacement) {
+					// use chrome's screen placement to automatically position the window.
+					// seems to have issues with full screen on MacOS
+					this.placeWindow(popup, lkgCanvas, cfg)
+				} else {
+					// open a normal pop up window, user will need to move it to the Looking Glass
+					popup = window.open("", undefined, "width=640,height=360")
+					popup.document.title = "Looking Glass Window (fullscreen me on Looking Glass!)"
+					popup.document.body.style.background = "black"
+					popup.document.body.appendChild(lkgCanvas)
+					console.assert(onbeforeunload)
+					popup.onbeforeunload = onbeforeunload
+				}
+				// destroy the window
 			} else {
 				controls.parentElement?.removeChild(controls)
 
@@ -344,6 +353,35 @@ export default class LookingGlassXRWebGLLayer extends XRWebGLLayer {
 			blitTextureToDefaultFramebufferIfNeeded,
 			moveCanvasToWindow,
 		}
+	}
+	// if chromium, use the Screen Placement API to automatically place the window in the correct location, compensate for address bar
+	private async placeWindow(popup, lkgCanvas: HTMLCanvasElement, config: any) {
+		const screenDetails = await window.getScreenDetails()
+		console.log(screenDetails, "cached screen details")
+		//temporary, grab the first monitor ID with "LKG" Todo: make more robust
+		const LKG = screenDetails.screens.filter((screen) => screen.label.includes("LKG"))[0]
+		console.log(LKG)
+		console.log("monitor ID", LKG.label, "serial number", config._calibration.serial)
+		const features = [
+			`left=${LKG.left}`,
+			`top=${LKG.top}`,
+			`width=${LKG.width}`,
+			`height=${LKG.height}`,
+			`menubar=no`,
+			`toolbar=no`,
+			`location=no`,
+			`status=no`,
+			`resizable=yes`,
+			`scrollbars=no`,
+			`fullscreenEnabled=true`,
+		].join(",")
+		console.log(config.calibration.slope.value, 'raw slope')
+		console.log(config.tilt, 'adjusted slope')
+		popup = window.open("", "new", features)
+		console.log(popup)
+		popup.document.body.style.background = "black"
+		popup.document.body.appendChild(lkgCanvas)
+		await lkgCanvas.requestFullscreen()
 	}
 
 	get framebuffer() {

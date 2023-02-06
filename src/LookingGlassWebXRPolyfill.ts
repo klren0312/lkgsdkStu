@@ -20,20 +20,42 @@ import WebXRPolyfill from "@lookingglass/webxr-polyfill/src/WebXRPolyfill"
 import { getLookingGlassConfig, updateLookingGlassConfig, ViewControlArgs } from "./LookingGlassConfig"
 import LookingGlassXRDevice from "./LookingGlassXRDevice"
 import LookingGlassXRWebGLLayer from "./LookingGlassXRWebGLLayer"
+import * as HoloPlayCore from "holoplay-core"
 
 export class LookingGlassWebXRPolyfill extends WebXRPolyfill {
 	private vrButton: HTMLButtonElement | undefined
-	public device: LookingGlassXRDevice
+	public device: LookingGlassXRDevice | undefined
 	/** true when previewing on Looking Glass */
 	public isPresenting: boolean = false
 
 	constructor(cfg?: Partial<ViewControlArgs>) {
 		super()
-
 		// Init the configuration
 		updateLookingGlassConfig(cfg)
+		this.loadPolyfill()
+	}
 
-		// Replace Enter VR button with custom Looking Glass button
+	static async init(cfg?: Partial<ViewControlArgs>) {
+		const success = await LookingGlassWebXRPolyfill.detectLookingGlassDevice()
+		if (success) {
+			new LookingGlassWebXRPolyfill(cfg)
+		}
+	}
+
+	/** Check if a Looking Glass is detected */
+	static async detectLookingGlassDevice(): Promise<boolean> {
+		return new Promise<boolean>((resolve)=>{
+			const client = new HoloPlayCore.Client(async (msg: any) => {
+				console.log(msg, 'message from core')
+				if (msg.devices.length > 0) {resolve(true)}
+				else {resolve(false)}
+		})
+		
+	})
+}
+
+	/**Load  the polyfill*/
+	private async loadPolyfill() {
 		this.overrideDefaultVRButton()
 
 		console.warn('Looking Glass WebXR "polyfill" overriding native WebXR API.')
@@ -56,7 +78,7 @@ export class LookingGlassWebXRPolyfill extends WebXRPolyfill {
 	private async overrideDefaultVRButton() {
 		this.vrButton = await waitForElement<HTMLButtonElement>("VRButton")
 
-		if (this.vrButton) {
+		if (this.vrButton && this.device) {
 			this.device.addEventListener("@@webxr-polyfill/vr-present-start", () => {
 				this.isPresenting = true
 				this.updateVRButtonUI()
@@ -82,11 +104,10 @@ export class LookingGlassWebXRPolyfill extends WebXRPolyfill {
 			await delay(100)
 			if (this.isPresenting) {
 				this.vrButton.innerHTML = "EXIT LOOKING GLASS"
-			}
-			else {
+			} else {
 				this.vrButton.innerHTML = "ENTER LOOKING GLASS"
 			}
-			
+
 			const width = 220
 			this.vrButton.style.width = `${width}px`
 			this.vrButton.style.left = `calc(50% - ${width / 2}px)`
@@ -124,7 +145,7 @@ async function waitForElement<T extends HTMLElement>(id: string): Promise<T> {
 }
 
 function delay(ms: number) {
-	return new Promise( resolve => setTimeout(resolve, ms) );
+	return new Promise((resolve) => setTimeout(resolve, ms))
 }
 
 /**

@@ -17,6 +17,7 @@ import XRWebGLLayer from "@lookingglass/webxr-polyfill/src/api/XRWebGLLayer";
 export declare const PRIVATE: unique symbol;
 export default class LookingGlassXRWebGLLayer extends XRWebGLLayer {
     constructor(session: any, gl: WebGL2RenderingContext, layerInit: any);
+    private placeWindow;
     get framebuffer(): any;
     get framebufferWidth(): number;
     get framebufferHeight(): number;
