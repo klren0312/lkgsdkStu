@@ -37,11 +37,6 @@ export function initLookingGlassControlGUI(lkgCanvas: HTMLCanvasElement, appCanv
 	c.appendChild(recordbutton)
 	recordbutton.id = "recordbutton"
 
-	const playbutton = document.createElement("button")
-	playbutton.innerText = "Play"
-	c.appendChild(playbutton)
-	playbutton.id = "playbutton"
-
 	const downloadbutton = document.createElement("button")
 	downloadbutton.innerText = "Download Video"
 	c.appendChild(downloadbutton)

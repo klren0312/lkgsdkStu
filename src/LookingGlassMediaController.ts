@@ -152,6 +152,6 @@ function downloadImage() {
 			//reset inline view to setting prior to changing it
 			cfg.inlineView = currentInlineView
 			cfg.capturing = false;
-		}, 2000)
+		}, 250)
 }
 }
