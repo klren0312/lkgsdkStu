@@ -18,6 +18,7 @@ export declare const PRIVATE: unique symbol;
 export default class LookingGlassXRWebGLLayer extends XRWebGLLayer {
     constructor(session: any, gl: WebGL2RenderingContext, layerInit: any);
     private placeWindow;
+    private openPopup;
     get framebuffer(): any;
     get framebufferWidth(): number;
     get framebufferHeight(): number;

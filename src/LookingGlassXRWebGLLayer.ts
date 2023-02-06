@@ -16,7 +16,7 @@
 
 import XRWebGLLayer, { PRIVATE as XRWebGLLayer_PRIVATE } from "@lookingglass/webxr-polyfill/src/api/XRWebGLLayer"
 import { Shader } from "holoplay-core"
-import { getLookingGlassConfig } from "./LookingGlassConfig"
+import { LookingGlassConfig, getLookingGlassConfig } from "./LookingGlassConfig"
 import { initLookingGlassControlGUI } from "./LookingGlassControls"
 
 export const PRIVATE = Symbol("LookingGlassXRWebGLLayer")
@@ -320,12 +320,7 @@ export default class LookingGlassXRWebGLLayer extends XRWebGLLayer {
 					this.placeWindow(lkgCanvas, cfg, enabled, onbeforeunload)
 				} else {
 					// open a normal pop up window, user will need to move it to the Looking Glass
-					cfg.popup = window.open("", undefined, "width=640,height=360")
-					cfg.popup.document.title = "Looking Glass Window (fullscreen me on Looking Glass!)"
-					cfg.popup.document.body.style.background = "black"
-					cfg.popup.document.body.appendChild(lkgCanvas)
-					console.assert(onbeforeunload)
-					cfg.popup.onbeforeunload = onbeforeunload
+					this.openPopup(cfg, lkgCanvas, onbeforeunload)
 				}
 				// destroy the window
 			} else {
@@ -353,6 +348,13 @@ export default class LookingGlassXRWebGLLayer extends XRWebGLLayer {
 		const screenDetails = await window.getScreenDetails()
 		//temporary, grab the first monitor ID with "LKG" Todo: make more robust
 		const LKG = screenDetails.screens.filter((screen) => screen.label.includes("LKG"))[0]
+		console.log(LKG, 'monitors')
+		if (LKG === undefined) {
+			console.log("no Looking Glass monitor detected - manually opening popup window")
+			this.openPopup(config, lkgCanvas, onbeforeunload)
+			return
+		}
+		else {
 		console.log("monitor ID", LKG.label, "serial number", config._calibration.serial)
 		const features = [
 			`left=${LKG.left}`,
@@ -372,6 +374,16 @@ export default class LookingGlassXRWebGLLayer extends XRWebGLLayer {
 		config.popup.document.body.appendChild(lkgCanvas)
 		console.assert(onbeforeunload)
 		config.popup.onbeforeunload = onbeforeunload
+	}
+	}
+
+	private openPopup(cfg: LookingGlassConfig, lkgCanvas: HTMLCanvasElement, onbeforeunload: any) {
+		cfg.popup = window.open("", undefined, "width=640,height=360")
+		cfg.popup.document.title = "Looking Glass Window (fullscreen me on Looking Glass!)"
+		cfg.popup.document.body.style.background = "black"
+		cfg.popup.document.body.appendChild(lkgCanvas)
+		console.assert(onbeforeunload)
+		cfg.popup.onbeforeunload = onbeforeunload
 	}
 
 	get framebuffer() {
