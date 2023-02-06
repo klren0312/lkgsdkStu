@@ -4,14 +4,14 @@
     "dist"
   ],
   "main": "./dist/webxr.umd.cjs",
-  "module": "./dist/webxr.js",
+  "module": "./dist/webxr.mjs",
   "exports": {
     ".": {
-      "import": "./dist/@lookingglass/webxr.js",
+      "import": "./dist/@lookingglass/webxr.mjs",
       "require": "./dist/@lookingglass/webxr.umd.cjs"
     }
   },
-  "version": "0.3.2-alpha.2",
+  "version": "0.4.0-alpha.1",
   "license": "Apache-2.0",
   "private": false,
   "description": "Official WebXR implementation for Looking Glass Holographic Displays.",

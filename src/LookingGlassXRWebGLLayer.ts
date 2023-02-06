@@ -24,16 +24,22 @@ export const PRIVATE = Symbol("LookingGlassXRWebGLLayer")
 export default class LookingGlassXRWebGLLayer extends XRWebGLLayer {
 	constructor(session: any, gl: WebGL2RenderingContext, layerInit: any) {
 		super(session, gl, layerInit)
-
+		// call the Looking Glass config class
+		const cfg = getLookingGlassConfig()
+		// create a reference to the existing canvas
+		const appCanvas = gl.canvas as HTMLCanvasElement
+		// create a new canvas element to be used later when we open the Looking Glass window
 		const lkgCanvas = document.createElement("canvas")
 		lkgCanvas.tabIndex = 0
 		const lkgCtx = lkgCanvas.getContext("2d", { alpha: false })
 		lkgCanvas.addEventListener("dblclick", function () {
 			this.requestFullscreen()
 		})
-		const controls = initLookingGlassControlGUI(lkgCanvas)
+		// create a hidden canvas element to be used for high quality quilt captures (note for future, offscreen canvas is not supported in safari)
+		const quiltCanvas = new OffscreenCanvas(cfg.framebufferWidth, cfg.framebufferHeight)
+		const quiltCtx = quiltCanvas.getContext("2d", { alpha: false })
 
-		const cfg = getLookingGlassConfig()
+		const controls = initLookingGlassControlGUI(lkgCanvas, appCanvas)
 
 		// Set up framebuffer/texture.
 
@@ -206,18 +212,17 @@ export default class LookingGlassXRWebGLLayer extends XRWebGLLayer {
 			gl.clearStencil(currentClearStencil)
 		}
 
-		const appCanvas = gl.canvas
-
 		let origWidth, origHeight
 
 		const blitTextureToDefaultFramebufferIfNeeded = () => {
 			if (!this[PRIVATE].LookingGlassEnabled) return
-
 			// Make sure the default framebuffer has the correct size (undo any resizing
 			// the host page did, and updating for the latest calibration value).
 			// But store off any resizing the host page DID do, so we can restore it on exit.
-			if (appCanvas.width !== cfg.calibration.screenW.value || appCanvas.height !== cfg.calibration.screenH.value) {
-				console.log('warning, the canvas is not the correct size!')
+
+			// check the dimensions of the canvas and ensure that we're not capturing
+			if ((appCanvas.width !== cfg.calibration.screenW.value || appCanvas.height !== cfg.calibration.screenH.value) && !cfg.capturing) {
+				console.log('resizing canvas')
 				console.log('app',appCanvas.width, 'width',appCanvas.height, 'height')
 				console.log('looking glass', lkgCanvas.width,'width', lkgCanvas.height,'height')
 				origWidth = appCanvas.width
@@ -261,12 +266,22 @@ export default class LookingGlassXRWebGLLayer extends XRWebGLLayer {
 
 					// Copy it into the canvas that's actually on the display
 					lkgCtx?.clearRect(0, 0, lkgCanvas.width, lkgCanvas.height)
-					lkgCtx?.drawImage(appCanvas, 0, 0)
-
-					// And optionally render over with a "nicer" inline view
+					// if we're not capturing, copy the quilt to the Looking Glass
+					if (!cfg.capturing) {
+					// draw the image from the source canvas which is the framebuffer width and height, to the device canvas which is the device width and height
+					lkgCtx?.drawImage(appCanvas, 0, 0, 1536, 2048, 0,0, 1536, 2048)
+					}
+					// Render the quilt or centered inline view to the canvas
 					if (cfg.inlineView !== 0) {
+						// If we're capturing, resize the canvas to the framebuffer size
+						if (cfg.capturing && appCanvas.width !== cfg.framebufferWidth) {
+							appCanvas.width = cfg.framebufferWidth
+							appCanvas.height = cfg.framebufferHeight
+							gl.viewport(0,0,cfg.framebufferHeight, cfg.framebufferWidth)
+						}
 						gl.uniform1i(u_viewType, cfg.inlineView)
 						gl.drawArrays(gl.TRIANGLES, 0, 6)
+					
 					}
 				}
 				gl.bindTexture(gl.TEXTURE_2D, oldTextureBinding)
@@ -296,13 +311,11 @@ export default class LookingGlassXRWebGLLayer extends XRWebGLLayer {
 				recompileProgram()
 
 				lkgCanvas.style.position = "fixed"
-				lkgCanvas.style.top = "0"
+				lkgCanvas.style.bottom = "0"
 				lkgCanvas.style.left = "0"
-				lkgCanvas.style.width = "100%"
-				lkgCanvas.style.height = "100%"
 
-				lkgCanvas.width = cfg.calibration.screenW.value
-				lkgCanvas.height = cfg.calibration.screenH.value
+				lkgCanvas.width = 1536
+				lkgCanvas.height = 2048
 
 				document.body.appendChild(controls)
 

@@ -1,7 +1,8 @@
 import { getLookingGlassConfig } from "./LookingGlassConfig"
+import { LookingGlassMediaController } from "./LookingGlassMediaController"
 
 //lkgCanvas is defined in LookingGlassXRWebGLLayer.js, it is required when calling this function
-export function initLookingGlassControlGUI(lkgCanvas: HTMLCanvasElement) {
+export function initLookingGlassControlGUI(lkgCanvas: HTMLCanvasElement, appCanvas: HTMLCanvasElement) {
 	const cfg = getLookingGlassConfig()
 
 	const styleElement = document.createElement("style")
@@ -22,13 +23,42 @@ export function initLookingGlassControlGUI(lkgCanvas: HTMLCanvasElement) {
 	c.style.borderRadius = "10px"
 	c.style.right = "15px"
 	c.style.bottom = "15px"
+	c.style.flex = "row"
 
 	const title = document.createElement("div")
 	c.appendChild(title)
 	title.style.width = "100%"
 	title.style.textAlign = "center"
 	title.style.fontWeight = "bold"
-	title.innerText = "Looking Glass Controls "
+	title.innerText = "Looking Glass Controls"
+
+	const recordbutton = document.createElement("button")
+	recordbutton.innerText = "Record"
+	c.appendChild(recordbutton)
+	recordbutton.id = "recordbutton"
+
+	const playbutton = document.createElement("button")
+	playbutton.innerText = "Play"
+	c.appendChild(playbutton)
+	playbutton.id = "playbutton"
+
+	const downloadbutton = document.createElement("button")
+	downloadbutton.innerText = "Download Video"
+	c.appendChild(downloadbutton)
+	downloadbutton.id = "downloadbutton"
+
+	const video = document.createElement("video")
+	c.appendChild(video)
+	video.id = "looking-glass-video"
+	video.width = 240
+	video.height = 320
+	video.style.backgroundColor = "black"
+	video.style.display = "none"
+
+	const screenshotbutton = document.createElement("button")
+	screenshotbutton.id = "screenshotbutton"
+	c.appendChild(screenshotbutton)
+	screenshotbutton.innerText = "Take Screenshot"
 
 	const help = document.createElement("div")
 	c.appendChild(help)
@@ -39,15 +69,15 @@ export function initLookingGlassControlGUI(lkgCanvas: HTMLCanvasElement) {
 	help.style.margin = "5px 0"
 	help.innerHTML = "Click the popup and use WASD, mouse left/right drag, and scroll."
 
-	const lrToggle = document.createElement("input")
-	title.appendChild(lrToggle)
-	lrToggle.type = "button"
-	lrToggle.value = "←"
-	lrToggle.dataset.otherValue = "→"
-	lrToggle.onclick = () => {
-		;[c.style.right, c.style.left] = [c.style.left, c.style.right]
-		;[lrToggle.value, lrToggle.dataset.otherValue] = [lrToggle.dataset.otherValue || "", lrToggle.value]
-	}
+	// const lrToggle = document.createElement("input")
+	// title.appendChild(lrToggle)
+	// lrToggle.type = "button"
+	// lrToggle.value = "←"
+	// lrToggle.dataset.otherValue = "→"
+	// lrToggle.onclick = () => {
+	// 	;[c.style.right, c.style.left] = [c.style.left, c.style.right]
+	// 	;[lrToggle.value, lrToggle.dataset.otherValue] = [lrToggle.dataset.otherValue || "", lrToggle.value]
+	// }
 
 	const controlListDiv = document.createElement("div")
 	c.appendChild(controlListDiv)
@@ -74,19 +104,19 @@ export function initLookingGlassControlGUI(lkgCanvas: HTMLCanvasElement) {
 		label.style.fontWeight = "bold"
 		label.title = opts.title
 
-		if (attrs.type !== "checkbox") {
-			const reset = document.createElement("input")
-			controlLineDiv.appendChild(reset)
-			reset.type = "button"
-			reset.value = "⎌"
-			reset.alt = "reset"
-			reset.title = "Reset value to default"
-			reset.style.padding = "0 4px"
-			reset.onclick = (e) => {
-				control.value = initialValue
-				control.oninput!(e)
-			}
-		}
+		// if (attrs.type !== "checkbox") {
+		// 	const reset = document.createElement("input")
+		// 	controlLineDiv.appendChild(reset)
+		// 	reset.type = "button"
+		// 	reset.value = "⎌"
+		// 	reset.alt = "reset"
+		// 	reset.title = "Reset value to default"
+		// 	reset.style.padding = "0 4px"
+		// 	reset.onclick = (e) => {
+		// 		control.value = initialValue
+		// 		control.oninput!(e)
+		// 	}
+		// }
 
 		const control = document.createElement("input")
 		controlLineDiv.appendChild(control)
@@ -143,86 +173,86 @@ export function initLookingGlassControlGUI(lkgCanvas: HTMLCanvasElement) {
 		return updateExternally
 	}
 
-	addControl(
-		"tileHeight",
-		{ type: "range", min: 160, max: 455, step: 1 },
-		{
-			label: "resolution",
-			title: "resolution of each view",
-			stringify: (v) => `${(v * cfg.aspect).toFixed()}&times;${v.toFixed()}`,
-		}
-	)
-	addControl(
-		"numViews",
-		{ type: "range", min: 1, max: 145, step: 1 },
-		{
-			label: "views",
-			title: "number of different viewing angles to render",
-			stringify: (v) => v.toFixed(),
-		}
-	)
+	// addControl(
+	// 	"tileHeight",
+	// 	{ type: "range", min: 160, max: 455, step: 1 },
+	// 	{
+	// 		label: "resolution",
+	// 		title: "resolution of each view",
+	// 		stringify: (v) => `${(v * cfg.aspect).toFixed()}&times;${v.toFixed()}`,
+	// 	}
+	// )
+	// addControl(
+	// 	"numViews",
+	// 	{ type: "range", min: 1, max: 145, step: 1 },
+	// 	{
+	// 		label: "views",
+	// 		title: "number of different viewing angles to render",
+	// 		stringify: (v) => v.toFixed(),
+	// 	}
+	// )
 
-	const setTrackballX = addControl(
-		"trackballX",
-		{
-			type: "range",
-			min: -Math.PI,
-			max: 1.0001 * Math.PI,
-			step: (0.5 / 180) * Math.PI,
-		},
-		{
-			label: "trackball x",
-			title: "camera trackball x",
-			fixRange: (v) => ((v + Math.PI * 3) % (Math.PI * 2)) - Math.PI,
-			stringify: (v) => `${((v / Math.PI) * 180).toFixed()}&deg;`,
-		}
-	)
-	const setTrackballY = addControl(
-		"trackballY",
-		{
-			type: "range",
-			min: -0.5 * Math.PI,
-			max: 0.5001 * Math.PI,
-			step: (1.0 / 180) * Math.PI,
-		},
-		{
-			label: "trackball y",
-			title: "camera trackball y",
-			fixRange: (v) => Math.max(-0.5 * Math.PI, Math.min(v, 0.5 * Math.PI)),
-			stringify: (v) => `${((v / Math.PI) * 180).toFixed()}&deg;`,
-		}
-	)
+	// const setTrackballX = addControl(
+	// 	"trackballX",
+	// 	{
+	// 		type: "range",
+	// 		min: -Math.PI,
+	// 		max: 1.0001 * Math.PI,
+	// 		step: (0.5 / 180) * Math.PI,
+	// 	},
+	// 	{
+	// 		label: "trackball x",
+	// 		title: "camera trackball x",
+	// 		fixRange: (v) => ((v + Math.PI * 3) % (Math.PI * 2)) - Math.PI,
+	// 		stringify: (v) => `${((v / Math.PI) * 180).toFixed()}&deg;`,
+	// 	}
+	// )
+	// const setTrackballY = addControl(
+	// 	"trackballY",
+	// 	{
+	// 		type: "range",
+	// 		min: -0.5 * Math.PI,
+	// 		max: 0.5001 * Math.PI,
+	// 		step: (1.0 / 180) * Math.PI,
+	// 	},
+	// 	{
+	// 		label: "trackball y",
+	// 		title: "camera trackball y",
+	// 		fixRange: (v) => Math.max(-0.5 * Math.PI, Math.min(v, 0.5 * Math.PI)),
+	// 		stringify: (v) => `${((v / Math.PI) * 180).toFixed()}&deg;`,
+	// 	}
+	// )
 
-	const setTargetX = addControl(
-		"targetX",
-		{ type: "range", min: -20, max: 20, step: 0.1 },
-		{
-			label: "target x",
-			title: "target position x",
-			fixRange: (v) => v,
-			stringify: (v) => v.toFixed(2) + " m",
-		}
-	)
-	const setTargetY = addControl(
-		"targetY",
-		{ type: "range", min: -20, max: 20, step: 0.1 },
-		{
-			label: "target y",
-			title: "target position y",
-			fixRange: (v) => v,
-			stringify: (v) => v.toFixed(2) + " m",
-		}
-	)
-	const setTargetZ = addControl(
-		"targetZ",
-		{ type: "range", min: -20, max: 20, step: 0.1 },
-		{
-			label: "target z",
-			title: "target position z",
-			fixRange: (v) => v,
-			stringify: (v) => v.toFixed(2) + " m",
-		}
-	)
+	// const setTargetX = addControl(
+	// 	"targetX",
+	// 	{ type: "range", min: -20, max: 20, step: 0.1 },
+	// 	{
+	// 		label: "target x",
+	// 		title: "target position x",
+	// 		fixRange: (v) => v,
+	// 		stringify: (v) => v.toFixed(2) + " m",
+	// 	}
+	// )
+	// const setTargetY = addControl(
+	// 	"targetY",
+	// 	{ type: "range", min: -20, max: 20, step: 0.1 },
+	// 	{
+	// 		label: "target y",
+	// 		title: "target position y",
+	// 		fixRange: (v) => v,
+	// 		stringify: (v) => v.toFixed(2) + " m",
+	// 	}
+	// )
+	// const setTargetZ = addControl(
+	// 	"targetZ",
+	// 	{ type: "range", min: -20, max: 20, step: 0.1 },
+	// 	{
+	// 		label: "target z",
+	// 		title: "target position z",
+	// 		fixRange: (v) => v,
+	// 		stringify: (v) => v.toFixed(2) + " m",
+	// 	}
+	// )
 
 	addControl(
 		"fovy",
@@ -287,12 +317,12 @@ export function initLookingGlassControlGUI(lkgCanvas: HTMLCanvasElement) {
 			const dx = -Math.cos(tx) * mx + Math.sin(tx) * Math.sin(ty) * my
 			const dy = -Math.cos(ty) * my
 			const dz = Math.sin(tx) * mx + Math.cos(tx) * Math.sin(ty) * my
-			setTargetX((v) => v + dx * cfg.targetDiam * 0.001)
-			setTargetY((v) => v + dy * cfg.targetDiam * 0.001)
-			setTargetZ((v) => v + dz * cfg.targetDiam * 0.001)
+			cfg.targetX = cfg.targetX + dx * cfg.targetDiam * 0.001
+			cfg.targetY = cfg.targetY + dy * cfg.targetDiam * 0.001
+			cfg.targetZ = cfg.targetZ + dz * cfg.targetDiam * 0.001
 		} else if (ev.buttons & 1) {
-			setTrackballX((v) => v - mx * 0.01)
-			setTrackballY((v) => v - my * 0.01)
+			cfg.trackballX = cfg.trackballX - mx * 0.01
+			cfg.trackballY = cfg.trackballY - my * 0.01
 		}
 	})
 
@@ -343,11 +373,16 @@ export function initLookingGlassControlGUI(lkgCanvas: HTMLCanvasElement) {
 		const dx = Math.cos(tx) * kx - Math.sin(tx) * Math.cos(ty) * ky
 		const dy = -Math.sin(ty) * ky
 		const dz = -Math.sin(tx) * kx - Math.cos(tx) * Math.cos(ty) * ky
-		setTargetX((v) => v + dx * cfg.targetDiam * 0.03)
-		setTargetY((v) => v + dy * cfg.targetDiam * 0.03)
-		setTargetZ((v) => v + dz * cfg.targetDiam * 0.03)
+		cfg.targetX = cfg.targetX + dx * cfg.targetDiam * 0.03
+		cfg.targetY = cfg.targetY + dy * cfg.targetDiam * 0.03
+		cfg.targetZ = cfg.targetZ + dz * cfg.targetDiam * 0.03
 		requestAnimationFrame(flyCamera)
 	}
+
+	// start the media controller after the buttons have been initialized
+	setTimeout(() => {
+		LookingGlassMediaController(appCanvas, cfg)
+	}, 1000)
 
 	return c
 }

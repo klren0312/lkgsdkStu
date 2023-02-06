@@ -6802,6 +6802,7 @@ function Shader(cfg) {
 `;
 }
 const DefaultEyeHeight = 1.6;
+let quiltResolution = 3360;
 var InlineView;
 (function(InlineView2) {
   InlineView2[InlineView2["Swizzled"] = 0] = "Swizzled";
@@ -6837,7 +6838,8 @@ class LookingGlassConfig$1 extends EventTarget {
       targetDiam: 2,
       fovy: 13 / 180 * Math.PI,
       depthiness: 1.25,
-      inlineView: InlineView.Center
+      inlineView: InlineView.Center,
+      capturing: false
     });
     this._viewControls = { ...this._viewControls, ...cfg };
     this.syncCalibration();
@@ -6852,8 +6854,6 @@ class LookingGlassConfig$1 extends EventTarget {
         console.warn("More than one Looking Glass device found... using the first one");
       }
       this.calibration = msg.devices[0].calibration;
-      this.calibration.screenH.value = 4096;
-      this.calibration.screenW.value = 4096;
     }, (err) => {
       console.error("Error creating Looking Glass client:", err);
     });
@@ -6884,16 +6884,10 @@ class LookingGlassConfig$1 extends EventTarget {
     }
   }
   get tileHeight() {
-    return this._viewControls.tileHeight;
-  }
-  set tileHeight(v) {
-    this.updateViewControls({ tileHeight: v });
+    return quiltResolution / 6;
   }
   get numViews() {
-    return this._viewControls.numViews;
-  }
-  set numViews(v) {
-    this.updateViewControls({ numViews: v });
+    return 48;
   }
   get targetX() {
     return this._viewControls.targetX;
@@ -6949,27 +6943,33 @@ class LookingGlassConfig$1 extends EventTarget {
   set inlineView(v) {
     this.updateViewControls({ inlineView: v });
   }
+  get capturing() {
+    return this._viewControls.capturing;
+  }
+  set capturing(v) {
+    this.updateViewControls({ capturing: v });
+  }
   get aspect() {
-    return this._calibration.screenW.value / this._calibration.screenH.value;
+    return 0.75;
   }
   get tileWidth() {
-    return Math.round(this.tileHeight * this.aspect);
+    return quiltResolution / 8;
   }
   get framebufferWidth() {
     if (this._calibration.screenW.value < 8e3)
-      return 4096;
+      return quiltResolution;
     else
       return 8192;
   }
-  get quiltColumns() {
-    return Math.floor(this.framebufferWidth / this.tileWidth);
+  get quiltWidth() {
+    return 8;
   }
-  get quiltRows() {
-    return Math.ceil(this.numViews / this.quiltColumns);
+  get quiltHeight() {
+    return 6;
   }
   get framebufferHeight() {
     if (this._calibration.screenW.value < 8e3)
-      return 4096;
+      return quiltResolution;
     else
       return 8192;
   }
@@ -7231,7 +7231,136 @@ function perspective(out, fovy, aspect, near, far) {
   }
   return out;
 }
-function initLookingGlassControlGUI(lkgCanvas) {
+function LookingGlassMediaController(appCanvas, cfg) {
+  const mediaSource = new MediaSource();
+  mediaSource.addEventListener("sourceopen", handleSourceOpen, false);
+  let mediaRecorder;
+  let recordedBlobs;
+  let sourceBuffer;
+  let stream;
+  const video = document.getElementById("looking-glass-video");
+  const recordButton = document.getElementById("recordbutton");
+  const playButton = document.getElementById("playbutton");
+  const downloadButton = document.getElementById("downloadbutton");
+  const screenshotbutton = document.getElementById("screenshotbutton");
+  recordButton.onclick = toggleRecording;
+  playButton.onclick = play;
+  downloadButton.onclick = downloadVideo;
+  screenshotbutton.onclick = downloadImage;
+  function handleSourceOpen(event) {
+    console.log("MediaSource opened");
+    sourceBuffer = mediaSource.addSourceBuffer('video/webm; codecs="h264"');
+    console.log("Source buffer: ", sourceBuffer);
+  }
+  function handleDataAvailable(event) {
+    if (event.data && event.data.size > 0) {
+      recordedBlobs.push(event.data);
+    }
+  }
+  function handleStop(event) {
+    console.log("Recorder stopped: ", event);
+    const superBuffer = new Blob(recordedBlobs, { type: "video/webm" });
+    video.src = window.URL.createObjectURL(superBuffer);
+  }
+  function toggleRecording() {
+    if (stream == null) {
+      stream = appCanvas.captureStream();
+      console.log("Started stream capture from canvas element: ", stream);
+    } else {
+      stream = null;
+      console.log("theoretically set stream to null and stop capture", stream);
+    }
+    if (recordButton.textContent === "Record") {
+      cfg.capturing = true;
+      if (cfg.inlineView != 2) {
+        cfg.inlineView = 2;
+      }
+      startRecording();
+    } else {
+      stopRecording();
+      cfg.capturing = false;
+      recordButton.textContent = "Record";
+      playButton.disabled = false;
+      downloadButton.disabled = false;
+    }
+  }
+  function startRecording() {
+    let options = { mimeType: "video/webm" };
+    recordedBlobs = [];
+    try {
+      mediaRecorder = new MediaRecorder(stream, options);
+    } catch (e0) {
+      console.log("Unable to create MediaRecorder with options Object: ", e0);
+      try {
+        options = { mimeType: "video/webm,codecs=h264" };
+        mediaRecorder = new MediaRecorder(stream, options);
+      } catch (e1) {
+        console.log("Unable to create MediaRecorder with options Object: ", e1);
+        try {
+          options = { mimeType: "video/h264" };
+          mediaRecorder = new MediaRecorder(stream, options);
+        } catch (e2) {
+          alert("MediaRecorder is not supported by this browser.\n\nTry Firefox 29 or later, or Chrome 47 or later, with Enable experimental Web Platform features enabled from chrome://flags.");
+          console.error("Exception while creating MediaRecorder:", e2);
+          return;
+        }
+      }
+    }
+    console.log("Created MediaRecorder", mediaRecorder, "with options", options);
+    recordButton.textContent = "Stop Recording";
+    playButton.disabled = true;
+    downloadButton.disabled = true;
+    mediaRecorder.onstop = handleStop;
+    mediaRecorder.ondataavailable = handleDataAvailable;
+    mediaRecorder.start(100);
+    console.log("MediaRecorder started", mediaRecorder);
+  }
+  function stopRecording() {
+    mediaRecorder.stop();
+    console.log("Recorded Blobs: ", recordedBlobs);
+    video.controls = true;
+  }
+  function play() {
+    video.play();
+  }
+  function downloadVideo() {
+    const blob = new Blob(recordedBlobs, { type: "video/webm" });
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.style.display = "none";
+    a.href = url;
+    a.download = "hologram_qs8x6a0.75.webm";
+    document.body.appendChild(a);
+    a.click();
+    setTimeout(() => {
+      document.body.removeChild(a);
+      window.URL.revokeObjectURL(url);
+    }, 100);
+  }
+  function downloadImage() {
+    cfg.capturing = true;
+    let currentInlineView = cfg.inlineView;
+    if (cfg.inlineView != 2) {
+      cfg.inlineView = 2;
+    }
+    setTimeout(() => {
+      appCanvas.toBlob((blob) => {
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.style.display = "none";
+        a.href = url;
+        a.download = "hologram_qs8x6a0.75.png";
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        window.URL.revokeObjectURL(url);
+      }, "image/png");
+      cfg.inlineView = currentInlineView;
+      cfg.capturing = false;
+    }, 2e3);
+  }
+}
+function initLookingGlassControlGUI(lkgCanvas, appCanvas) {
   var _a;
   const cfg = getLookingGlassConfig();
   const styleElement = document.createElement("style");
@@ -7251,12 +7380,36 @@ function initLookingGlassControlGUI(lkgCanvas) {
   c.style.borderRadius = "10px";
   c.style.right = "15px";
   c.style.bottom = "15px";
+  c.style.flex = "row";
   const title = document.createElement("div");
   c.appendChild(title);
   title.style.width = "100%";
   title.style.textAlign = "center";
   title.style.fontWeight = "bold";
-  title.innerText = "Looking Glass Controls ";
+  title.innerText = "Looking Glass Controls";
+  const recordbutton = document.createElement("button");
+  recordbutton.innerText = "Record";
+  c.appendChild(recordbutton);
+  recordbutton.id = "recordbutton";
+  const playbutton = document.createElement("button");
+  playbutton.innerText = "Play";
+  c.appendChild(playbutton);
+  playbutton.id = "playbutton";
+  const downloadbutton = document.createElement("button");
+  downloadbutton.innerText = "Download Video";
+  c.appendChild(downloadbutton);
+  downloadbutton.id = "downloadbutton";
+  const video = document.createElement("video");
+  c.appendChild(video);
+  video.id = "looking-glass-video";
+  video.width = 240;
+  video.height = 320;
+  video.style.backgroundColor = "black";
+  video.style.display = "none";
+  const screenshotbutton = document.createElement("button");
+  screenshotbutton.id = "screenshotbutton";
+  c.appendChild(screenshotbutton);
+  screenshotbutton.innerText = "Take Screenshot";
   const help = document.createElement("div");
   c.appendChild(help);
   help.style.width = "100%";
@@ -7265,15 +7418,6 @@ function initLookingGlassControlGUI(lkgCanvas) {
   help.style.fontSize = "14px";
   help.style.margin = "5px 0";
   help.innerHTML = "Click the popup and use WASD, mouse left/right drag, and scroll.";
-  const lrToggle = document.createElement("input");
-  title.appendChild(lrToggle);
-  lrToggle.type = "button";
-  lrToggle.value = "\u2190";
-  lrToggle.dataset.otherValue = "\u2192";
-  lrToggle.onclick = () => {
-    [c.style.right, c.style.left] = [c.style.left, c.style.right];
-    [lrToggle.value, lrToggle.dataset.otherValue] = [lrToggle.dataset.otherValue || "", lrToggle.value];
-  };
   const controlListDiv = document.createElement("div");
   c.appendChild(controlListDiv);
   const addControl = (name, attrs, opts) => {
@@ -7294,19 +7438,6 @@ function initLookingGlassControlGUI(lkgCanvas) {
     label.style.fontSize = "13px";
     label.style.fontWeight = "bold";
     label.title = opts.title;
-    if (attrs.type !== "checkbox") {
-      const reset = document.createElement("input");
-      controlLineDiv.appendChild(reset);
-      reset.type = "button";
-      reset.value = "\u238C";
-      reset.alt = "reset";
-      reset.title = "Reset value to default";
-      reset.style.padding = "0 4px";
-      reset.onclick = (e) => {
-        control.value = initialValue;
-        control.oninput(e);
-      };
-    }
     const control = document.createElement("input");
     controlLineDiv.appendChild(control);
     Object.assign(control, attrs);
@@ -7353,56 +7484,6 @@ function initLookingGlassControlGUI(lkgCanvas) {
     }
     return updateExternally;
   };
-  addControl("tileHeight", { type: "range", min: 160, max: 455, step: 1 }, {
-    label: "resolution",
-    title: "resolution of each view",
-    stringify: (v) => `${(v * cfg.aspect).toFixed()}&times;${v.toFixed()}`
-  });
-  addControl("numViews", { type: "range", min: 1, max: 145, step: 1 }, {
-    label: "views",
-    title: "number of different viewing angles to render",
-    stringify: (v) => v.toFixed()
-  });
-  const setTrackballX = addControl("trackballX", {
-    type: "range",
-    min: -Math.PI,
-    max: 1.0001 * Math.PI,
-    step: 0.5 / 180 * Math.PI
-  }, {
-    label: "trackball x",
-    title: "camera trackball x",
-    fixRange: (v) => (v + Math.PI * 3) % (Math.PI * 2) - Math.PI,
-    stringify: (v) => `${(v / Math.PI * 180).toFixed()}&deg;`
-  });
-  const setTrackballY = addControl("trackballY", {
-    type: "range",
-    min: -0.5 * Math.PI,
-    max: 0.5001 * Math.PI,
-    step: 1 / 180 * Math.PI
-  }, {
-    label: "trackball y",
-    title: "camera trackball y",
-    fixRange: (v) => Math.max(-0.5 * Math.PI, Math.min(v, 0.5 * Math.PI)),
-    stringify: (v) => `${(v / Math.PI * 180).toFixed()}&deg;`
-  });
-  const setTargetX = addControl("targetX", { type: "range", min: -20, max: 20, step: 0.1 }, {
-    label: "target x",
-    title: "target position x",
-    fixRange: (v) => v,
-    stringify: (v) => v.toFixed(2) + " m"
-  });
-  const setTargetY = addControl("targetY", { type: "range", min: -20, max: 20, step: 0.1 }, {
-    label: "target y",
-    title: "target position y",
-    fixRange: (v) => v,
-    stringify: (v) => v.toFixed(2) + " m"
-  });
-  const setTargetZ = addControl("targetZ", { type: "range", min: -20, max: 20, step: 0.1 }, {
-    label: "target z",
-    title: "target position z",
-    fixRange: (v) => v,
-    stringify: (v) => v.toFixed(2) + " m"
-  });
   addControl("fovy", {
     type: "range",
     min: 1 / 180 * Math.PI,
@@ -7446,12 +7527,12 @@ function initLookingGlassControlGUI(lkgCanvas) {
       const dx = -Math.cos(tx) * mx + Math.sin(tx) * Math.sin(ty) * my;
       const dy = -Math.cos(ty) * my;
       const dz = Math.sin(tx) * mx + Math.cos(tx) * Math.sin(ty) * my;
-      setTargetX((v) => v + dx * cfg.targetDiam * 1e-3);
-      setTargetY((v) => v + dy * cfg.targetDiam * 1e-3);
-      setTargetZ((v) => v + dz * cfg.targetDiam * 1e-3);
+      cfg.targetX = cfg.targetX + dx * cfg.targetDiam * 1e-3;
+      cfg.targetY = cfg.targetY + dy * cfg.targetDiam * 1e-3;
+      cfg.targetZ = cfg.targetZ + dz * cfg.targetDiam * 1e-3;
     } else if (ev.buttons & 1) {
-      setTrackballX((v) => v - mx * 0.01);
-      setTrackballY((v) => v - my * 0.01);
+      cfg.trackballX = cfg.trackballX - mx * 0.01;
+      cfg.trackballY = cfg.trackballY - my * 0.01;
     }
   });
   const keys = { w: 0, a: 0, s: 0, d: 0 };
@@ -7499,25 +7580,31 @@ function initLookingGlassControlGUI(lkgCanvas) {
     const dx = Math.cos(tx) * kx - Math.sin(tx) * Math.cos(ty) * ky;
     const dy = -Math.sin(ty) * ky;
     const dz = -Math.sin(tx) * kx - Math.cos(tx) * Math.cos(ty) * ky;
-    setTargetX((v) => v + dx * cfg.targetDiam * 0.03);
-    setTargetY((v) => v + dy * cfg.targetDiam * 0.03);
-    setTargetZ((v) => v + dz * cfg.targetDiam * 0.03);
+    cfg.targetX = cfg.targetX + dx * cfg.targetDiam * 0.03;
+    cfg.targetY = cfg.targetY + dy * cfg.targetDiam * 0.03;
+    cfg.targetZ = cfg.targetZ + dz * cfg.targetDiam * 0.03;
     requestAnimationFrame(flyCamera);
   }
+  setTimeout(() => {
+    LookingGlassMediaController(appCanvas, cfg);
+  }, 1e3);
   return c;
 }
 const PRIVATE = Symbol("LookingGlassXRWebGLLayer");
 class LookingGlassXRWebGLLayer extends XRWebGLLayer {
   constructor(session, gl, layerInit) {
     super(session, gl, layerInit);
+    const cfg = getLookingGlassConfig();
+    const appCanvas = gl.canvas;
     const lkgCanvas = document.createElement("canvas");
     lkgCanvas.tabIndex = 0;
     const lkgCtx = lkgCanvas.getContext("2d", { alpha: false });
     lkgCanvas.addEventListener("dblclick", function() {
       this.requestFullscreen();
     });
-    const controls = initLookingGlassControlGUI(lkgCanvas);
-    const cfg = getLookingGlassConfig();
+    const quiltCanvas = new OffscreenCanvas(cfg.framebufferWidth, cfg.framebufferHeight);
+    quiltCanvas.getContext("2d", { alpha: false });
+    const controls = initLookingGlassControlGUI(lkgCanvas, appCanvas);
     const config = this[PRIVATE$3].config;
     const texture = gl.createTexture();
     let depthStencil, dsConfig;
@@ -7650,13 +7737,12 @@ class LookingGlassXRWebGLLayer extends XRWebGLLayer {
       gl.clearDepth(currentClearDepth);
       gl.clearStencil(currentClearStencil);
     };
-    const appCanvas = gl.canvas;
     let origWidth, origHeight;
     const blitTextureToDefaultFramebufferIfNeeded = () => {
       if (!this[PRIVATE].LookingGlassEnabled)
         return;
-      if (appCanvas.width !== cfg.calibration.screenW.value || appCanvas.height !== cfg.calibration.screenH.value) {
-        console.log("warning, the canvas is not the correct size!");
+      if ((appCanvas.width !== cfg.calibration.screenW.value || appCanvas.height !== cfg.calibration.screenH.value) && !cfg.capturing) {
+        console.log("resizing canvas");
         console.log("app", appCanvas.width, "width", appCanvas.height, "height");
         console.log("looking glass", lkgCanvas.width, "width", lkgCanvas.height, "height");
         origWidth = appCanvas.width;
@@ -7692,8 +7778,15 @@ class LookingGlassXRWebGLLayer extends XRWebGLLayer {
           gl.uniform1i(u_viewType, 0);
           gl.drawArrays(gl.TRIANGLES, 0, 6);
           lkgCtx == null ? void 0 : lkgCtx.clearRect(0, 0, lkgCanvas.width, lkgCanvas.height);
-          lkgCtx == null ? void 0 : lkgCtx.drawImage(appCanvas, 0, 0);
+          if (!cfg.capturing) {
+            lkgCtx == null ? void 0 : lkgCtx.drawImage(appCanvas, 0, 0, 1536, 2048, 0, 0, 1536, 2048);
+          }
           if (cfg.inlineView !== 0) {
+            if (cfg.capturing && appCanvas.width !== cfg.framebufferWidth) {
+              appCanvas.width = cfg.framebufferWidth;
+              appCanvas.height = cfg.framebufferHeight;
+              gl.viewport(0, 0, cfg.framebufferHeight, cfg.framebufferWidth);
+            }
             gl.uniform1i(u_viewType, cfg.inlineView);
             gl.drawArrays(gl.TRIANGLES, 0, 6);
           }
@@ -7725,12 +7818,10 @@ class LookingGlassXRWebGLLayer extends XRWebGLLayer {
       if (enabled) {
         recompileProgram();
         lkgCanvas.style.position = "fixed";
-        lkgCanvas.style.top = "0";
+        lkgCanvas.style.bottom = "0";
         lkgCanvas.style.left = "0";
-        lkgCanvas.style.width = "100%";
-        lkgCanvas.style.height = "100%";
-        lkgCanvas.width = cfg.calibration.screenW.value;
-        lkgCanvas.height = cfg.calibration.screenH.value;
+        lkgCanvas.width = 1536;
+        lkgCanvas.height = 2048;
         document.body.appendChild(controls);
         popup = window.open("", void 0, "width=640,height=360");
         popup.document.title = "Looking Glass Window (fullscreen me on Looking Glass!)";

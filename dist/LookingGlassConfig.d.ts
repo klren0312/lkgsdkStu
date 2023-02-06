@@ -96,6 +96,11 @@ export declare type ViewControlArgs = {
      * @default InlineView.Center
      */
     inlineView: InlineView;
+    /**
+     * Defines whether or not the quilt view is being captured.
+     * @default false
+     */
+    capturing: boolean;
 };
 declare type LookingGlassConfigEvent = "on-config-changed";
 export declare class LookingGlassConfig extends EventTarget {
@@ -112,12 +117,10 @@ export declare class LookingGlassConfig extends EventTarget {
      * defines the height of the individual quilt view, the width is then set based on the aspect ratio of the connected device.
      */
     get tileHeight(): number;
-    set tileHeight(v: number);
     /**
      * defines the number of views to be rendered
      */
     get numViews(): number;
-    set numViews(v: number);
     /**
      * defines the position of the camera on the X-axis
      */
@@ -163,12 +166,14 @@ export declare class LookingGlassConfig extends EventTarget {
      */
     get inlineView(): InlineView;
     set inlineView(v: InlineView);
+    get capturing(): boolean;
+    set capturing(v: boolean);
     get aspect(): number;
     get tileWidth(): number;
-    get framebufferWidth(): 4096 | 8192;
-    get quiltColumns(): number;
-    get quiltRows(): number;
-    get framebufferHeight(): 4096 | 8192;
+    get framebufferWidth(): number;
+    get quiltWidth(): number;
+    get quiltHeight(): number;
+    get framebufferHeight(): number;
     get viewCone(): number;
     get tilt(): number;
     get subp(): number;

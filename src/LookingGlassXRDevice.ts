@@ -129,6 +129,7 @@ export default class LookingGlassXRDevice extends XRDevice {
 
       const baseLayerPrivate = session.baseLayer[LookingGlassXRWebGLLayer_PRIVATE];
       baseLayerPrivate.clearFramebuffer();
+      //if session is not immersive, we need to set the projection matrix and view matrix for the inline session
     } else {
       const gl = session.baseLayer.context;
 
@@ -208,7 +209,7 @@ export default class LookingGlassXRDevice extends XRDevice {
       const cfg = getLookingGlassConfig();
       const col = viewIndex % cfg.quiltWidth;
       const row = Math.floor(viewIndex / cfg.quiltWidth);
-
+      // determine where to draw the current viewIndex to in the quilt
       target.x = cfg.tileWidth * col;
       target.y = cfg.tileHeight * row;
       target.width = cfg.tileWidth;

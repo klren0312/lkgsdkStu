@@ -18,6 +18,8 @@ import * as HoloPlayCore from "holoplay-core"
 
 export const DefaultEyeHeight: number = 1.6
 
+let quiltResolution = 3360
+
 type Value = {
 	value: number
 }
@@ -103,6 +105,11 @@ export type ViewControlArgs = {
 	 * @default InlineView.Center
 	 */
 	inlineView: InlineView
+	/** 
+	 * Defines whether or not the quilt view is being captured.
+	 * @default false
+	 */
+	capturing: boolean
 }
 
 type LookingGlassConfigEvent = "on-config-changed"
@@ -138,6 +145,7 @@ export class LookingGlassConfig extends EventTarget {
 		fovy: (13.0 / 180) * Math.PI,
 		depthiness: 1.25,
 		inlineView: InlineView.Center,
+		capturing: false
 	}
 
 	constructor(cfg?: Partial<ViewControlArgs>) {
@@ -157,8 +165,6 @@ export class LookingGlassConfig extends EventTarget {
 					console.warn("More than one Looking Glass device found... using the first one")
 				}
 				this.calibration = msg.devices[0].calibration
-				this.calibration.screenH.value = 4096
-				this.calibration.screenW.value = 4096
 			},
 			(err) => {
 				console.error("Error creating Looking Glass client:", err)
@@ -206,22 +212,14 @@ export class LookingGlassConfig extends EventTarget {
 	 * defines the height of the individual quilt view, the width is then set based on the aspect ratio of the connected device.
 	 */
 	public get tileHeight(): number {
-		return this._viewControls.tileHeight
-	}
-
-	set tileHeight(v: number) {
-		this.updateViewControls({ tileHeight: v })
+		return quiltResolution / 6
 	}
 
 	/**
 	 * defines the number of views to be rendered
 	 */
 	get numViews() {
-		return this._viewControls.numViews
-	}
-
-	set numViews(v) {
-		this.updateViewControls({ numViews: v })
+		return 48
 	}
 
 	/**
@@ -323,30 +321,40 @@ export class LookingGlassConfig extends EventTarget {
 		this.updateViewControls({ inlineView: v })
 	}
 
+	get capturing() {
+		return this._viewControls.capturing
+	}
+
+	set capturing(v : boolean) {
+		this.updateViewControls({ capturing: v })
+	}
+
 	// Computed
 
 	public get aspect() {
-		return this._calibration.screenW.value / this._calibration.screenH.value
+		return 0.75
 	}
 
 	public get tileWidth() {
-		return Math.round(this.tileHeight * this.aspect)
+		return (quiltResolution / 8)
 	}
 
 	public get framebufferWidth() {
-		return 4096
+		if (this._calibration.screenW.value < 8000) return quiltResolution
+		else return 8192
 	}
 
-	public get quiltColumns() {
-		return Math.floor(this.framebufferWidth / this.tileWidth)
+	public get quiltWidth() {
+		return 8
 	}
 
-	public get quiltRows() {
-		return Math.ceil(this.numViews / this.quiltColumns)
+	public get quiltHeight() {
+		return 6
 	}
 
 	public get framebufferHeight() {
-		return 4096
+		if (this._calibration.screenW.value < 8000) return quiltResolution
+		else return 8192
 	}
 
 	public get viewCone() {
