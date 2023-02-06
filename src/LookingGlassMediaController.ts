@@ -13,11 +13,9 @@ let stream;
 const video = document.getElementById('looking-glass-video');
 
 const recordButton = document.getElementById('recordbutton');
-const playButton = document.getElementById('playbutton');
 const downloadButton = document.getElementById('downloadbutton');
 const screenshotbutton = document.getElementById('screenshotbutton');
 recordButton.onclick = toggleRecording;
-playButton.onclick = play;
 downloadButton.onclick = downloadVideo;
 screenshotbutton.onclick = downloadImage;
 
@@ -62,7 +60,6 @@ function toggleRecording() {
     stopRecording();
     cfg.capturing = false;
     recordButton.textContent = 'Record';
-    playButton.disabled = false;
     downloadButton.disabled = false;
   }
 }
@@ -94,7 +91,6 @@ function startRecording() {
   }
   console.log('Created MediaRecorder', mediaRecorder, 'with options', options);
   recordButton.textContent = 'Stop Recording';
-  playButton.disabled = true;
   downloadButton.disabled = true;
   mediaRecorder.onstop = handleStop;
   mediaRecorder.ondataavailable = handleDataAvailable;
@@ -106,10 +102,6 @@ function stopRecording() {
   mediaRecorder.stop();
   console.log('Recorded Blobs: ', recordedBlobs);
   video.controls = true;
-}
-
-function play() {
-  video.play();
 }
 
 function downloadVideo() {
