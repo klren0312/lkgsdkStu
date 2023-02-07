@@ -36,6 +36,7 @@ export default class LookingGlassXRWebGLLayer extends XRWebGLLayer {
 			this.requestFullscreen()
 		})
 
+		// initialize the Looking Glass Controls, pass references to both Canvas elements
 		const controls = initLookingGlassControlGUI(lkgCanvas, appCanvas)
 
 		// Set up framebuffer/texture.
@@ -262,7 +263,7 @@ export default class LookingGlassXRWebGLLayer extends XRWebGLLayer {
 					// if we're not capturing, copy the quilt to the Looking Glass
 					if (!cfg.capturing) {
 						// draw the image from the source canvas which is the framebuffer width and height, to the device canvas which is the device width and height
-						lkgCtx?.drawImage(appCanvas, 0, 0, 1536, 2048, 0, 0, 1536, 2048)
+						lkgCtx?.drawImage(appCanvas, 0, 0, cfg.calibration.screenW.value, cfg.calibration.screenH.value, 0, 0, cfg.calibration.screenW.value, cfg.calibration.screenH.value)
 					}
 					// Render the quilt or centered inline view to the canvas
 					if (cfg.inlineView !== 0) {
@@ -355,7 +356,7 @@ export default class LookingGlassXRWebGLLayer extends XRWebGLLayer {
 			return
 		}
 		else {
-		console.log("monitor ID", LKG.label, "serial number", config._calibration.serial)
+		console.log("monitor ID", LKG.label, "serial number", config._calibration)
 		const features = [
 			`left=${LKG.left}`,
 			`top=${LKG.top}`,

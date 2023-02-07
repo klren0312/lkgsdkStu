@@ -36,7 +36,8 @@ export class LookingGlassWebXRPolyfill extends WebXRPolyfill {
 	}
 
 	static async init(cfg?: Partial<ViewControlArgs>) {
-		const success = await LookingGlassWebXRPolyfill.detectLookingGlassDevice()
+		// const success = await LookingGlassWebXRPolyfill.detectLookingGlassDevice()
+		const success = true
 		if (success) {
 			new LookingGlassWebXRPolyfill(cfg)
 		}

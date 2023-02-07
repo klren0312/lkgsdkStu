@@ -6802,7 +6802,7 @@ function Shader(cfg) {
 `;
 }
 const DefaultEyeHeight = 1.6;
-let quiltResolution = 3360;
+let quiltResolution = 3840;
 var InlineView;
 (function(InlineView2) {
   InlineView2[InlineView2["Swizzled"] = 0] = "Swizzled";
@@ -6841,7 +6841,8 @@ class LookingGlassConfig$1 extends EventTarget {
       depthiness: 1.25,
       inlineView: InlineView.Center,
       capturing: false,
-      popup: null
+      popup: null,
+      XRSession: null
     });
     __publicField(this, "LookingGlassDetected");
     this._viewControls = { ...this._viewControls, ...cfg };
@@ -6885,10 +6886,13 @@ class LookingGlassConfig$1 extends EventTarget {
     }
   }
   get tileHeight() {
-    return quiltResolution / 6;
+    return Math.round(quiltResolution / this.quiltHeight);
+  }
+  set tileHeight(v) {
+    this.updateViewControls({ tileHeight: v });
   }
   get numViews() {
-    return 48;
+    return this.quiltWidth * this.quiltHeight;
   }
   get targetX() {
     return this._viewControls.targetX;
@@ -6956,11 +6960,17 @@ class LookingGlassConfig$1 extends EventTarget {
   set popup(v) {
     this.updateViewControls({ popup: v });
   }
+  get XRSession() {
+    return this._viewControls.XRSession;
+  }
+  set XRSession(v) {
+    this.updateViewControls({ XRSession: v });
+  }
   get aspect() {
-    return 0.75;
+    return this._calibration.screenW.value / this._calibration.screenH.value;
   }
   get tileWidth() {
-    return quiltResolution / 8;
+    return Math.round(quiltResolution / this.quiltWidth);
   }
   get framebufferWidth() {
     if (this._calibration.screenW.value < 8e3)
@@ -6969,10 +6979,26 @@ class LookingGlassConfig$1 extends EventTarget {
       return 8192;
   }
   get quiltWidth() {
-    return 8;
+    if (this.calibration.screenW.value == 1536) {
+      return 8;
+    } else if (this.calibration.screenW.value == 3840) {
+      return 5;
+    } else if (this.calibration.screenW.value == 8192) {
+      return 5;
+    } else {
+      return 1;
+    }
   }
   get quiltHeight() {
-    return 6;
+    if (this.calibration.screenW.value == 1536) {
+      return 6;
+    } else if (this.calibration.screenW.value == 3840) {
+      return 9;
+    } else if (this.calibration.screenW.value == 8192) {
+      return 9;
+    } else {
+      return 1;
+    }
   }
   get framebufferHeight() {
     if (this._calibration.screenW.value < 8e3)
@@ -6985,6 +7011,8 @@ class LookingGlassConfig$1 extends EventTarget {
   }
   get tilt() {
     return this._calibration.screenH.value / (this._calibration.screenW.value * this._calibration.slope.value) * (this._calibration.flipImageX.value ? -1 : 1);
+  }
+  set tilt(windowHeight) {
   }
   get subp() {
     return 1 / (this._calibration.screenW.value * 3);
@@ -7337,27 +7365,36 @@ function LookingGlassMediaController(appCanvas, cfg) {
       window.URL.revokeObjectURL(url);
     }, 100);
   }
-  function downloadImage() {
-    cfg.capturing = true;
-    let currentInlineView = cfg.inlineView;
-    if (cfg.inlineView != 2) {
-      cfg.inlineView = 2;
+  function downloadImage(appCanvas2, cfg2) {
+    const new_canvas = new HTMLCanvasElement();
+    const gl = new_canvas.getContext("webgl2");
+    const app = appCanvas2.getContext("webgl2");
+    if (gl && app) {
+      var framebuffer = gl.createFramebuffer();
+      gl.bindFramebuffer(gl.FRAMEBUFFER, framebuffer);
+      gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, app.getParameter(gl.ACTIVE_TEXTURE), 0);
+      var data = new Uint8Array(cfg2.framebufferWidth * cfg2.framebufferHeight * 4);
+      gl.readPixels(0, 0, cfg2.framebufferWidth, cfg2.framebufferHeight, gl.RGBA, gl.UNSIGNED_BYTE, data);
+      gl.deleteFramebuffer(framebuffer);
+      var canvas = document.createElement("canvas");
+      canvas.width = cfg2.framebufferWidth;
+      canvas.height = cfg2.framebufferHeight;
+      var context = canvas.getContext("2d");
+      if (context) {
+        var imageData = context.createImageData(cfg2.framebufferWidth, cfg2.framebufferHeight);
+        imageData.data.set(data);
+        context.putImageData(imageData, 0, 0);
+      }
+      let url = canvas.toDataURL();
+      const a = document.createElement("a");
+      a.style.display = "none";
+      a.href = url;
+      a.download = "hologram_qs8x6a0.75.png";
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      window.URL.revokeObjectURL(url);
     }
-    setTimeout(() => {
-      appCanvas.toBlob((blob) => {
-        const url = window.URL.createObjectURL(blob);
-        const a = document.createElement("a");
-        a.style.display = "none";
-        a.href = url;
-        a.download = "hologram_qs8x6a0.75.png";
-        document.body.appendChild(a);
-        a.click();
-        document.body.removeChild(a);
-        window.URL.revokeObjectURL(url);
-      }, "image/png");
-      cfg.inlineView = currentInlineView;
-      cfg.capturing = false;
-    }, 250);
   }
 }
 function initLookingGlassControlGUI(lkgCanvas, appCanvas) {
@@ -7769,7 +7806,7 @@ class LookingGlassXRWebGLLayer extends XRWebGLLayer {
           gl.drawArrays(gl.TRIANGLES, 0, 6);
           lkgCtx == null ? void 0 : lkgCtx.clearRect(0, 0, lkgCanvas.width, lkgCanvas.height);
           if (!cfg.capturing) {
-            lkgCtx == null ? void 0 : lkgCtx.drawImage(appCanvas, 0, 0, 1536, 2048, 0, 0, 1536, 2048);
+            lkgCtx == null ? void 0 : lkgCtx.drawImage(appCanvas, 0, 0, cfg.calibration.screenW.value, cfg.calibration.screenH.value, 0, 0, cfg.calibration.screenW.value, cfg.calibration.screenH.value);
           }
           if (cfg.inlineView !== 0) {
             if (cfg.capturing && appCanvas.width !== cfg.framebufferWidth) {
@@ -7816,12 +7853,7 @@ class LookingGlassXRWebGLLayer extends XRWebGLLayer {
         if (screenPlacement) {
           this.placeWindow(lkgCanvas, cfg, enabled, onbeforeunload);
         } else {
-          cfg.popup = window.open("", void 0, "width=640,height=360");
-          cfg.popup.document.title = "Looking Glass Window (fullscreen me on Looking Glass!)";
-          cfg.popup.document.body.style.background = "black";
-          cfg.popup.document.body.appendChild(lkgCanvas);
-          console.assert(onbeforeunload);
-          cfg.popup.onbeforeunload = onbeforeunload;
+          this.openPopup(cfg, lkgCanvas, onbeforeunload);
         }
       } else {
         (_a = controls.parentElement) == null ? void 0 : _a.removeChild(controls);
@@ -7843,25 +7875,40 @@ class LookingGlassXRWebGLLayer extends XRWebGLLayer {
   async placeWindow(lkgCanvas, config, enabled, onbeforeunload) {
     const screenDetails = await window.getScreenDetails();
     const LKG = screenDetails.screens.filter((screen2) => screen2.label.includes("LKG"))[0];
-    console.log("monitor ID", LKG.label, "serial number", config._calibration.serial);
-    const features = [
-      `left=${LKG.left}`,
-      `top=${LKG.top}`,
-      `width=${LKG.width}`,
-      `height=${LKG.height}`,
-      `menubar=no`,
-      `toolbar=no`,
-      `location=no`,
-      `status=no`,
-      `resizable=yes`,
-      `scrollbars=no`,
-      `fullscreenEnabled=true`
-    ].join(",");
-    config.popup = window.open("", "new", features);
-    config.popup.document.body.style.background = "black";
-    config.popup.document.body.appendChild(lkgCanvas);
+    console.log(LKG, "monitors");
+    if (LKG === void 0) {
+      console.log("no Looking Glass monitor detected - manually opening popup window");
+      this.openPopup(config, lkgCanvas, onbeforeunload);
+      return;
+    } else {
+      console.log("monitor ID", LKG.label, "serial number", config._calibration);
+      const features = [
+        `left=${LKG.left}`,
+        `top=${LKG.top}`,
+        `width=${LKG.width}`,
+        `height=${LKG.height}`,
+        `menubar=no`,
+        `toolbar=no`,
+        `location=no`,
+        `status=no`,
+        `resizable=yes`,
+        `scrollbars=no`,
+        `fullscreenEnabled=true`
+      ].join(",");
+      config.popup = window.open("", "new", features);
+      config.popup.document.body.style.background = "black";
+      config.popup.document.body.appendChild(lkgCanvas);
+      console.assert(onbeforeunload);
+      config.popup.onbeforeunload = onbeforeunload;
+    }
+  }
+  openPopup(cfg, lkgCanvas, onbeforeunload) {
+    cfg.popup = window.open("", void 0, "width=640,height=360");
+    cfg.popup.document.title = "Looking Glass Window (fullscreen me on Looking Glass!)";
+    cfg.popup.document.body.style.background = "black";
+    cfg.popup.document.body.appendChild(lkgCanvas);
     console.assert(onbeforeunload);
-    config.popup.onbeforeunload = onbeforeunload;
+    cfg.popup.onbeforeunload = onbeforeunload;
   }
   get framebuffer() {
     return this[PRIVATE].LookingGlassEnabled ? this[PRIVATE].framebuffer : null;
@@ -7887,9 +7934,11 @@ class LookingGlassXRDevice extends XRDevice {
   onBaseLayerSet(sessionId, layer) {
     const session = this.sessions.get(sessionId);
     session.baseLayer = layer;
+    const cfg = getLookingGlassConfig();
     const baseLayerPrivate = layer[PRIVATE];
     baseLayerPrivate.LookingGlassEnabled = session.immersive;
     if (session.immersive) {
+      cfg.XRSession = this.sessions.get(sessionId);
       baseLayerPrivate.moveCanvasToWindow(true, () => {
         this.endSession(sessionId);
       });
@@ -8100,8 +8149,7 @@ class LookingGlassWebXRPolyfill extends WebXRPolyfill {
     this.loadPolyfill();
   }
   static async init(cfg) {
-    const success = await LookingGlassWebXRPolyfill.detectLookingGlassDevice();
-    if (success) {
+    {
       new LookingGlassWebXRPolyfill(cfg);
     }
   }

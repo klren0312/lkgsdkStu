@@ -98,14 +98,19 @@ export declare type ViewControlArgs = {
      */
     inlineView: InlineView;
     /**
-     * Defines whether or not the quilt view is being captured.
+     * A reference to the popup window, this will only exist once the window is opened. Calling before the window is open will fail.
+     * @default null
+     */
+    popup: typeof Window | null;
+    /**
+     * The current capture state, when capturing is set to true the device width and height is overridden for higher quality capture
      * @default false
      */
     capturing: boolean;
     /**
-     * A reference to the popup window, only valid when created.
+     * A reference to the current XRSession, giving access to the WebXR rendering context, this should be read only
      */
-    popup: typeof window | any;
+    XRSession: any;
 };
 declare type LookingGlassConfigEvent = "on-config-changed";
 export declare class LookingGlassConfig extends EventTarget {
@@ -123,6 +128,7 @@ export declare class LookingGlassConfig extends EventTarget {
      * defines the height of the individual quilt view, the width is then set based on the aspect ratio of the connected device.
      */
     get tileHeight(): number;
+    set tileHeight(v: number);
     /**
      * defines the number of views to be rendered
      */
@@ -176,14 +182,17 @@ export declare class LookingGlassConfig extends EventTarget {
     set capturing(v: boolean);
     get popup(): typeof window;
     set popup(v: typeof window);
+    get XRSession(): any;
+    set XRSession(v: any);
     get aspect(): number;
     get tileWidth(): number;
     get framebufferWidth(): number;
-    get quiltWidth(): number;
-    get quiltHeight(): number;
+    get quiltWidth(): 5 | 1 | 8;
+    get quiltHeight(): 1 | 6 | 9;
     get framebufferHeight(): number;
     get viewCone(): number;
     get tilt(): number;
+    set tilt(windowHeight: number);
     get subp(): number;
     get pitch(): number;
 }

@@ -37,10 +37,12 @@ export default class LookingGlassXRDevice extends XRDevice {
   onBaseLayerSet(sessionId, layer) {
     const session = this.sessions.get(sessionId);
     session.baseLayer = layer;
+    const cfg = getLookingGlassConfig();
 
     const baseLayerPrivate = layer[LookingGlassXRWebGLLayer_PRIVATE];
     baseLayerPrivate.LookingGlassEnabled = session.immersive;
     if (session.immersive) {
+      cfg.XRSession = this.sessions.get(sessionId)
       baseLayerPrivate.moveCanvasToWindow(true, () => {
         this.endSession(sessionId);
       });
@@ -129,7 +131,8 @@ export default class LookingGlassXRDevice extends XRDevice {
 
       const baseLayerPrivate = session.baseLayer[LookingGlassXRWebGLLayer_PRIVATE];
       baseLayerPrivate.clearFramebuffer();
-      //if session is not immersive, we need to set the projection matrix and view matrix for the inline session
+      //if session is not immersive, we need to set the projection matrix and view matrix for the inline session 
+      // Note: I think this breaks three.js when the session is ended. We should *try* to grab the camera position before entering the session if possible. 
     } else {
       const gl = session.baseLayer.context;
 
@@ -148,7 +151,7 @@ export default class LookingGlassXRDevice extends XRDevice {
     const session = this.sessions.get(sessionId);
     session.baseLayer[LookingGlassXRWebGLLayer_PRIVATE].blitTextureToDefaultFramebufferIfNeeded();
   }
-
+// Looking Glass WebXR Library requires local to be set when requesting an XR session.
   async requestFrameOfReferenceTransform(type, options) {
     const matrix = mat4.create();
     switch (type) {
@@ -166,6 +169,7 @@ export default class LookingGlassXRDevice extends XRDevice {
   endSession(sessionId) {
     const session = this.sessions.get(sessionId);
     if (session.immersive && session.baseLayer) {
+      // close the window and destroy the controls on the end of session
       session.baseLayer[LookingGlassXRWebGLLayer_PRIVATE].moveCanvasToWindow(false);
       this.dispatchEvent('@@webxr-polyfill/vr-present-end', sessionId);
     }
@@ -196,6 +200,7 @@ export default class LookingGlassXRDevice extends XRDevice {
     return undefined;
   }
 
+  // get the current view and determine where on the quilt to render it. 
   getViewport(sessionId, eye, layer, target, viewIndex) {
     if (viewIndex === undefined) {
       const session = this.sessions.get(sessionId);
