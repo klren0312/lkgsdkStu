@@ -158,7 +158,7 @@ export class LookingGlassConfig extends EventTarget {
 		inlineView: InlineView.Center,
 		capturing: false,
 		popup: null, 
-		XRSession: null
+		XRSession: null,
 	}
 	LookingGlassDetected: any
 
@@ -370,7 +370,7 @@ export class LookingGlassConfig extends EventTarget {
 	}
 
 	public get framebufferWidth() {
-		if (this._calibration.screenW.value < 8000) return quiltResolution
+		if (this._calibration.screenW.value < 7000) return quiltResolution
 		else return 8192
 	}
 
@@ -387,7 +387,7 @@ export class LookingGlassConfig extends EventTarget {
 			return 5
 		}
 		else {
-			return 1
+			return 8
 		}
 	}
 
@@ -403,12 +403,12 @@ export class LookingGlassConfig extends EventTarget {
 			return 9
 		}
 		else {
-			return 1
+			return 6
 		}
 	}
 
 	public get framebufferHeight() {
-		if (this._calibration.screenW.value < 8000) return quiltResolution
+		if (this._calibration.screenW.value < 7000) return quiltResolution
 		else return 8192
 	}
 
