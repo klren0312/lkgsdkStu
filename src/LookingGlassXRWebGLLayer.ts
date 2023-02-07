@@ -16,8 +16,9 @@
 
 import XRWebGLLayer, { PRIVATE as XRWebGLLayer_PRIVATE } from "@lookingglass/webxr-polyfill/src/api/XRWebGLLayer"
 import { Shader } from "holoplay-core"
-import { LookingGlassConfig, getLookingGlassConfig } from "./LookingGlassConfig"
+import { getLookingGlassConfig } from "./LookingGlassConfig"
 import { initLookingGlassControlGUI } from "./LookingGlassControls"
+import { placeWindow, openPopup } from "./LookingGlassWindow"
 
 export const PRIVATE = Symbol("LookingGlassXRWebGLLayer")
 
@@ -212,8 +213,10 @@ export default class LookingGlassXRWebGLLayer extends XRWebGLLayer {
 
 		let origWidth, origHeight
 
+
 		const blitTextureToDefaultFramebufferIfNeeded = () => {
 			if (!this[PRIVATE].LookingGlassEnabled) return
+			// if (cfg.viewCount) return
 			// Make sure the default framebuffer has the correct size (undo any resizing
 			// the host page did, and updating for the latest calibration value).
 			// But store off any resizing the host page DID do, so we can restore it on exit.
@@ -311,6 +314,7 @@ export default class LookingGlassXRWebGLLayer extends XRWebGLLayer {
 
 				document.body.appendChild(controls)
 				const screenPlacement = "getScreenDetails" in window
+				console.log(screenPlacement, 'Screen placement API exists')
 				try {
 				} catch {
 					console.log("user did not allow window placement, using normal popup instead")
@@ -318,10 +322,10 @@ export default class LookingGlassXRWebGLLayer extends XRWebGLLayer {
 				if (screenPlacement) {
 					// use chrome's screen placement to automatically position the window.
 					// seems to have issues with full screen on MacOS
-					this.placeWindow(lkgCanvas, cfg, enabled, onbeforeunload)
+					placeWindow(lkgCanvas, cfg, enabled, onbeforeunload)
 				} else {
 					// open a normal pop up window, user will need to move it to the Looking Glass
-					this.openPopup(cfg, lkgCanvas, onbeforeunload)
+					openPopup(cfg, lkgCanvas, onbeforeunload)
 				}
 				// destroy the window
 			} else {
@@ -343,48 +347,6 @@ export default class LookingGlassXRWebGLLayer extends XRWebGLLayer {
 			blitTextureToDefaultFramebufferIfNeeded,
 			moveCanvasToWindow,
 		}
-	}
-	// if chromium, use the Screen Placement API to automatically place the window in the correct location, compensate for address bar
-	private async placeWindow(lkgCanvas: HTMLCanvasElement, config: any, enabled: any, onbeforeunload: any) {
-		const screenDetails = await window.getScreenDetails()
-		//temporary, grab the first monitor ID with "LKG" Todo: make more robust
-		const LKG = screenDetails.screens.filter((screen) => screen.label.includes("LKG"))[0]
-		console.log(LKG, 'monitors')
-		if (LKG === undefined) {
-			console.log("no Looking Glass monitor detected - manually opening popup window")
-			this.openPopup(config, lkgCanvas, onbeforeunload)
-			return
-		}
-		else {
-		console.log("monitor ID", LKG.label, "serial number", config._calibration)
-		const features = [
-			`left=${LKG.left}`,
-			`top=${LKG.top}`,
-			`width=${LKG.width}`,
-			`height=${LKG.height}`,
-			`menubar=no`,
-			`toolbar=no`,
-			`location=no`,
-			`status=no`,
-			`resizable=yes`,
-			`scrollbars=no`,
-			`fullscreenEnabled=true`,
-		].join(",")
-		config.popup = window.open("", "new", features)
-		config.popup.document.body.style.background = "black"
-		config.popup.document.body.appendChild(lkgCanvas)
-		console.assert(onbeforeunload)
-		config.popup.onbeforeunload = onbeforeunload
-	}
-	}
-
-	private openPopup(cfg: LookingGlassConfig, lkgCanvas: HTMLCanvasElement, onbeforeunload: any) {
-		cfg.popup = window.open("", undefined, "width=640,height=360")
-		cfg.popup.document.title = "Looking Glass Window (fullscreen me on Looking Glass!)"
-		cfg.popup.document.body.style.background = "black"
-		cfg.popup.document.body.appendChild(lkgCanvas)
-		console.assert(onbeforeunload)
-		cfg.popup.onbeforeunload = onbeforeunload
 	}
 
 	get framebuffer() {
