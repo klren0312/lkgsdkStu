@@ -110,7 +110,7 @@ export function LookingGlassMediaController(appCanvas: HTMLCanvasElement, cfg: L
 		const a = document.createElement("a")
 		a.style.display = "none"
 		a.href = url
-		a.download = "hologram_qs8x6a0.75.webm"
+		a.download = `hologram_qs${cfg.quiltWidth}x${cfg.quiltHeight}a${cfg.aspect}.webm`
 		document.body.appendChild(a)
 		a.click()
 		setTimeout(() => {
@@ -153,7 +153,7 @@ export function LookingGlassMediaController(appCanvas: HTMLCanvasElement, cfg: L
 			const a = document.createElement("a")
 			a.style.display = "none"
 			a.href = url
-			a.download = "hologram_qs8x6a0.75.png"
+      a.download = `hologram_qs${cfg.quiltWidth}x${cfg.quiltHeight}a${cfg.aspect}.png`;
 			document.body.appendChild(a)
 			a.click()
 			document.body.removeChild(a)
