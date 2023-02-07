@@ -9,13 +9,12 @@ export function LookingGlassMediaController(appCanvas: HTMLCanvasElement, cfg: L
 	let stream
 
 	const video = document.getElementById("looking-glass-video")
-
 	const recordButton = document.getElementById("recordbutton")
 	const downloadButton = document.getElementById("downloadbutton")
 	const screenshotbutton = document.getElementById("screenshotbutton")
 	recordButton.onclick = toggleRecording
 	downloadButton.onclick = downloadVideo
-	screenshotbutton.onclick = downloadImage
+	screenshotbutton.onclick = downloadImage(appCanvas, cfg)
 
 	function handleSourceOpen(event) {
 		console.log("MediaSource opened")
@@ -121,7 +120,7 @@ export function LookingGlassMediaController(appCanvas: HTMLCanvasElement, cfg: L
 
 	function downloadImage(appCanvas: HTMLCanvasElement, cfg: LookingGlassConfig) {
 		// capturing must be set to true before downloading an image in order to capture a high quality quilt. TODO: manually grab XRsession framebuffer instead
-		const new_canvas = new HTMLCanvasElement()
+		const new_canvas = document.createElement("canvas")
 		const gl = new_canvas.getContext("webgl2")
 		const app = appCanvas.getContext("webgl2")
 		// Create a framebuffer backed by the texture
