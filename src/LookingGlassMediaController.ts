@@ -1,4 +1,4 @@
-import { LookingGlassConfig } from "./LookingGlassConfig"
+import { LookingGlassConfig } from './LookingGlassConfig';
 
 export function LookingGlassMediaController(appCanvas: HTMLCanvasElement, cfg: LookingGlassConfig) {
 	const mediaSource = new MediaSource()
@@ -8,13 +8,13 @@ export function LookingGlassMediaController(appCanvas: HTMLCanvasElement, cfg: L
 	let sourceBuffer
 	let stream
 
-	const video = document.getElementById("looking-glass-video")
-	const recordButton = document.getElementById("recordbutton")
-	const downloadButton = document.getElementById("downloadbutton")
-	const screenshotbutton = document.getElementById("screenshotbutton")
-	recordButton.onclick = toggleRecording
-	downloadButton.onclick = downloadVideo
-	screenshotbutton.onclick = downloadImage(appCanvas, cfg)
+	const video = document.getElementById("looking-glass-video") as HTMLVideoElement | null
+	const recordButton = document.getElementById("recordbutton") as HTMLButtonElement | null
+	const downloadButton = document.getElementById("downloadbutton") as HTMLButtonElement | null
+	const screenshotbutton = document.getElementById("screenshotbutton") as HTMLButtonElement | null
+	recordButton?.addEventListener("click", toggleRecording)
+	downloadButton?.addEventListener("click", downloadVideo)
+	screenshotbutton?.addEventListener("click", downloadImage)
 
 	function handleSourceOpen(event) {
 		console.log("MediaSource opened")
@@ -31,7 +31,9 @@ export function LookingGlassMediaController(appCanvas: HTMLCanvasElement, cfg: L
 	function handleStop(event) {
 		console.log("Recorder stopped: ", event)
 		const superBuffer = new Blob(recordedBlobs, { type: "video/webm" })
-		video.src = window.URL.createObjectURL(superBuffer)
+		if (video) {
+			video.src = window.URL.createObjectURL(superBuffer)
+		}
 	}
 
 	function toggleRecording() {
@@ -45,7 +47,7 @@ export function LookingGlassMediaController(appCanvas: HTMLCanvasElement, cfg: L
 			console.log("theoretically set stream to null and stop capture", stream)
 		}
 
-		if (recordButton.textContent === "Record") {
+		if (cfg.capturing === false) {
 			// set capturing to true before recording starts
 			cfg.capturing = true
 			// in order to record a quilt video the inline view must be set to quilt
@@ -56,8 +58,10 @@ export function LookingGlassMediaController(appCanvas: HTMLCanvasElement, cfg: L
 		} else {
 			stopRecording()
 			cfg.capturing = false
-			recordButton.textContent = "Record"
-			downloadButton.disabled = false
+			if (recordButton && downloadButton) {
+				recordButton.textContent = "Record"
+				downloadButton.disabled = false
+			}
 		}
 	}
 
@@ -89,8 +93,10 @@ export function LookingGlassMediaController(appCanvas: HTMLCanvasElement, cfg: L
 			}
 		}
 		console.log("Created MediaRecorder", mediaRecorder, "with options", options)
-		recordButton.textContent = "Stop Recording"
-		downloadButton.disabled = true
+		if (recordButton && downloadButton) {
+			recordButton.textContent = "Stop Recording"
+			downloadButton.disabled = true
+		}
 		mediaRecorder.onstop = handleStop
 		mediaRecorder.ondataavailable = handleDataAvailable
 		mediaRecorder.start(100) // collect 100ms of data
@@ -100,7 +106,6 @@ export function LookingGlassMediaController(appCanvas: HTMLCanvasElement, cfg: L
 	function stopRecording() {
 		mediaRecorder.stop()
 		console.log("Recorded Blobs: ", recordedBlobs)
-		video.controls = true
 	}
 
 	function downloadVideo() {
@@ -118,45 +123,19 @@ export function LookingGlassMediaController(appCanvas: HTMLCanvasElement, cfg: L
 		}, 100)
 	}
 
-	function downloadImage(appCanvas: HTMLCanvasElement, cfg: LookingGlassConfig) {
+	function downloadImage() {
 		// capturing must be set to true before downloading an image in order to capture a high quality quilt. TODO: manually grab XRsession framebuffer instead
-		const new_canvas = document.createElement("canvas")
-		const gl = new_canvas.getContext("webgl2")
-		const app = appCanvas.getContext("webgl2")
-		// Create a framebuffer backed by the texture
-		if (gl && app) {
-			var framebuffer = gl.createFramebuffer()
-			gl.bindFramebuffer(gl.FRAMEBUFFER, framebuffer)
-			gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, app.getParameter(gl.ACTIVE_TEXTURE), 0)
-
-			// Read the contents of the framebuffer
-			var data = new Uint8Array(cfg.framebufferWidth * cfg.framebufferHeight * 4)
-			gl.readPixels(0, 0, cfg.framebufferWidth, cfg.framebufferHeight, gl.RGBA, gl.UNSIGNED_BYTE, data)
-
-			gl.deleteFramebuffer(framebuffer)
-
-			// Create a 2D canvas to store the result
-			var canvas = document.createElement("canvas")
-			canvas.width = cfg.framebufferWidth
-			canvas.height = cfg.framebufferHeight
-			var context = canvas.getContext("2d")
-
-			// Copy the pixels to a 2D canvas
-			if (context) {
-				var imageData = context.createImageData(cfg.framebufferWidth, cfg.framebufferHeight)
-				imageData.data.set(data)
-				context.putImageData(imageData, 0, 0)
-			}
-
-			let url = canvas.toDataURL()
+			let url = appCanvas.toDataURL()
 			const a = document.createElement("a")
 			a.style.display = "none"
 			a.href = url
-      a.download = `hologram_qs${cfg.quiltWidth}x${cfg.quiltHeight}a${cfg.aspect}.png`;
+			  a.download = `hologram_qs${cfg.quiltWidth}x${cfg.quiltHeight}a${cfg.aspect}.png`;
 			document.body.appendChild(a)
 			a.click()
 			document.body.removeChild(a)
 			window.URL.revokeObjectURL(url)
 		}
-	}
 }
+
+// create an image from a webGL texture and download it
+

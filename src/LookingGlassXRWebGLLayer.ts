@@ -22,6 +22,8 @@ import { placeWindow, openPopup } from "./LookingGlassWindow"
 
 export const PRIVATE = Symbol("LookingGlassXRWebGLLayer")
 
+export type Viewport = {0}
+
 export default class LookingGlassXRWebGLLayer extends XRWebGLLayer {
 	constructor(session: any, gl: WebGL2RenderingContext, layerInit: any) {
 		super(session, gl, layerInit)
@@ -121,9 +123,16 @@ export default class LookingGlassXRWebGLLayer extends XRWebGLLayer {
 
 		const program = gl.createProgram()
 		const vs = gl.createShader(gl.VERTEX_SHADER)
-		gl.attachShader(program, vs)
 		const fs = gl.createShader(gl.FRAGMENT_SHADER)
+
+		// if the shaders are invalid exit
+		if (program === null || vs === null || fs === null) {
+			console.error("there was a problem with shader construction")
+			return
+		}
+		gl.attachShader(program, vs)
 		gl.attachShader(program, fs)
+	
 
 		{
 			const vsSource = `
@@ -222,11 +231,11 @@ export default class LookingGlassXRWebGLLayer extends XRWebGLLayer {
 			// But store off any resizing the host page DID do, so we can restore it on exit.
 
 			// check the dimensions of the canvas and ensure that we're not capturing
-			if ((appCanvas.width !== cfg.calibration.screenW.value || appCanvas.height !== cfg.calibration.screenH.value) && !cfg.capturing) {
+			if ((appCanvas.width !== cfg.framebufferWidth || appCanvas.height !== cfg.framebufferHeight)) {
 				origWidth = appCanvas.width
 				origHeight = appCanvas.height
-				appCanvas.width = cfg.calibration.screenW.value
-				appCanvas.height = cfg.calibration.screenH.value
+				appCanvas.width = cfg.framebufferWidth
+				appCanvas.height = cfg.framebufferHeight
 			}
 
 			const oldVAO = gl.getParameter(GL_VERTEX_ARRAY_BINDING)
@@ -235,7 +244,7 @@ export default class LookingGlassXRWebGLLayer extends XRWebGLLayer {
 			const oldDepthTest = gl.getParameter(gl.DEPTH_TEST)
 			const oldStencilTest = gl.getParameter(gl.STENCIL_TEST)
 			const oldScissorTest = gl.getParameter(gl.SCISSOR_TEST)
-			const oldViewport = gl.getParameter(gl.VIEWPORT)
+			const oldViewport = gl.getParameter(gl.VIEWPORT) as Int32Array
 			const oldFramebufferBinding = gl.getParameter(gl.FRAMEBUFFER_BINDING)
 			const oldRenderbufferBinding = gl.getParameter(gl.RENDERBUFFER_BINDING)
 			const oldProgram = gl.getParameter(gl.CURRENT_PROGRAM)
@@ -261,13 +270,11 @@ export default class LookingGlassXRWebGLLayer extends XRWebGLLayer {
 					gl.uniform1i(u_viewType, 0)
 					gl.drawArrays(gl.TRIANGLES, 0, 6)
 
-					// Copy it into the canvas that's actually on the display
+					// Clear the Looking Glass Canvas before drawing the new image
 					lkgCtx?.clearRect(0, 0, lkgCanvas.width, lkgCanvas.height)
 					// if we're not capturing, copy the quilt to the Looking Glass
-					if (!cfg.capturing) {
-						// draw the image from the source canvas which is the framebuffer width and height, to the device canvas which is the device width and height
-						lkgCtx?.drawImage(appCanvas, 0, 0, cfg.calibration.screenW.value, cfg.calibration.screenH.value, 0, 0, cfg.calibration.screenW.value, cfg.calibration.screenH.value)
-					}
+					// draw the image from the source canvas which is the framebuffer width and height, to the device canvas which is the device width and height
+					lkgCtx?.drawImage(appCanvas, 0, 0, cfg.framebufferWidth, cfg.framebufferHeight, 0, 0, cfg.calibration.screenW.value, cfg.calibration.screenH.value)
 					// Render the quilt or centered inline view to the canvas
 					if (cfg.inlineView !== 0) {
 						// If we're capturing, resize the canvas to the framebuffer size
@@ -286,7 +293,7 @@ export default class LookingGlassXRWebGLLayer extends XRWebGLLayer {
 			gl.useProgram(oldProgram)
 			gl.bindRenderbuffer(gl.RENDERBUFFER, oldRenderbufferBinding)
 			gl.bindFramebuffer(gl.FRAMEBUFFER, oldFramebufferBinding)
-			gl.viewport(...oldViewport)
+			gl.viewport(oldViewport[0], oldViewport[1], oldViewport[2], oldViewport[3])
 			;(oldScissorTest ? glEnable : glDisable)(gl.SCISSOR_TEST)
 			;(oldStencilTest ? glEnable : glDisable)(gl.STENCIL_TEST)
 			;(oldDepthTest ? glEnable : glDisable)(gl.DEPTH_TEST)
@@ -297,7 +304,7 @@ export default class LookingGlassXRWebGLLayer extends XRWebGLLayer {
 
 		window.addEventListener("unload", () => {
 			if (cfg.popup) cfg.popup.close()
-			cfg.popup = undefined
+			cfg.popup = null
 		})
 
 		const moveCanvasToWindow = (enabled, onbeforeunload) => {
@@ -321,7 +328,6 @@ export default class LookingGlassXRWebGLLayer extends XRWebGLLayer {
 				}
 				if (screenPlacement) {
 					// use chrome's screen placement to automatically position the window.
-					// seems to have issues with full screen on MacOS
 					placeWindow(lkgCanvas, cfg, enabled, onbeforeunload)
 				} else {
 					// open a normal pop up window, user will need to move it to the Looking Glass
@@ -333,10 +339,11 @@ export default class LookingGlassXRWebGLLayer extends XRWebGLLayer {
 
 				appCanvas.width = origWidth
 				appCanvas.height = origHeight
-
-				cfg.popup.onbeforeunload = undefined
-				cfg.popup.close()
-				cfg.popup = undefined
+				if (cfg.popup) {
+					cfg.popup.onbeforeunload = null
+					cfg.popup.close()
+					cfg.popup = null
+				}
 			}
 		}
 

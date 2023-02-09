@@ -99,16 +99,16 @@ export declare type ViewControlArgs = {
     inlineView: InlineView;
     /**
      * A reference to the popup window, this will only exist once the window is opened. Calling before the window is open will fail.
-     * @default null
+     * @default Window
      */
-    popup: typeof Window | null;
+    popup: Window | null;
     /**
      * The current capture state, when capturing is set to true the device width and height is overridden for higher quality capture
      * @default false
      */
     capturing: boolean;
     /**
-     * A reference to the current XRSession, giving access to the WebXR rendering context, this should be read only
+     * A reference to the current XRSession, giving access to the WebXR rendering context, this should be read only unless you like living dangerously
      */
     XRSession: any;
 };
@@ -180,15 +180,15 @@ export declare class LookingGlassConfig extends EventTarget {
     set inlineView(v: InlineView);
     get capturing(): boolean;
     set capturing(v: boolean);
-    get popup(): typeof window;
-    set popup(v: typeof window);
+    get popup(): Window | null;
+    set popup(v: Window | null);
     get XRSession(): any;
     set XRSession(v: any);
     get aspect(): number;
     get tileWidth(): number;
     get framebufferWidth(): number;
-    get quiltWidth(): 5 | 1 | 8;
-    get quiltHeight(): 1 | 6 | 9;
+    get quiltWidth(): 5 | 8;
+    get quiltHeight(): 6 | 9;
     get framebufferHeight(): number;
     get viewCone(): number;
     get tilt(): number;

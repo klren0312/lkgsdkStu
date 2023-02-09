@@ -108,16 +108,16 @@ export type ViewControlArgs = {
 	inlineView: InlineView
 	/**
 	 * A reference to the popup window, this will only exist once the window is opened. Calling before the window is open will fail. 
-	 * @default null
+	 * @default Window
 	 */
-	popup: typeof Window | null
+	popup: Window | null
 	/**
 	 * The current capture state, when capturing is set to true the device width and height is overridden for higher quality capture
 	 * @default false
 	 */
 	capturing: boolean
 	/**
-	 * A reference to the current XRSession, giving access to the WebXR rendering context, this should be read only
+	 * A reference to the current XRSession, giving access to the WebXR rendering context, this should be read only unless you like living dangerously
 	 */
 	XRSession: any
 }
@@ -348,7 +348,7 @@ export class LookingGlassConfig extends EventTarget {
 		return this._viewControls.popup
 	}
 
-	set popup(v : typeof window) {
+	set popup(v : Window | null) {
 		this.updateViewControls({ popup: v })
 	}
 

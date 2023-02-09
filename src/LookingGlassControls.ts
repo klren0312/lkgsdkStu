@@ -30,34 +30,42 @@ export function initLookingGlassControlGUI(lkgCanvas: HTMLCanvasElement, appCanv
 	title.style.width = "100%"
 	title.style.textAlign = "center"
 	title.style.fontWeight = "bold"
+	title.style.marginBottom = "8px"
 	title.innerText = "Looking Glass Controls"
 
-	const recordbutton = document.createElement("button")
-	recordbutton.innerText = "Record"
-	c.appendChild(recordbutton)
-	recordbutton.id = "recordbutton"
+	// const recordbutton = document.createElement("button")
+	// recordbutton.innerText = "Record"
+	// c.appendChild(recordbutton)
+	// recordbutton.id = "recordbutton"
 
-	const downloadbutton = document.createElement("button")
-	downloadbutton.innerText = "Download Video"
-	c.appendChild(downloadbutton)
-	downloadbutton.id = "downloadbutton"
+	// const downloadbutton = document.createElement("button")
+	// downloadbutton.innerText = "Download Video"
+	// c.appendChild(downloadbutton)
+	// downloadbutton.id = "downloadbutton"
 
-	const video = document.createElement("video")
-	c.appendChild(video)
-	video.id = "looking-glass-video"
-	video.width = 240
-	video.height = 320
-	video.style.backgroundColor = "black"
-	video.style.display = "none"
+	// const video = document.createElement("video")
+	// c.appendChild(video)
+	// video.id = "looking-glass-video"
+	// video.width = 240
+	// video.height = 320
+	// video.style.backgroundColor = "black"
+	// video.style.display = "none"
 
 	const screenshotbutton = document.createElement("button")
+	screenshotbutton.style.display = "block"
+	screenshotbutton.style.margin = "auto"
+	screenshotbutton.style.width = "100%"
+	screenshotbutton.style.height = "35px"
+	screenshotbutton.style.padding = "4px"
+	screenshotbutton.style.marginBottom = "8px"
+	screenshotbutton.style.borderRadius = "8px"
 	screenshotbutton.id = "screenshotbutton"
 	c.appendChild(screenshotbutton)
-	screenshotbutton.innerText = "Take Screenshot"
+	screenshotbutton.innerText = "Save Hologram"
 
 	const help = document.createElement("div")
 	c.appendChild(help)
-	help.style.width = "100%"
+	help.style.width = "290px"
 	help.style.whiteSpace = "normal"
 	help.style.color = "rgba(255,255,255,0.7)"
 	help.style.fontSize = "14px"
