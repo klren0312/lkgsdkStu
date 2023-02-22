@@ -36,24 +36,8 @@ export class LookingGlassWebXRPolyfill extends WebXRPolyfill {
 	}
 
 	static async init(cfg?: Partial<ViewControlArgs>) {
-		// const success = await LookingGlassWebXRPolyfill.detectLookingGlassDevice()
-		const success = true
-		if (success) {
 			new LookingGlassWebXRPolyfill(cfg)
-		}
 	}
-
-	/** Check if a Looking Glass is detected */
-	static async detectLookingGlassDevice(): Promise<boolean> {
-		return new Promise<boolean>((resolve)=>{
-			const client = new HoloPlayCore.Client(async (msg: any) => {
-				console.log(msg, 'message from core')
-				if (msg.devices.length > 0) {resolve(true)}
-				else {resolve(false)}
-		})
-		
-	})
-}
 
 	/**Load  the polyfill*/
 	private async loadPolyfill() {
