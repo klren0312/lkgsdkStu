@@ -1,6 +1,47 @@
 import { LookingGlassConfig } from './LookingGlassConfig';
+import { initLookingGlassControlGUI } from "./LookingGlassControls"
+
+
+export const moveCanvasToWindow = (onbeforeunload, cfg: LookingGlassConfig, lkgCanvas: HTMLCanvasElement, appCanvas: HTMLCanvasElement, origWidth: number, origHeight: number) => {
+
+	// initialize the Looking Glass Controls, pass references to both Canvas elements
+	const controls = initLookingGlassControlGUI(lkgCanvas, appCanvas)
+
+	lkgCanvas.style.position = "fixed"
+	lkgCanvas.style.bottom = "0"
+	lkgCanvas.style.left = "0"
+
+	lkgCanvas.width = cfg.calibration.screenW.value
+	lkgCanvas.height = cfg.calibration.screenH.value
+
+	document.body.appendChild(controls)
+	const screenPlacement = "getScreenDetails" in window
+	console.log(screenPlacement, 'Screen placement API exists')
+	try {
+	} catch {
+		console.log("user did not allow window placement, using normal popup instead")
+	}
+	if (screenPlacement) {
+		// use chrome's screen placement to automatically position the window.
+		placeWindow(lkgCanvas, cfg, onbeforeunload)
+	} else {
+		// open a normal pop up window, user will need to move it to the Looking Glass
+		openPopup(cfg, lkgCanvas, onbeforeunload)
+	}
+		// destroy the window
+	if (cfg.popup) {
+		controls.parentElement?.removeChild(controls)
+		// restore the original canvas size once an XR session has been exited
+		appCanvas.width = origWidth
+		appCanvas.height = origHeight
+		if (cfg.popup) {
+			cfg.popup.onbeforeunload = null
+			cfg.popup.close()
+			cfg.popup = null
+		}
+	}}
 	// if chromium, use the Screen Placement API to automatically place the window in the correct location, compensate for address bar
-	export async function placeWindow(lkgCanvas: HTMLCanvasElement, config: LookingGlassConfig, enabled: any, onbeforeunload: any) {
+	export async function placeWindow(lkgCanvas: HTMLCanvasElement, config: LookingGlassConfig, onbeforeunload: any) {
 		const screenDetails = await (window as any).getScreenDetails() 
 		console.log(screenDetails)
 		//temporary, grab the first monitor ID with "LKG" Todo: make more robust

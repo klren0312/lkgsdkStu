@@ -18,7 +18,7 @@ import XRWebGLLayer, { PRIVATE as XRWebGLLayer_PRIVATE } from "@lookingglass/web
 import { Shader } from "holoplay-core"
 import { getLookingGlassConfig } from "./LookingGlassConfig"
 import { initLookingGlassControlGUI } from "./LookingGlassControls"
-import { placeWindow, openPopup } from "./LookingGlassWindow"
+import { moveCanvasToWindow } from "./LookingGlassWindow"
 
 export const PRIVATE = Symbol("LookingGlassXRWebGLLayer")
 
@@ -306,47 +306,9 @@ export default class LookingGlassXRWebGLLayer extends XRWebGLLayer {
 			if (cfg.popup) cfg.popup.close()
 			cfg.popup = null
 		})
-
-		const moveCanvasToWindow = (enabled, onbeforeunload) => {
-			if (!!cfg.popup == enabled) return
-
-			if (enabled) {
-				recompileProgram()
-				lkgCanvas.style.position = "fixed"
-				lkgCanvas.style.bottom = "0"
-				lkgCanvas.style.left = "0"
-
-				lkgCanvas.width = cfg.calibration.screenW.value
-				lkgCanvas.height = cfg.calibration.screenH.value
-
-				document.body.appendChild(controls)
-				const screenPlacement = "getScreenDetails" in window
-				console.log(screenPlacement, 'Screen placement API exists')
-				try {
-				} catch {
-					console.log("user did not allow window placement, using normal popup instead")
-				}
-				if (screenPlacement) {
-					// use chrome's screen placement to automatically position the window.
-					placeWindow(lkgCanvas, cfg, enabled, onbeforeunload)
-				} else {
-					// open a normal pop up window, user will need to move it to the Looking Glass
-					openPopup(cfg, lkgCanvas, onbeforeunload)
-				}
-				// destroy the window
-			} else {
-				controls.parentElement?.removeChild(controls)
-
-				appCanvas.width = origWidth
-				appCanvas.height = origHeight
-				if (cfg.popup) {
-					cfg.popup.onbeforeunload = null
-					cfg.popup.close()
-					cfg.popup = null
-				}
-			}
-		}
-
+		recompileProgram()
+		moveCanvasToWindow(onbeforeunload, cfg, lkgCanvas, appCanvas, origWidth, origHeight)
+		
 		this[PRIVATE] = {
 			LookingGlassEnabled: false,
 			framebuffer,
