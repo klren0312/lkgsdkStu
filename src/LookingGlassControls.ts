@@ -33,24 +33,6 @@ export function initLookingGlassControlGUI(lkgCanvas: HTMLCanvasElement, appCanv
 	title.style.marginBottom = "8px"
 	title.innerText = "Looking Glass Controls"
 
-	// const recordbutton = document.createElement("button")
-	// recordbutton.innerText = "Record"
-	// c.appendChild(recordbutton)
-	// recordbutton.id = "recordbutton"
-
-	// const downloadbutton = document.createElement("button")
-	// downloadbutton.innerText = "Download Video"
-	// c.appendChild(downloadbutton)
-	// downloadbutton.id = "downloadbutton"
-
-	// const video = document.createElement("video")
-	// c.appendChild(video)
-	// video.id = "looking-glass-video"
-	// video.width = 240
-	// video.height = 320
-	// video.style.backgroundColor = "black"
-	// video.style.display = "none"
-
 	const screenshotbutton = document.createElement("button")
 	screenshotbutton.style.display = "block"
 	screenshotbutton.style.margin = "auto"
@@ -71,16 +53,6 @@ export function initLookingGlassControlGUI(lkgCanvas: HTMLCanvasElement, appCanv
 	help.style.fontSize = "14px"
 	help.style.margin = "5px 0"
 	help.innerHTML = "Click the popup and use WASD, mouse left/right drag, and scroll."
-
-	// const lrToggle = document.createElement("input")
-	// title.appendChild(lrToggle)
-	// lrToggle.type = "button"
-	// lrToggle.value = "←"
-	// lrToggle.dataset.otherValue = "→"
-	// lrToggle.onclick = () => {
-	// 	;[c.style.right, c.style.left] = [c.style.left, c.style.right]
-	// 	;[lrToggle.value, lrToggle.dataset.otherValue] = [lrToggle.dataset.otherValue || "", lrToggle.value]
-	// }
 
 	const controlListDiv = document.createElement("div")
 	c.appendChild(controlListDiv)
@@ -106,20 +78,6 @@ export function initLookingGlassControlGUI(lkgCanvas: HTMLCanvasElement, appCanv
 		label.style.fontSize = "13px"
 		label.style.fontWeight = "bold"
 		label.title = opts.title
-
-		// if (attrs.type !== "checkbox") {
-		// 	const reset = document.createElement("input")
-		// 	controlLineDiv.appendChild(reset)
-		// 	reset.type = "button"
-		// 	reset.value = "⎌"
-		// 	reset.alt = "reset"
-		// 	reset.title = "Reset value to default"
-		// 	reset.style.padding = "0 4px"
-		// 	reset.onclick = (e) => {
-		// 		control.value = initialValue
-		// 		control.oninput!(e)
-		// 	}
-		// }
 
 		const control = document.createElement("input")
 		controlLineDiv.appendChild(control)
@@ -175,87 +133,6 @@ export function initLookingGlassControlGUI(lkgCanvas: HTMLCanvasElement, appCanv
 
 		return updateExternally
 	}
-
-	// addControl(
-	// 	"tileHeight",
-	// 	{ type: "range", min: 160, max: 455, step: 1 },
-	// 	{
-	// 		label: "resolution",
-	// 		title: "resolution of each view",
-	// 		stringify: (v) => `${(v * cfg.aspect).toFixed()}&times;${v.toFixed()}`,
-	// 	}
-	// )
-	// addControl(
-	// 	"numViews",
-	// 	{ type: "range", min: 1, max: 145, step: 1 },
-	// 	{
-	// 		label: "views",
-	// 		title: "number of different viewing angles to render",
-	// 		stringify: (v) => v.toFixed(),
-	// 	}
-	// )
-
-	// const setTrackballX = addControl(
-	// 	"trackballX",
-	// 	{
-	// 		type: "range",
-	// 		min: -Math.PI,
-	// 		max: 1.0001 * Math.PI,
-	// 		step: (0.5 / 180) * Math.PI,
-	// 	},
-	// 	{
-	// 		label: "trackball x",
-	// 		title: "camera trackball x",
-	// 		fixRange: (v) => ((v + Math.PI * 3) % (Math.PI * 2)) - Math.PI,
-	// 		stringify: (v) => `${((v / Math.PI) * 180).toFixed()}&deg;`,
-	// 	}
-	// )
-	// const setTrackballY = addControl(
-	// 	"trackballY",
-	// 	{
-	// 		type: "range",
-	// 		min: -0.5 * Math.PI,
-	// 		max: 0.5001 * Math.PI,
-	// 		step: (1.0 / 180) * Math.PI,
-	// 	},
-	// 	{
-	// 		label: "trackball y",
-	// 		title: "camera trackball y",
-	// 		fixRange: (v) => Math.max(-0.5 * Math.PI, Math.min(v, 0.5 * Math.PI)),
-	// 		stringify: (v) => `${((v / Math.PI) * 180).toFixed()}&deg;`,
-	// 	}
-	// )
-
-	// const setTargetX = addControl(
-	// 	"targetX",
-	// 	{ type: "range", min: -20, max: 20, step: 0.1 },
-	// 	{
-	// 		label: "target x",
-	// 		title: "target position x",
-	// 		fixRange: (v) => v,
-	// 		stringify: (v) => v.toFixed(2) + " m",
-	// 	}
-	// )
-	// const setTargetY = addControl(
-	// 	"targetY",
-	// 	{ type: "range", min: -20, max: 20, step: 0.1 },
-	// 	{
-	// 		label: "target y",
-	// 		title: "target position y",
-	// 		fixRange: (v) => v,
-	// 		stringify: (v) => v.toFixed(2) + " m",
-	// 	}
-	// )
-	// const setTargetZ = addControl(
-	// 	"targetZ",
-	// 	{ type: "range", min: -20, max: 20, step: 0.1 },
-	// 	{
-	// 		label: "target z",
-	// 		title: "target position z",
-	// 		fixRange: (v) => v,
-	// 		stringify: (v) => v.toFixed(2) + " m",
-	// 	}
-	// )
 
 	addControl(
 		"fovy",
