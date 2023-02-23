@@ -20,7 +20,6 @@ import WebXRPolyfill from "@lookingglass/webxr-polyfill/src/WebXRPolyfill"
 import { getLookingGlassConfig, updateLookingGlassConfig, ViewControlArgs } from "./LookingGlassConfig"
 import LookingGlassXRDevice from "./LookingGlassXRDevice"
 import LookingGlassXRWebGLLayer from "./LookingGlassXRWebGLLayer"
-import * as HoloPlayCore from "holoplay-core"
 
 export class LookingGlassWebXRPolyfill extends WebXRPolyfill {
 	private vrButton: HTMLButtonElement | undefined
