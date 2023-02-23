@@ -30,17 +30,14 @@ export default class LookingGlassXRWebGLLayer extends XRWebGLLayer {
 		// call the Looking Glass config class
 		const cfg = getLookingGlassConfig()
 		// create a reference to the existing canvas
-		const appCanvas = gl.canvas as HTMLCanvasElement
+		cfg.appCanvas = gl.canvas as HTMLCanvasElement
 		// create a new canvas element to be used later when we open the Looking Glass window
-		const lkgCanvas = document.createElement("canvas")
-		lkgCanvas.tabIndex = 0
-		const lkgCtx = lkgCanvas.getContext("2d", { alpha: false })
-		lkgCanvas.addEventListener("dblclick", function () {
+		cfg.lkgCanvas = document.createElement("canvas")
+		cfg.lkgCanvas.tabIndex = 0
+		const lkgCtx = cfg.lkgCanvas.getContext("2d", { alpha: false })
+		cfg.lkgCanvas.addEventListener("dblclick", function () {
 			this.requestFullscreen()
 		})
-
-		// initialize the Looking Glass Controls, pass references to both Canvas elements
-		const controls = initLookingGlassControlGUI(lkgCanvas, appCanvas)
 
 		// Set up framebuffer/texture.
 
@@ -225,17 +222,17 @@ export default class LookingGlassXRWebGLLayer extends XRWebGLLayer {
 
 		const blitTextureToDefaultFramebufferIfNeeded = () => {
 			if (!this[PRIVATE].LookingGlassEnabled) return
-			// if (cfg.viewCount) return
+			if (cfg.appCanvas == null || cfg.lkgCanvas == null) return
 			// Make sure the default framebuffer has the correct size (undo any resizing
 			// the host page did, and updating for the latest calibration value).
 			// But store off any resizing the host page DID do, so we can restore it on exit.
 
 			// check the dimensions of the canvas and ensure that we're not capturing
-			if ((appCanvas.width !== cfg.framebufferWidth || appCanvas.height !== cfg.framebufferHeight)) {
-				origWidth = appCanvas.width
-				origHeight = appCanvas.height
-				appCanvas.width = cfg.framebufferWidth
-				appCanvas.height = cfg.framebufferHeight
+			if ((cfg.appCanvas.width !== cfg.framebufferWidth || cfg.appCanvas.height !== cfg.framebufferHeight)) {
+				origWidth = cfg.appCanvas.width
+				origHeight = cfg.appCanvas.height
+				cfg.appCanvas.width = cfg.framebufferWidth
+				cfg.appCanvas.height = cfg.framebufferHeight
 			}
 
 			const oldVAO = gl.getParameter(GL_VERTEX_ARRAY_BINDING)
@@ -271,16 +268,16 @@ export default class LookingGlassXRWebGLLayer extends XRWebGLLayer {
 					gl.drawArrays(gl.TRIANGLES, 0, 6)
 
 					// Clear the Looking Glass Canvas before drawing the new image
-					lkgCtx?.clearRect(0, 0, lkgCanvas.width, lkgCanvas.height)
+					lkgCtx?.clearRect(0, 0, cfg.lkgCanvas.width, cfg.lkgCanvas.height)
 					// if we're not capturing, copy the quilt to the Looking Glass
 					// draw the image from the source canvas which is the framebuffer width and height, to the device canvas which is the device width and height
-					lkgCtx?.drawImage(appCanvas, 0, 0, cfg.framebufferWidth, cfg.framebufferHeight, 0, 0, cfg.calibration.screenW.value, cfg.calibration.screenH.value)
+					lkgCtx?.drawImage(cfg.appCanvas, 0, 0, cfg.framebufferWidth, cfg.framebufferHeight, 0, 0, cfg.calibration.screenW.value, cfg.calibration.screenH.value)
 					// Render the quilt or centered inline view to the canvas
 					if (cfg.inlineView !== 0) {
 						// If we're capturing, resize the canvas to the framebuffer size
-						if (cfg.capturing && appCanvas.width !== cfg.framebufferWidth) {
-							appCanvas.width = cfg.framebufferWidth
-							appCanvas.height = cfg.framebufferHeight
+						if (cfg.capturing && cfg.appCanvas.width !== cfg.framebufferWidth) {
+							cfg.appCanvas.width = cfg.framebufferWidth
+							cfg.appCanvas.height = cfg.framebufferHeight
 							gl.viewport(0, 0, cfg.framebufferHeight, cfg.framebufferWidth)
 						}
 						gl.uniform1i(u_viewType, cfg.inlineView)
@@ -307,14 +304,14 @@ export default class LookingGlassXRWebGLLayer extends XRWebGLLayer {
 			cfg.popup = null
 		})
 		recompileProgram()
-		moveCanvasToWindow(onbeforeunload, cfg, lkgCanvas, appCanvas, origWidth, origHeight)
-		
+		// moveCanvasToWindow(true, onbeforeunload)
+
 		this[PRIVATE] = {
 			LookingGlassEnabled: false,
 			framebuffer,
 			clearFramebuffer,
 			blitTextureToDefaultFramebufferIfNeeded,
-			moveCanvasToWindow,
+			moveCanvasToWindow
 		}
 	}
 
@@ -326,5 +323,5 @@ export default class LookingGlassXRWebGLLayer extends XRWebGLLayer {
 	}
 	get framebufferHeight() {
 		return getLookingGlassConfig().framebufferHeight
+		}
 	}
-}

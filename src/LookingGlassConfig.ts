@@ -18,8 +18,6 @@ import * as HoloPlayCore from "holoplay-core"
 
 export const DefaultEyeHeight: number = 1.6
 
-let quiltResolution = 3840
-
 type Value = {
 	value: number
 }
@@ -52,6 +50,7 @@ export enum InlineView {
 
 export type ViewControlArgs = {
 	/**
+	 * @Deprecated: since 0.4.0 use `quiltResolution` instead
 	 * Defines the height of the individual quilt view, the width is then set based on the aspect ratio of the connected device.
 	 * @default 512
 	 */
@@ -120,6 +119,22 @@ export type ViewControlArgs = {
 	 * A reference to the current XRSession, giving access to the WebXR rendering context, this should be read only unless you like living dangerously
 	 */
 	XRSession: any
+	/**
+	 * The current quilt resolution, this is a read only value that is set based on the connected device
+	 * @default 3840
+	 * 
+	 */
+	quiltResolution: number
+	/**
+	 * The Canvas on the Looking Glass
+	 * @default null
+	 */
+	lkgCanvas: HTMLCanvasElement | null
+	/**
+	 * The main webgl context
+	 * @default null
+	 */
+	appCanvas: HTMLCanvasElement | null
 }
 
 type LookingGlassConfigEvent = "on-config-changed"
@@ -157,8 +172,11 @@ export class LookingGlassConfig extends EventTarget {
 		depthiness: 1.25,
 		inlineView: InlineView.Center,
 		capturing: false,
+		quiltResolution: 3840,
 		popup: null, 
 		XRSession: null,
+		lkgCanvas: null, 
+		appCanvas: null
 	}
 	LookingGlassDetected: any
 
@@ -220,14 +238,26 @@ export class LookingGlassConfig extends EventTarget {
 	// configurable
 
 	/**
-	 * defines the height of the individual quilt view, the width is then set based on the aspect ratio of the connected device.
+	 * @deprecated defines the height of the individual quilt view, the width is then set based on the aspect ratio of the connected device.
 	 */
 	public get tileHeight(): number {
-		return Math.round(quiltResolution / this.quiltHeight)
+		return Math.round(this._viewControls.quiltResolution / this.quiltHeight)
 	}
 
 	set tileHeight(v: number) {
-		this.updateViewControls({ tileHeight: v })
+		Math.round(this._viewControls.quiltResolution / this.quiltHeight)
+	}
+
+	/**
+	 * defines the quilt resolution, only change this at start, do not change this after an XRSession has started
+	 */
+
+	public get quiltResolution(): number {
+		return this._viewControls.quiltResolution
+	}
+
+	set quiltResolution(v: number) {
+		this.updateViewControls({ quiltResolution: v })
 	}
 
 	/**
@@ -359,6 +389,23 @@ export class LookingGlassConfig extends EventTarget {
 	set XRSession(v) {
 		this.updateViewControls({XRSession: v})
 	}
+
+	get lkgCanvas() {
+		return this._viewControls.lkgCanvas
+	}
+
+	set lkgCanvas(v) {
+		this.updateViewControls({lkgCanvas: v})
+	}
+
+	get appCanvas() {
+		return this._viewControls.appCanvas
+	}
+
+	set appCanvas(v) {
+		this.updateViewControls({appCanvas: v})
+	}
+
 	// Computed
 
 	public get aspect() {
@@ -366,11 +413,11 @@ export class LookingGlassConfig extends EventTarget {
 	}
 
 	public get tileWidth() {
-		return Math.round(quiltResolution / this.quiltWidth)
+		return Math.round(this._viewControls.quiltResolution / this.quiltWidth)
 	}
 
 	public get framebufferWidth() {
-		if (this._calibration.screenW.value < 7000) return quiltResolution
+		if (this._calibration.screenW.value < 7000) return this._viewControls.quiltResolution
 		else return 8192
 	}
 
@@ -408,7 +455,7 @@ export class LookingGlassConfig extends EventTarget {
 	}
 
 	public get framebufferHeight() {
-		if (this._calibration.screenW.value < 7000) return quiltResolution
+		if (this._calibration.screenW.value < 7000) return this._viewControls.quiltResolution
 		else return 8192
 	}
 

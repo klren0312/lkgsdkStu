@@ -43,9 +43,16 @@ export default class LookingGlassXRDevice extends XRDevice {
     baseLayerPrivate.LookingGlassEnabled = session.immersive;
     if (session.immersive) {
       cfg.XRSession = this.sessions.get(sessionId)
-      baseLayerPrivate.moveCanvasToWindow(true, () => {
-        this.endSession(sessionId);
-      });
+      //create the window and pass in the session reference
+      if (cfg.popup == null) {
+        baseLayerPrivate.moveCanvasToWindow(true, () => {
+          this.endSession(sessionId);
+        });
+      }
+      else {
+        console.warn('attempted to assign baselayer twice?')
+      }
+
     }
   }
 

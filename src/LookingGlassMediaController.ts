@@ -1,13 +1,21 @@
-import { LookingGlassConfig } from './LookingGlassConfig';
+import { getLookingGlassConfig } from './LookingGlassConfig';
 
-export function LookingGlassMediaController(appCanvas: HTMLCanvasElement, cfg: LookingGlassConfig) {
+export function LookingGlassMediaController() {
 
+	const cfg = getLookingGlassConfig();
+
+	if (cfg.appCanvas == null) {
+		console.warn('Media Capture initialized while canvas is null!')
+		return
+	}
+	else {
 	const screenshotbutton = document.getElementById("screenshotbutton") as HTMLButtonElement | null
 	screenshotbutton?.addEventListener("click", downloadImage)
 
 	function downloadImage() {
 		// capturing must be set to true before downloading an image in order to capture a high quality quilt. TODO: manually grab XRsession framebuffer instead
-			let url = appCanvas.toDataURL()
+		    if (cfg.appCanvas != null) {
+			let url = cfg.appCanvas.toDataURL()
 			const a = document.createElement("a")
 			a.style.display = "none"
 			a.href = url
@@ -16,6 +24,8 @@ export function LookingGlassMediaController(appCanvas: HTMLCanvasElement, cfg: L
 			a.click()
 			document.body.removeChild(a)
 			window.URL.revokeObjectURL(url)
+			}
 		}
+	}
 }
 
