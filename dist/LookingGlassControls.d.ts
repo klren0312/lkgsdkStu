@@ -1,1 +1,1 @@
-export declare function initLookingGlassControlGUI(lkgCanvas: HTMLCanvasElement, appCanvas: HTMLCanvasElement): HTMLDivElement;
+export declare function initLookingGlassControlGUI(): HTMLDivElement | undefined;

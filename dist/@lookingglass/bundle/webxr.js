@@ -6802,7 +6802,6 @@ function Shader(cfg) {
 `;
 }
 const DefaultEyeHeight = 1.6;
-let quiltResolution = 3840;
 var InlineView;
 (function(InlineView2) {
   InlineView2[InlineView2["Swizzled"] = 0] = "Swizzled";
@@ -6841,8 +6840,11 @@ class LookingGlassConfig$1 extends EventTarget {
       depthiness: 1.25,
       inlineView: InlineView.Center,
       capturing: false,
+      quiltResolution: 3840,
       popup: null,
-      XRSession: null
+      XRSession: null,
+      lkgCanvas: null,
+      appCanvas: null
     });
     __publicField(this, "LookingGlassDetected");
     this._viewControls = { ...this._viewControls, ...cfg };
@@ -6886,10 +6888,16 @@ class LookingGlassConfig$1 extends EventTarget {
     }
   }
   get tileHeight() {
-    return Math.round(quiltResolution / this.quiltHeight);
+    return Math.round(this._viewControls.quiltResolution / this.quiltHeight);
   }
   set tileHeight(v) {
-    this.updateViewControls({ tileHeight: v });
+    Math.round(this._viewControls.quiltResolution / this.quiltHeight);
+  }
+  get quiltResolution() {
+    return this._viewControls.quiltResolution;
+  }
+  set quiltResolution(v) {
+    this.updateViewControls({ quiltResolution: v });
   }
   get numViews() {
     return this.quiltWidth * this.quiltHeight;
@@ -6966,15 +6974,27 @@ class LookingGlassConfig$1 extends EventTarget {
   set XRSession(v) {
     this.updateViewControls({ XRSession: v });
   }
+  get lkgCanvas() {
+    return this._viewControls.lkgCanvas;
+  }
+  set lkgCanvas(v) {
+    this.updateViewControls({ lkgCanvas: v });
+  }
+  get appCanvas() {
+    return this._viewControls.appCanvas;
+  }
+  set appCanvas(v) {
+    this.updateViewControls({ appCanvas: v });
+  }
   get aspect() {
     return this._calibration.screenW.value / this._calibration.screenH.value;
   }
   get tileWidth() {
-    return Math.round(quiltResolution / this.quiltWidth);
+    return Math.round(this._viewControls.quiltResolution / this.quiltWidth);
   }
   get framebufferWidth() {
     if (this._calibration.screenW.value < 7e3)
-      return quiltResolution;
+      return this._viewControls.quiltResolution;
     else
       return 8192;
   }
@@ -7002,7 +7022,7 @@ class LookingGlassConfig$1 extends EventTarget {
   }
   get framebufferHeight() {
     if (this._calibration.screenW.value < 7e3)
-      return quiltResolution;
+      return this._viewControls.quiltResolution;
     else
       return 8192;
   }
@@ -7266,342 +7286,280 @@ function perspective(out, fovy, aspect, near, far) {
   }
   return out;
 }
-function LookingGlassMediaController(appCanvas, cfg) {
-  const mediaSource = new MediaSource();
-  mediaSource.addEventListener("sourceopen", handleSourceOpen, false);
-  let mediaRecorder;
-  let recordedBlobs;
-  let sourceBuffer;
-  let stream;
-  const video = document.getElementById("looking-glass-video");
-  const recordButton = document.getElementById("recordbutton");
-  const downloadButton = document.getElementById("downloadbutton");
-  const screenshotbutton = document.getElementById("screenshotbutton");
-  recordButton == null ? void 0 : recordButton.addEventListener("click", toggleRecording);
-  downloadButton == null ? void 0 : downloadButton.addEventListener("click", downloadVideo);
-  screenshotbutton == null ? void 0 : screenshotbutton.addEventListener("click", downloadImage);
-  function handleSourceOpen(event) {
-    console.log("MediaSource opened");
-    sourceBuffer = mediaSource.addSourceBuffer('video/webm; codecs="h264"');
-    console.log("Source buffer: ", sourceBuffer);
-  }
-  function handleDataAvailable(event) {
-    if (event.data && event.data.size > 0) {
-      recordedBlobs.push(event.data);
-    }
-  }
-  function handleStop(event) {
-    console.log("Recorder stopped: ", event);
-    const superBuffer = new Blob(recordedBlobs, { type: "video/webm" });
-    if (video) {
-      video.src = window.URL.createObjectURL(superBuffer);
-    }
-  }
-  function toggleRecording() {
-    if (stream == null) {
-      stream = appCanvas.captureStream();
-      console.log("Started stream capture from canvas element: ", stream);
-    } else {
-      stream = null;
-      console.log("theoretically set stream to null and stop capture", stream);
-    }
-    if (cfg.capturing === false) {
-      cfg.capturing = true;
-      if (cfg.inlineView != 2) {
-        cfg.inlineView = 2;
+function LookingGlassMediaController() {
+  const cfg = getLookingGlassConfig();
+  if (cfg.appCanvas == null) {
+    console.warn("Media Capture initialized while canvas is null!");
+    return;
+  } else {
+    let downloadImage = function() {
+      if (cfg.appCanvas != null) {
+        let url = cfg.appCanvas.toDataURL();
+        const a = document.createElement("a");
+        a.style.display = "none";
+        a.href = url;
+        a.download = `hologram_qs${cfg.quiltWidth}x${cfg.quiltHeight}a${cfg.aspect}.png`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        window.URL.revokeObjectURL(url);
       }
-      startRecording();
-    } else {
-      stopRecording();
-      cfg.capturing = false;
-      if (recordButton && downloadButton) {
-        recordButton.textContent = "Record";
-        downloadButton.disabled = false;
-      }
-    }
-  }
-  function startRecording() {
-    let options = { mimeType: "video/webm" };
-    recordedBlobs = [];
-    try {
-      mediaRecorder = new MediaRecorder(stream, options);
-    } catch (e0) {
-      console.log("Unable to create MediaRecorder with options Object: ", e0);
-      try {
-        options = { mimeType: "video/webm,codecs=h264" };
-        mediaRecorder = new MediaRecorder(stream, options);
-      } catch (e1) {
-        console.log("Unable to create MediaRecorder with options Object: ", e1);
-        try {
-          options = { mimeType: "video/h264" };
-          mediaRecorder = new MediaRecorder(stream, options);
-        } catch (e2) {
-          alert("MediaRecorder is not supported by this browser.\n\nTry Firefox 29 or later, or Chrome 47 or later, with Enable experimental Web Platform features enabled from chrome://flags.");
-          console.error("Exception while creating MediaRecorder:", e2);
-          return;
-        }
-      }
-    }
-    console.log("Created MediaRecorder", mediaRecorder, "with options", options);
-    if (recordButton && downloadButton) {
-      recordButton.textContent = "Stop Recording";
-      downloadButton.disabled = true;
-    }
-    mediaRecorder.onstop = handleStop;
-    mediaRecorder.ondataavailable = handleDataAvailable;
-    mediaRecorder.start(100);
-    console.log("MediaRecorder started", mediaRecorder);
-  }
-  function stopRecording() {
-    mediaRecorder.stop();
-    console.log("Recorded Blobs: ", recordedBlobs);
-  }
-  function downloadVideo() {
-    const blob = new Blob(recordedBlobs, { type: "video/webm" });
-    const url = window.URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.style.display = "none";
-    a.href = url;
-    a.download = `hologram_qs${cfg.quiltWidth}x${cfg.quiltHeight}a${cfg.aspect}.webm`;
-    document.body.appendChild(a);
-    a.click();
-    setTimeout(() => {
-      document.body.removeChild(a);
-      window.URL.revokeObjectURL(url);
-    }, 100);
-  }
-  function downloadImage() {
-    let url = appCanvas.toDataURL();
-    const a = document.createElement("a");
-    a.style.display = "none";
-    a.href = url;
-    a.download = `hologram_qs${cfg.quiltWidth}x${cfg.quiltHeight}a${cfg.aspect}.png`;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    window.URL.revokeObjectURL(url);
+    };
+    const screenshotbutton = document.getElementById("screenshotbutton");
+    screenshotbutton == null ? void 0 : screenshotbutton.addEventListener("click", downloadImage);
   }
 }
-function initLookingGlassControlGUI(lkgCanvas, appCanvas) {
+function initLookingGlassControlGUI() {
   var _a;
   const cfg = getLookingGlassConfig();
-  const styleElement = document.createElement("style");
-  document.head.appendChild(styleElement);
-  (_a = styleElement.sheet) == null ? void 0 : _a.insertRule("#LookingGlassWebXRControls * { all: revert; font-family: sans-serif }");
-  const c = document.createElement("div");
-  c.id = "LookingGlassWebXRControls";
-  c.style.position = "fixed";
-  c.style.zIndex = "1000";
-  c.style.padding = "15px";
-  c.style.width = "320px";
-  c.style.maxWidth = "calc(100vw - 18px)";
-  c.style.maxHeight = "calc(100vh - 18px)";
-  c.style.whiteSpace = "nowrap";
-  c.style.background = "rgba(0, 0, 0, 0.6)";
-  c.style.color = "white";
-  c.style.borderRadius = "10px";
-  c.style.right = "15px";
-  c.style.bottom = "15px";
-  c.style.flex = "row";
-  const title = document.createElement("div");
-  c.appendChild(title);
-  title.style.width = "100%";
-  title.style.textAlign = "center";
-  title.style.fontWeight = "bold";
-  title.style.marginBottom = "8px";
-  title.innerText = "Looking Glass Controls";
-  const screenshotbutton = document.createElement("button");
-  screenshotbutton.style.display = "block";
-  screenshotbutton.style.margin = "auto";
-  screenshotbutton.style.width = "100%";
-  screenshotbutton.style.height = "35px";
-  screenshotbutton.style.padding = "4px";
-  screenshotbutton.style.marginBottom = "8px";
-  screenshotbutton.style.borderRadius = "8px";
-  screenshotbutton.id = "screenshotbutton";
-  c.appendChild(screenshotbutton);
-  screenshotbutton.innerText = "Save Hologram";
-  const help = document.createElement("div");
-  c.appendChild(help);
-  help.style.width = "290px";
-  help.style.whiteSpace = "normal";
-  help.style.color = "rgba(255,255,255,0.7)";
-  help.style.fontSize = "14px";
-  help.style.margin = "5px 0";
-  help.innerHTML = "Click the popup and use WASD, mouse left/right drag, and scroll.";
-  const controlListDiv = document.createElement("div");
-  c.appendChild(controlListDiv);
-  const addControl = (name, attrs, opts) => {
-    const stringify = opts.stringify;
-    const controlLineDiv = document.createElement("div");
-    controlLineDiv.style.marginBottom = "8px";
-    controlListDiv.appendChild(controlLineDiv);
-    const controlID = name;
-    const initialValue = cfg[name];
-    const label = document.createElement("label");
-    controlLineDiv.appendChild(label);
-    label.innerText = opts.label;
-    label.setAttribute("for", controlID);
-    label.style.width = "100px";
-    label.style.display = "inline-block";
-    label.style.textDecoration = "dotted underline 1px";
-    label.style.fontFamily = `"Courier New"`;
-    label.style.fontSize = "13px";
-    label.style.fontWeight = "bold";
-    label.title = opts.title;
-    const control = document.createElement("input");
-    controlLineDiv.appendChild(control);
-    Object.assign(control, attrs);
-    control.id = controlID;
-    control.title = opts.title;
-    control.value = attrs.value !== void 0 ? attrs.value : initialValue;
-    const updateValue = (newValue) => {
-      cfg[name] = newValue;
-      updateNumberText(newValue);
-    };
-    control.oninput = () => {
-      const newValue = attrs.type === "range" ? parseFloat(control.value) : attrs.type === "checkbox" ? control.checked : control.value;
-      updateValue(newValue);
-    };
-    const updateExternally = (callback) => {
-      let newValue = callback(cfg[name]);
-      if (opts.fixRange) {
-        newValue = opts.fixRange(newValue);
-        control.max = Math.max(parseFloat(control.max), newValue).toString();
-        control.min = Math.min(parseFloat(control.min), newValue).toString();
+  if (cfg.lkgCanvas == null) {
+    console.warn("window placement called without a valid XR Session!");
+  } else {
+    let flyCamera = function() {
+      let kx = keys.d - keys.a;
+      let ky = keys.w - keys.s;
+      if (kx && ky) {
+        kx *= Math.sqrt(0.5);
+        ky *= Math.sqrt(0.5);
       }
-      control.value = newValue;
-      updateValue(newValue);
-    };
-    if (attrs.type === "range") {
-      control.style.width = "110px";
-      control.style.height = "8px";
-      control.onwheel = (ev) => {
-        updateExternally((oldValue) => oldValue + Math.sign(ev.deltaX - ev.deltaY) * attrs.step);
-      };
-    }
-    let updateNumberText = (value) => {
-    };
-    if (stringify) {
-      const numberText = document.createElement("span");
-      numberText.style.fontFamily = `"Courier New"`;
-      numberText.style.fontSize = "13px";
-      numberText.style.marginLeft = "3px";
-      controlLineDiv.appendChild(numberText);
-      updateNumberText = (v) => {
-        numberText.innerHTML = stringify(v);
-      };
-      updateNumberText(initialValue);
-    }
-    return updateExternally;
-  };
-  addControl("fovy", {
-    type: "range",
-    min: 1 / 180 * Math.PI,
-    max: 120.1 / 180 * Math.PI,
-    step: 1 / 180 * Math.PI
-  }, {
-    label: "fov",
-    title: "perspective fov (degrades stereo effect)",
-    fixRange: (v) => Math.max(1 / 180 * Math.PI, Math.min(v, 120.1 / 180 * Math.PI)),
-    stringify: (v) => {
-      const xdeg = v / Math.PI * 180;
-      const ydeg = Math.atan(Math.tan(v / 2) * cfg.aspect) * 2 / Math.PI * 180;
-      return `${xdeg.toFixed()}&deg;&times;${ydeg.toFixed()}&deg;`;
-    }
-  });
-  addControl("depthiness", { type: "range", min: 0, max: 2, step: 0.01 }, {
-    label: "depthiness",
-    title: 'exaggerates depth by multiplying the width of the view cone (as reported by the firmware) - can somewhat compensate for depthiness lost using higher fov. 1.25 seems to be most physically accurate on Looking Glass 8.9".',
-    fixRange: (v) => Math.max(0, v),
-    stringify: (v) => `${v.toFixed(2)}x`
-  });
-  addControl("inlineView", { type: "range", min: 0, max: 2, step: 1 }, {
-    label: "inline view",
-    title: "what to show inline on the original canvas (swizzled = no overwrite)",
-    fixRange: (v) => Math.max(0, Math.min(v, 2)),
-    stringify: (v) => v === 0 ? "swizzled" : v === 1 ? "center" : v === 2 ? "quilt" : "?"
-  });
-  lkgCanvas.oncontextmenu = (ev) => {
-    ev.preventDefault();
-  };
-  lkgCanvas.addEventListener("wheel", (ev) => {
-    const old = cfg.targetDiam;
-    const GAMMA = 1.1;
-    const logOld = Math.log(old) / Math.log(GAMMA);
-    return cfg.targetDiam = Math.pow(GAMMA, logOld + ev.deltaY * 0.01);
-  });
-  lkgCanvas.addEventListener("mousemove", (ev) => {
-    const mx = ev.movementX, my = -ev.movementY;
-    if (ev.buttons & 2 || ev.buttons & 1 && (ev.shiftKey || ev.ctrlKey)) {
       const tx = cfg.trackballX, ty = cfg.trackballY;
-      const dx = -Math.cos(tx) * mx + Math.sin(tx) * Math.sin(ty) * my;
-      const dy = -Math.cos(ty) * my;
-      const dz = Math.sin(tx) * mx + Math.cos(tx) * Math.sin(ty) * my;
-      cfg.targetX = cfg.targetX + dx * cfg.targetDiam * 1e-3;
-      cfg.targetY = cfg.targetY + dy * cfg.targetDiam * 1e-3;
-      cfg.targetZ = cfg.targetZ + dz * cfg.targetDiam * 1e-3;
-    } else if (ev.buttons & 1) {
-      cfg.trackballX = cfg.trackballX - mx * 0.01;
-      cfg.trackballY = cfg.trackballY - my * 0.01;
-    }
-  });
-  const keys = { w: 0, a: 0, s: 0, d: 0 };
-  lkgCanvas.addEventListener("keydown", (ev) => {
-    switch (ev.code) {
-      case "KeyW":
-        keys.w = 1;
-        break;
-      case "KeyA":
-        keys.a = 1;
-        break;
-      case "KeyS":
-        keys.s = 1;
-        break;
-      case "KeyD":
-        keys.d = 1;
-        break;
-    }
-  });
-  lkgCanvas.addEventListener("keyup", (ev) => {
-    switch (ev.code) {
-      case "KeyW":
-        keys.w = 0;
-        break;
-      case "KeyA":
-        keys.a = 0;
-        break;
-      case "KeyS":
-        keys.s = 0;
-        break;
-      case "KeyD":
-        keys.d = 0;
-        break;
-    }
-  });
-  requestAnimationFrame(flyCamera);
-  function flyCamera() {
-    let kx = keys.d - keys.a;
-    let ky = keys.w - keys.s;
-    if (kx && ky) {
-      kx *= Math.sqrt(0.5);
-      ky *= Math.sqrt(0.5);
-    }
-    const tx = cfg.trackballX, ty = cfg.trackballY;
-    const dx = Math.cos(tx) * kx - Math.sin(tx) * Math.cos(ty) * ky;
-    const dy = -Math.sin(ty) * ky;
-    const dz = -Math.sin(tx) * kx - Math.cos(tx) * Math.cos(ty) * ky;
-    cfg.targetX = cfg.targetX + dx * cfg.targetDiam * 0.03;
-    cfg.targetY = cfg.targetY + dy * cfg.targetDiam * 0.03;
-    cfg.targetZ = cfg.targetZ + dz * cfg.targetDiam * 0.03;
+      const dx = Math.cos(tx) * kx - Math.sin(tx) * Math.cos(ty) * ky;
+      const dy = -Math.sin(ty) * ky;
+      const dz = -Math.sin(tx) * kx - Math.cos(tx) * Math.cos(ty) * ky;
+      cfg.targetX = cfg.targetX + dx * cfg.targetDiam * 0.03;
+      cfg.targetY = cfg.targetY + dy * cfg.targetDiam * 0.03;
+      cfg.targetZ = cfg.targetZ + dz * cfg.targetDiam * 0.03;
+      requestAnimationFrame(flyCamera);
+    };
+    const styleElement = document.createElement("style");
+    document.head.appendChild(styleElement);
+    (_a = styleElement.sheet) == null ? void 0 : _a.insertRule("#LookingGlassWebXRControls * { all: revert; font-family: sans-serif }");
+    const c = document.createElement("div");
+    c.id = "LookingGlassWebXRControls";
+    c.style.position = "fixed";
+    c.style.zIndex = "1000";
+    c.style.padding = "15px";
+    c.style.width = "320px";
+    c.style.maxWidth = "calc(100vw - 18px)";
+    c.style.maxHeight = "calc(100vh - 18px)";
+    c.style.whiteSpace = "nowrap";
+    c.style.background = "rgba(0, 0, 0, 0.6)";
+    c.style.color = "white";
+    c.style.borderRadius = "10px";
+    c.style.right = "15px";
+    c.style.bottom = "15px";
+    c.style.flex = "row";
+    const title = document.createElement("div");
+    c.appendChild(title);
+    title.style.width = "100%";
+    title.style.textAlign = "center";
+    title.style.fontWeight = "bold";
+    title.style.marginBottom = "8px";
+    title.innerText = "Looking Glass Controls";
+    const screenshotbutton = document.createElement("button");
+    screenshotbutton.style.display = "block";
+    screenshotbutton.style.margin = "auto";
+    screenshotbutton.style.width = "100%";
+    screenshotbutton.style.height = "35px";
+    screenshotbutton.style.padding = "4px";
+    screenshotbutton.style.marginBottom = "8px";
+    screenshotbutton.style.borderRadius = "8px";
+    screenshotbutton.id = "screenshotbutton";
+    c.appendChild(screenshotbutton);
+    screenshotbutton.innerText = "Save Hologram";
+    const help = document.createElement("div");
+    c.appendChild(help);
+    help.style.width = "290px";
+    help.style.whiteSpace = "normal";
+    help.style.color = "rgba(255,255,255,0.7)";
+    help.style.fontSize = "14px";
+    help.style.margin = "5px 0";
+    help.innerHTML = "Click the popup and use WASD, mouse left/right drag, and scroll.";
+    const controlListDiv = document.createElement("div");
+    c.appendChild(controlListDiv);
+    const addControl = (name, attrs, opts) => {
+      const stringify = opts.stringify;
+      const controlLineDiv = document.createElement("div");
+      controlLineDiv.style.marginBottom = "8px";
+      controlListDiv.appendChild(controlLineDiv);
+      const controlID = name;
+      const initialValue = cfg[name];
+      const label = document.createElement("label");
+      controlLineDiv.appendChild(label);
+      label.innerText = opts.label;
+      label.setAttribute("for", controlID);
+      label.style.width = "100px";
+      label.style.display = "inline-block";
+      label.style.textDecoration = "dotted underline 1px";
+      label.style.fontFamily = `"Courier New"`;
+      label.style.fontSize = "13px";
+      label.style.fontWeight = "bold";
+      label.title = opts.title;
+      const control = document.createElement("input");
+      controlLineDiv.appendChild(control);
+      Object.assign(control, attrs);
+      control.id = controlID;
+      control.title = opts.title;
+      control.value = attrs.value !== void 0 ? attrs.value : initialValue;
+      const updateValue = (newValue) => {
+        cfg[name] = newValue;
+        updateNumberText(newValue);
+      };
+      control.oninput = () => {
+        const newValue = attrs.type === "range" ? parseFloat(control.value) : attrs.type === "checkbox" ? control.checked : control.value;
+        updateValue(newValue);
+      };
+      const updateExternally = (callback) => {
+        let newValue = callback(cfg[name]);
+        if (opts.fixRange) {
+          newValue = opts.fixRange(newValue);
+          control.max = Math.max(parseFloat(control.max), newValue).toString();
+          control.min = Math.min(parseFloat(control.min), newValue).toString();
+        }
+        control.value = newValue;
+        updateValue(newValue);
+      };
+      if (attrs.type === "range") {
+        control.style.width = "110px";
+        control.style.height = "8px";
+        control.onwheel = (ev) => {
+          updateExternally((oldValue) => oldValue + Math.sign(ev.deltaX - ev.deltaY) * attrs.step);
+        };
+      }
+      let updateNumberText = (value) => {
+      };
+      if (stringify) {
+        const numberText = document.createElement("span");
+        numberText.style.fontFamily = `"Courier New"`;
+        numberText.style.fontSize = "13px";
+        numberText.style.marginLeft = "3px";
+        controlLineDiv.appendChild(numberText);
+        updateNumberText = (v) => {
+          numberText.innerHTML = stringify(v);
+        };
+        updateNumberText(initialValue);
+      }
+      return updateExternally;
+    };
+    addControl("fovy", {
+      type: "range",
+      min: 1 / 180 * Math.PI,
+      max: 120.1 / 180 * Math.PI,
+      step: 1 / 180 * Math.PI
+    }, {
+      label: "fov",
+      title: "perspective fov (degrades stereo effect)",
+      fixRange: (v) => Math.max(1 / 180 * Math.PI, Math.min(v, 120.1 / 180 * Math.PI)),
+      stringify: (v) => {
+        const xdeg = v / Math.PI * 180;
+        const ydeg = Math.atan(Math.tan(v / 2) * cfg.aspect) * 2 / Math.PI * 180;
+        return `${xdeg.toFixed()}&deg;&times;${ydeg.toFixed()}&deg;`;
+      }
+    });
+    addControl("depthiness", { type: "range", min: 0, max: 2, step: 0.01 }, {
+      label: "depthiness",
+      title: 'exaggerates depth by multiplying the width of the view cone (as reported by the firmware) - can somewhat compensate for depthiness lost using higher fov. 1.25 seems to be most physically accurate on Looking Glass 8.9".',
+      fixRange: (v) => Math.max(0, v),
+      stringify: (v) => `${v.toFixed(2)}x`
+    });
+    addControl("inlineView", { type: "range", min: 0, max: 2, step: 1 }, {
+      label: "inline view",
+      title: "what to show inline on the original canvas (swizzled = no overwrite)",
+      fixRange: (v) => Math.max(0, Math.min(v, 2)),
+      stringify: (v) => v === 0 ? "swizzled" : v === 1 ? "center" : v === 2 ? "quilt" : "?"
+    });
+    cfg.lkgCanvas.oncontextmenu = (ev) => {
+      ev.preventDefault();
+    };
+    cfg.lkgCanvas.addEventListener("wheel", (ev) => {
+      const old = cfg.targetDiam;
+      const GAMMA = 1.1;
+      const logOld = Math.log(old) / Math.log(GAMMA);
+      return cfg.targetDiam = Math.pow(GAMMA, logOld + ev.deltaY * 0.01);
+    });
+    cfg.lkgCanvas.addEventListener("mousemove", (ev) => {
+      const mx = ev.movementX, my = -ev.movementY;
+      if (ev.buttons & 2 || ev.buttons & 1 && (ev.shiftKey || ev.ctrlKey)) {
+        const tx = cfg.trackballX, ty = cfg.trackballY;
+        const dx = -Math.cos(tx) * mx + Math.sin(tx) * Math.sin(ty) * my;
+        const dy = -Math.cos(ty) * my;
+        const dz = Math.sin(tx) * mx + Math.cos(tx) * Math.sin(ty) * my;
+        cfg.targetX = cfg.targetX + dx * cfg.targetDiam * 1e-3;
+        cfg.targetY = cfg.targetY + dy * cfg.targetDiam * 1e-3;
+        cfg.targetZ = cfg.targetZ + dz * cfg.targetDiam * 1e-3;
+      } else if (ev.buttons & 1) {
+        cfg.trackballX = cfg.trackballX - mx * 0.01;
+        cfg.trackballY = cfg.trackballY - my * 0.01;
+      }
+    });
+    const keys = { w: 0, a: 0, s: 0, d: 0 };
+    cfg.lkgCanvas.addEventListener("keydown", (ev) => {
+      switch (ev.code) {
+        case "KeyW":
+          keys.w = 1;
+          break;
+        case "KeyA":
+          keys.a = 1;
+          break;
+        case "KeyS":
+          keys.s = 1;
+          break;
+        case "KeyD":
+          keys.d = 1;
+          break;
+      }
+    });
+    cfg.lkgCanvas.addEventListener("keyup", (ev) => {
+      switch (ev.code) {
+        case "KeyW":
+          keys.w = 0;
+          break;
+        case "KeyA":
+          keys.a = 0;
+          break;
+        case "KeyS":
+          keys.s = 0;
+          break;
+        case "KeyD":
+          keys.d = 0;
+          break;
+      }
+    });
     requestAnimationFrame(flyCamera);
+    setTimeout(() => {
+      LookingGlassMediaController();
+    }, 1e3);
+    return c;
   }
-  setTimeout(() => {
-    LookingGlassMediaController(appCanvas, cfg);
-  }, 1e3);
-  return c;
 }
-async function placeWindow(lkgCanvas, config, enabled, onbeforeunload) {
+let controls;
+const moveCanvasToWindow = (enabled, onbeforeunload) => {
+  const cfg = getLookingGlassConfig();
+  if (cfg.lkgCanvas == null) {
+    console.warn("window placement called without a valid XR Session!");
+    return;
+  } else if (enabled == false) {
+    closeWindow(cfg, controls);
+  } else {
+    if (controls == null) {
+      controls = initLookingGlassControlGUI();
+    }
+    cfg.lkgCanvas.style.position = "fixed";
+    cfg.lkgCanvas.style.bottom = "0";
+    cfg.lkgCanvas.style.left = "0";
+    cfg.lkgCanvas.width = cfg.calibration.screenW.value;
+    cfg.lkgCanvas.height = cfg.calibration.screenH.value;
+    document.body.appendChild(controls);
+    const screenPlacement = "getScreenDetails" in window;
+    console.log(screenPlacement, "Screen placement API exists");
+    if (screenPlacement) {
+      placeWindow(cfg.lkgCanvas, cfg, onbeforeunload);
+    } else {
+      openPopup(cfg, cfg.lkgCanvas, onbeforeunload);
+    }
+  }
+};
+async function placeWindow(lkgCanvas, config, onbeforeunload) {
   const screenDetails = await window.getScreenDetails();
   console.log(screenDetails);
   const LKG = screenDetails.screens.filter((screen2) => screen2.label.includes("LKG"))[0];
@@ -7634,7 +7592,7 @@ async function placeWindow(lkgCanvas, config, enabled, onbeforeunload) {
     }
   }
 }
-async function openPopup(cfg, lkgCanvas, onbeforeunload) {
+function openPopup(cfg, lkgCanvas, onbeforeunload) {
   cfg.popup = window.open("", void 0, "width=640,height=360");
   if (cfg.popup) {
     cfg.popup.document.title = "Looking Glass Window (fullscreen me on Looking Glass!)";
@@ -7644,19 +7602,27 @@ async function openPopup(cfg, lkgCanvas, onbeforeunload) {
     cfg.popup.onbeforeunload = onbeforeunload;
   }
 }
+function closeWindow(cfg, controls2) {
+  var _a;
+  (_a = controls2.parentElement) == null ? void 0 : _a.removeChild(controls2);
+  if (cfg.popup) {
+    cfg.popup.onbeforeunload = null;
+    cfg.popup.close();
+    cfg.popup = null;
+  }
+}
 const PRIVATE = Symbol("LookingGlassXRWebGLLayer");
 class LookingGlassXRWebGLLayer extends XRWebGLLayer {
   constructor(session, gl, layerInit) {
     super(session, gl, layerInit);
     const cfg = getLookingGlassConfig();
-    const appCanvas = gl.canvas;
-    const lkgCanvas = document.createElement("canvas");
-    lkgCanvas.tabIndex = 0;
-    const lkgCtx = lkgCanvas.getContext("2d", { alpha: false });
-    lkgCanvas.addEventListener("dblclick", function() {
+    cfg.appCanvas = gl.canvas;
+    cfg.lkgCanvas = document.createElement("canvas");
+    cfg.lkgCanvas.tabIndex = 0;
+    const lkgCtx = cfg.lkgCanvas.getContext("2d", { alpha: false });
+    cfg.lkgCanvas.addEventListener("dblclick", function() {
       this.requestFullscreen();
     });
-    const controls = initLookingGlassControlGUI(lkgCanvas, appCanvas);
     const config = this[PRIVATE$3].config;
     const texture = gl.createTexture();
     let depthStencil, dsConfig;
@@ -7793,15 +7759,16 @@ class LookingGlassXRWebGLLayer extends XRWebGLLayer {
       gl.clearDepth(currentClearDepth);
       gl.clearStencil(currentClearStencil);
     };
-    let origWidth, origHeight;
     const blitTextureToDefaultFramebufferIfNeeded = () => {
       if (!this[PRIVATE].LookingGlassEnabled)
         return;
-      if (appCanvas.width !== cfg.framebufferWidth || appCanvas.height !== cfg.framebufferHeight) {
-        origWidth = appCanvas.width;
-        origHeight = appCanvas.height;
-        appCanvas.width = cfg.framebufferWidth;
-        appCanvas.height = cfg.framebufferHeight;
+      if (cfg.appCanvas == null || cfg.lkgCanvas == null)
+        return;
+      if (cfg.appCanvas.width !== cfg.framebufferWidth || cfg.appCanvas.height !== cfg.framebufferHeight) {
+        cfg.appCanvas.width;
+        cfg.appCanvas.height;
+        cfg.appCanvas.width = cfg.framebufferWidth;
+        cfg.appCanvas.height = cfg.framebufferHeight;
       }
       const oldVAO2 = gl.getParameter(GL_VERTEX_ARRAY_BINDING);
       const oldCullFace = gl.getParameter(gl.CULL_FACE);
@@ -7829,12 +7796,12 @@ class LookingGlassXRWebGLLayer extends XRWebGLLayer {
           gl.viewport(0, 0, gl.drawingBufferWidth, gl.drawingBufferHeight);
           gl.uniform1i(u_viewType, 0);
           gl.drawArrays(gl.TRIANGLES, 0, 6);
-          lkgCtx == null ? void 0 : lkgCtx.clearRect(0, 0, lkgCanvas.width, lkgCanvas.height);
-          lkgCtx == null ? void 0 : lkgCtx.drawImage(appCanvas, 0, 0, cfg.framebufferWidth, cfg.framebufferHeight, 0, 0, cfg.calibration.screenW.value, cfg.calibration.screenH.value);
+          lkgCtx == null ? void 0 : lkgCtx.clearRect(0, 0, cfg.lkgCanvas.width, cfg.lkgCanvas.height);
+          lkgCtx == null ? void 0 : lkgCtx.drawImage(cfg.appCanvas, 0, 0, cfg.framebufferWidth, cfg.framebufferHeight, 0, 0, cfg.calibration.screenW.value, cfg.calibration.screenH.value);
           if (cfg.inlineView !== 0) {
-            if (cfg.capturing && appCanvas.width !== cfg.framebufferWidth) {
-              appCanvas.width = cfg.framebufferWidth;
-              appCanvas.height = cfg.framebufferHeight;
+            if (cfg.capturing && cfg.appCanvas.width !== cfg.framebufferWidth) {
+              cfg.appCanvas.width = cfg.framebufferWidth;
+              cfg.appCanvas.height = cfg.framebufferHeight;
               gl.viewport(0, 0, cfg.framebufferHeight, cfg.framebufferWidth);
             }
             gl.uniform1i(u_viewType, cfg.inlineView);
@@ -7860,36 +7827,7 @@ class LookingGlassXRWebGLLayer extends XRWebGLLayer {
         cfg.popup.close();
       cfg.popup = null;
     });
-    const moveCanvasToWindow = (enabled, onbeforeunload) => {
-      var _a;
-      if (!!cfg.popup == enabled)
-        return;
-      if (enabled) {
-        recompileProgram();
-        lkgCanvas.style.position = "fixed";
-        lkgCanvas.style.bottom = "0";
-        lkgCanvas.style.left = "0";
-        lkgCanvas.width = cfg.calibration.screenW.value;
-        lkgCanvas.height = cfg.calibration.screenH.value;
-        document.body.appendChild(controls);
-        const screenPlacement = "getScreenDetails" in window;
-        console.log(screenPlacement, "Screen placement API exists");
-        if (screenPlacement) {
-          placeWindow(lkgCanvas, cfg, enabled, onbeforeunload);
-        } else {
-          openPopup(cfg, lkgCanvas, onbeforeunload);
-        }
-      } else {
-        (_a = controls.parentElement) == null ? void 0 : _a.removeChild(controls);
-        appCanvas.width = origWidth;
-        appCanvas.height = origHeight;
-        if (cfg.popup) {
-          cfg.popup.onbeforeunload = null;
-          cfg.popup.close();
-          cfg.popup = null;
-        }
-      }
-    };
+    recompileProgram();
     this[PRIVATE] = {
       LookingGlassEnabled: false,
       framebuffer,
@@ -7927,9 +7865,13 @@ class LookingGlassXRDevice extends XRDevice {
     baseLayerPrivate.LookingGlassEnabled = session.immersive;
     if (session.immersive) {
       cfg.XRSession = this.sessions.get(sessionId);
-      baseLayerPrivate.moveCanvasToWindow(true, () => {
-        this.endSession(sessionId);
-      });
+      if (cfg.popup == null) {
+        baseLayerPrivate.moveCanvasToWindow(true, () => {
+          this.endSession(sessionId);
+        });
+      } else {
+        console.warn("attempted to assign baselayer twice?");
+      }
     }
   }
   isSessionSupported(mode) {
@@ -8137,21 +8079,7 @@ class LookingGlassWebXRPolyfill extends WebXRPolyfill {
     this.loadPolyfill();
   }
   static async init(cfg) {
-    {
-      new LookingGlassWebXRPolyfill(cfg);
-    }
-  }
-  static async detectLookingGlassDevice() {
-    return new Promise((resolve) => {
-      new Client(async (msg) => {
-        console.log(msg, "message from core");
-        if (msg.devices.length > 0) {
-          resolve(true);
-        } else {
-          resolve(false);
-        }
-      });
-    });
+    new LookingGlassWebXRPolyfill(cfg);
   }
   async loadPolyfill() {
     this.overrideDefaultVRButton();

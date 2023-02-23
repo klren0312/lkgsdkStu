@@ -43,6 +43,7 @@ export declare enum InlineView {
 }
 export declare type ViewControlArgs = {
     /**
+     * @Deprecated: since 0.4.0 use `quiltResolution` instead
      * Defines the height of the individual quilt view, the width is then set based on the aspect ratio of the connected device.
      * @default 512
      */
@@ -111,6 +112,22 @@ export declare type ViewControlArgs = {
      * A reference to the current XRSession, giving access to the WebXR rendering context, this should be read only unless you like living dangerously
      */
     XRSession: any;
+    /**
+     * The current quilt resolution, this is a read only value that is set based on the connected device
+     * @default 3840
+     *
+     */
+    quiltResolution: number;
+    /**
+     * The Canvas on the Looking Glass
+     * @default null
+     */
+    lkgCanvas: HTMLCanvasElement | null;
+    /**
+     * The main webgl context
+     * @default null
+     */
+    appCanvas: HTMLCanvasElement | null;
 };
 declare type LookingGlassConfigEvent = "on-config-changed";
 export declare class LookingGlassConfig extends EventTarget {
@@ -125,10 +142,15 @@ export declare class LookingGlassConfig extends EventTarget {
     set calibration(value: Partial<CalibrationArgs>);
     updateViewControls(value: Partial<ViewControlArgs> | undefined): void;
     /**
-     * defines the height of the individual quilt view, the width is then set based on the aspect ratio of the connected device.
+     * @deprecated defines the height of the individual quilt view, the width is then set based on the aspect ratio of the connected device.
      */
     get tileHeight(): number;
     set tileHeight(v: number);
+    /**
+     * defines the quilt resolution, only change this at start, do not change this after an XRSession has started
+     */
+    get quiltResolution(): number;
+    set quiltResolution(v: number);
     /**
      * defines the number of views to be rendered
      */
@@ -184,6 +206,10 @@ export declare class LookingGlassConfig extends EventTarget {
     set popup(v: Window | null);
     get XRSession(): any;
     set XRSession(v: any);
+    get lkgCanvas(): HTMLCanvasElement | null;
+    set lkgCanvas(v: HTMLCanvasElement | null);
+    get appCanvas(): HTMLCanvasElement | null;
+    set appCanvas(v: HTMLCanvasElement | null);
     get aspect(): number;
     get tileWidth(): number;
     get framebufferWidth(): number;

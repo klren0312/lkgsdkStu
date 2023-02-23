@@ -1,2 +1,1 @@
-import { LookingGlassConfig } from './LookingGlassConfig';
-export declare function LookingGlassMediaController(appCanvas: HTMLCanvasElement, cfg: LookingGlassConfig): void;
+export declare function LookingGlassMediaController(): void;
