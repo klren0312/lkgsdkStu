@@ -161,7 +161,7 @@ export class LookingGlassConfig extends EventTarget {
 	// Config defaults
 	private _viewControls: ViewControlArgs = {
 		tileHeight: 512,
-		numViews: 45,
+		numViews: 48,
 		trackballX: 0,
 		trackballY: 0,
 		targetX: 0,
@@ -241,18 +241,14 @@ export class LookingGlassConfig extends EventTarget {
 	 * @deprecated defines the height of the individual quilt view, the width is then set based on the aspect ratio of the connected device.
 	 */
 	public get tileHeight(): number {
-		return Math.round(this._viewControls.quiltResolution / this.quiltHeight)
-	}
-
-	set tileHeight(v: number) {
-		Math.round(this._viewControls.quiltResolution / this.quiltHeight)
+		return Math.round(this.framebufferHeight / this.quiltHeight)
 	}
 
 	/**
 	 * defines the quilt resolution, only change this at start, do not change this after an XRSession has started
 	 */
 
-	public get quiltResolution(): number {
+    public get quiltResolution(): number {
 		return this._viewControls.quiltResolution
 	}
 
@@ -413,12 +409,12 @@ export class LookingGlassConfig extends EventTarget {
 	}
 
 	public get tileWidth() {
-		return Math.round(this._viewControls.quiltResolution / this.quiltWidth)
+		return Math.round(this.framebufferWidth / this.quiltWidth)
 	}
 
 	public get framebufferWidth() {
 		if (this._calibration.screenW.value < 7000) return this._viewControls.quiltResolution
-		else return 8192
+		else return 7680
 	}
 
 	// number of columns
@@ -430,7 +426,7 @@ export class LookingGlassConfig extends EventTarget {
 			return 5
 
 		}
-		else if (this.calibration.screenW.value == 8192) {
+		else if (this.calibration.screenW.value > 7000) {
 			return 5
 		}
 		else {
@@ -446,7 +442,7 @@ export class LookingGlassConfig extends EventTarget {
 			return 9
 
 		}
-		else if (this.calibration.screenW.value == 8192) {
+		else if (this.calibration.screenW.value > 7000) {
 			return 9
 		}
 		else {
@@ -456,7 +452,7 @@ export class LookingGlassConfig extends EventTarget {
 
 	public get framebufferHeight() {
 		if (this._calibration.screenW.value < 7000) return this._viewControls.quiltResolution
-		else return 8192
+		else return 4320
 	}
 
 	public get viewCone() {
