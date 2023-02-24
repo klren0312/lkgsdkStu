@@ -222,10 +222,10 @@ export default class LookingGlassXRDevice extends XRDevice {
       const col = viewIndex % cfg.quiltWidth;
       const row = Math.floor(viewIndex / cfg.quiltWidth);
       // determine where to draw the current viewIndex to in the quilt
-      target.x = cfg.tileWidth * col;
-      target.y = cfg.tileHeight * row;
-      target.width = cfg.tileWidth;
-      target.height = cfg.tileHeight;
+      target.x = (cfg.framebufferWidth / cfg.quiltWidth) * col;
+      target.y = (cfg.framebufferHeight / cfg.quiltHeight) * row;
+      target.width = cfg.framebufferWidth / cfg.quiltWidth;
+      target.height = cfg.framebufferHeight / cfg.quiltHeight;
     }
     return true;
   }
