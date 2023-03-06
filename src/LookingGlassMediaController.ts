@@ -1,6 +1,6 @@
 import { getLookingGlassConfig } from './LookingGlassConfig';
 
-export function LookingGlassMediaController() {
+export async function LookingGlassMediaController() {
 
 	const cfg = getLookingGlassConfig();
 
@@ -10,7 +10,11 @@ export function LookingGlassMediaController() {
 	}
 	else {
 	const screenshotbutton = document.getElementById("screenshotbutton") as HTMLButtonElement | null
-	screenshotbutton?.addEventListener("click", downloadImage)
+	screenshotbutton?.addEventListener("click", waitforDownload)
+
+	async function waitforDownload() {
+		await resolveWhenIdle.promise( 50 ).finally(downloadImage)
+	}
 
 	function downloadImage() {
 		// capturing must be set to true before downloading an image in order to capture a high quality quilt. TODO: manually grab XRsession framebuffer instead
@@ -28,4 +32,19 @@ export function LookingGlassMediaController() {
 		}
 	}
 }
+
+// make request and cancel generic to support most browsers
+const idleOptions = { timeout: 500 };
+const request = window.requestIdleCallback || window.requestAnimationFrame;
+const cancel = window.cancelIdleCallback || window.cancelAnimationFrame;
+
+
+// controllable promise
+const resolveWhenIdle = {
+  request: request,
+  cancel: cancel,
+  promise: (num) => new Promise((resolve) => request(resolve, Object.assign({}, idleOptions, num))),
+};
+
+export { resolveWhenIdle };
 
