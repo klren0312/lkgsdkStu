@@ -145,7 +145,6 @@ export declare class LookingGlassConfig extends EventTarget {
      * @deprecated defines the height of the individual quilt view, the width is then set based on the aspect ratio of the connected device.
      */
     get tileHeight(): number;
-    set tileHeight(v: number);
     /**
      * defines the quilt resolution, only change this at start, do not change this after an XRSession has started
      */

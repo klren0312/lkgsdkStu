@@ -6829,7 +6829,7 @@ class LookingGlassConfig$1 extends EventTarget {
     });
     __publicField(this, "_viewControls", {
       tileHeight: 512,
-      numViews: 45,
+      numViews: 48,
       trackballX: 0,
       trackballY: 0,
       targetX: 0,
@@ -6888,10 +6888,7 @@ class LookingGlassConfig$1 extends EventTarget {
     }
   }
   get tileHeight() {
-    return Math.round(this._viewControls.quiltResolution / this.quiltHeight);
-  }
-  set tileHeight(v) {
-    Math.round(this._viewControls.quiltResolution / this.quiltHeight);
+    return Math.round(this.framebufferHeight / this.quiltHeight);
   }
   get quiltResolution() {
     return this._viewControls.quiltResolution;
@@ -6990,20 +6987,20 @@ class LookingGlassConfig$1 extends EventTarget {
     return this._calibration.screenW.value / this._calibration.screenH.value;
   }
   get tileWidth() {
-    return Math.round(this._viewControls.quiltResolution / this.quiltWidth);
+    return Math.round(this.framebufferWidth / this.quiltWidth);
   }
   get framebufferWidth() {
     if (this._calibration.screenW.value < 7e3)
       return this._viewControls.quiltResolution;
     else
-      return 8192;
+      return 7680;
   }
   get quiltWidth() {
     if (this.calibration.screenW.value == 1536) {
       return 8;
     } else if (this.calibration.screenW.value == 3840) {
       return 5;
-    } else if (this.calibration.screenW.value == 8192) {
+    } else if (this.calibration.screenW.value > 7e3) {
       return 5;
     } else {
       return 8;
@@ -7014,7 +7011,7 @@ class LookingGlassConfig$1 extends EventTarget {
       return 6;
     } else if (this.calibration.screenW.value == 3840) {
       return 9;
-    } else if (this.calibration.screenW.value == 8192) {
+    } else if (this.calibration.screenW.value > 7e3) {
       return 9;
     } else {
       return 6;
@@ -7024,7 +7021,7 @@ class LookingGlassConfig$1 extends EventTarget {
     if (this._calibration.screenW.value < 7e3)
       return this._viewControls.quiltResolution;
     else
-      return 8192;
+      return 4320;
   }
   get viewCone() {
     return this._calibration.viewCone.value * this.depthiness / 180 * Math.PI;
@@ -7286,7 +7283,7 @@ function perspective(out, fovy, aspect, near, far) {
   }
   return out;
 }
-function LookingGlassMediaController() {
+async function LookingGlassMediaController() {
   const cfg = getLookingGlassConfig();
   if (cfg.appCanvas == null) {
     console.warn("Media Capture initialized while canvas is null!");
@@ -7306,12 +7303,24 @@ function LookingGlassMediaController() {
       }
     };
     const screenshotbutton = document.getElementById("screenshotbutton");
-    screenshotbutton == null ? void 0 : screenshotbutton.addEventListener("click", downloadImage);
+    screenshotbutton == null ? void 0 : screenshotbutton.addEventListener("click", waitforDownload);
+    async function waitforDownload() {
+      await resolveWhenIdle.promise(50).finally(downloadImage);
+    }
   }
 }
+const idleOptions = { timeout: 500 };
+const request = window.requestIdleCallback || window.requestAnimationFrame;
+const cancel = window.cancelIdleCallback || window.cancelAnimationFrame;
+const resolveWhenIdle = {
+  request,
+  cancel,
+  promise: (num) => new Promise((resolve) => request(resolve, Object.assign({}, idleOptions, num)))
+};
 function initLookingGlassControlGUI() {
   var _a;
   const cfg = getLookingGlassConfig();
+  console.log(cfg, "for debugging purposes");
   if (cfg.lkgCanvas == null) {
     console.warn("window placement called without a valid XR Session!");
   } else {
@@ -8006,10 +8015,10 @@ class LookingGlassXRDevice extends XRDevice {
       const cfg = getLookingGlassConfig();
       const col = viewIndex % cfg.quiltWidth;
       const row = Math.floor(viewIndex / cfg.quiltWidth);
-      target.x = cfg.tileWidth * col;
-      target.y = cfg.tileHeight * row;
-      target.width = cfg.tileWidth;
-      target.height = cfg.tileHeight;
+      target.x = cfg.framebufferWidth / cfg.quiltWidth * col;
+      target.y = cfg.framebufferHeight / cfg.quiltHeight * row;
+      target.width = cfg.framebufferWidth / cfg.quiltWidth;
+      target.height = cfg.framebufferHeight / cfg.quiltHeight;
     }
     return true;
   }
