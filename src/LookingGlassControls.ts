@@ -48,6 +48,20 @@ export function initLookingGlassControlGUI() {
 		screenshotbutton.id = "screenshotbutton"
 		c.appendChild(screenshotbutton)
 		screenshotbutton.innerText = "Save Hologram"
+
+		const copybutton = document.createElement("button")
+		copybutton.style.display = "block"
+		copybutton.style.margin = "auto"
+		copybutton.style.width = "100%"
+		copybutton.style.height = "35px"
+		copybutton.style.padding = "4px"
+		copybutton.style.marginBottom = "8px"
+		copybutton.style.borderRadius = "8px"
+		copybutton.id = "copybutton"
+		c.appendChild(copybutton)
+		copybutton.innerText = "Copy Config"
+		copybutton.addEventListener("click", () => {
+		copyConfigToClipboard(cfg)})
 	
 		const help = document.createElement("div")
 		c.appendChild(help)
@@ -270,4 +284,29 @@ export function initLookingGlassControlGUI() {
 	
 		return c
 	}
+}
+
+function copyConfigToClipboard(cfg) {
+
+	let targetX = cfg.targetX
+	let targetY = cfg.targetY
+	let targetZ = cfg.targetZ
+	let fovy = `${Math.round((cfg.fovy / Math.PI) * 180)} * Math.PI / 180`
+	let targetDiam = cfg.targetDiam
+	let trackballX = cfg.trackballX
+	let trackballY = cfg.trackballY
+	let depthiness = cfg.depthiness
+	const camera = {
+		targetX,
+		targetY,
+		targetZ,
+		fovy,
+		targetDiam,
+		trackballX,
+		trackballY,
+		depthiness,
+	}
+
+	let config = JSON.stringify(camera, null, 4)
+	navigator.clipboard.writeText(config)
 }
