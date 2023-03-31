@@ -21,6 +21,8 @@ import { PRIVATE as LookingGlassXRWebGLLayer_PRIVATE } from './LookingGlassXRWeb
 import { DefaultEyeHeight, getLookingGlassConfig } from './LookingGlassConfig';
 
 export default class LookingGlassXRDevice extends XRDevice {
+  static instance: LookingGlassXRDevice | null = null;
+
   constructor(global) {
     super(global);
 
@@ -32,6 +34,16 @@ export default class LookingGlassXRDevice extends XRDevice {
     this.inlineInverseViewMatrix = mat4.create();
     this.LookingGlassProjectionMatrices = [];
     this.LookingGlassInverseViewMatrices = [];
+    this.captureScreenshot = false;
+    this.screenshotCallback = null;
+
+    if (!LookingGlassXRDevice.instance) {
+      LookingGlassXRDevice.instance = this;
+  }
+}
+
+  static getInstance() {
+    return LookingGlassXRDevice.instance;
   }
 
   onBaseLayerSet(sessionId, layer) {
@@ -157,6 +169,11 @@ export default class LookingGlassXRDevice extends XRDevice {
   onFrameEnd(sessionId) {
     const session = this.sessions.get(sessionId);
     session.baseLayer[LookingGlassXRWebGLLayer_PRIVATE].blitTextureToDefaultFramebufferIfNeeded();
+
+    if (this.captureScreenshot && this.screenshotCallback) {
+      this.screenshotCallback();
+      this.captureScreenshot = false;
+    }
   }
 // Looking Glass WebXR Library requires local to be set when requesting an XR session.
   async requestFrameOfReferenceTransform(type, options) {

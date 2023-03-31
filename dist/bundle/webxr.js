@@ -7285,12 +7285,9 @@ function perspective(out, fovy, aspect, near, far) {
 }
 async function LookingGlassMediaController() {
   const cfg = getLookingGlassConfig();
-  if (cfg.appCanvas == null) {
-    console.warn("Media Capture initialized while canvas is null!");
-    return;
-  } else {
-    let downloadImage = function() {
-      if (cfg.appCanvas != null) {
+  function downloadImage() {
+    if (cfg.appCanvas != null) {
+      try {
         let url = cfg.appCanvas.toDataURL();
         const a = document.createElement("a");
         a.style.display = "none";
@@ -7300,23 +7297,24 @@ async function LookingGlassMediaController() {
         a.click();
         document.body.removeChild(a);
         window.URL.revokeObjectURL(url);
+      } catch (error) {
+        console.error("Error while capturing canvas data:", error);
       }
-    };
-    const screenshotbutton = document.getElementById("screenshotbutton");
-    screenshotbutton == null ? void 0 : screenshotbutton.addEventListener("click", waitforDownload);
-    async function waitforDownload() {
-      await resolveWhenIdle.promise(50).finally(downloadImage);
     }
   }
+  const screenshotButton = document.getElementById("screenshotbutton");
+  if (screenshotButton) {
+    screenshotButton.addEventListener("click", () => {
+      const xrDevice = LookingGlassXRDevice.getInstance();
+      if (!xrDevice) {
+        console.warn("LookingGlassXRDevice not initialized");
+        return;
+      }
+      xrDevice.captureScreenshot = true;
+      xrDevice.screenshotCallback = downloadImage;
+    });
+  }
 }
-const idleOptions = { timeout: 500 };
-const request = window.requestIdleCallback || window.requestAnimationFrame;
-const cancel = window.cancelIdleCallback || window.cancelAnimationFrame;
-const resolveWhenIdle = {
-  request,
-  cancel,
-  promise: (num) => new Promise((resolve) => request(resolve, Object.assign({}, idleOptions, num)))
-};
 function initLookingGlassControlGUI() {
   var _a;
   const cfg = getLookingGlassConfig();
@@ -7957,7 +7955,7 @@ class LookingGlassXRWebGLLayer extends XRWebGLLayer {
     return getLookingGlassConfig().framebufferHeight;
   }
 }
-class LookingGlassXRDevice extends XRDevice {
+const _LookingGlassXRDevice = class extends XRDevice {
   constructor(global2) {
     super(global2);
     this.sessions = /* @__PURE__ */ new Map();
@@ -7967,6 +7965,14 @@ class LookingGlassXRDevice extends XRDevice {
     this.inlineInverseViewMatrix = create();
     this.LookingGlassProjectionMatrices = [];
     this.LookingGlassInverseViewMatrices = [];
+    this.captureScreenshot = false;
+    this.screenshotCallback = null;
+    if (!_LookingGlassXRDevice.instance) {
+      _LookingGlassXRDevice.instance = this;
+    }
+  }
+  static getInstance() {
+    return _LookingGlassXRDevice.instance;
   }
   onBaseLayerSet(sessionId, layer) {
     const session = this.sessions.get(sessionId);
@@ -8065,6 +8071,10 @@ class LookingGlassXRDevice extends XRDevice {
   onFrameEnd(sessionId) {
     const session = this.sessions.get(sessionId);
     session.baseLayer[PRIVATE].blitTextureToDefaultFramebufferIfNeeded();
+    if (this.captureScreenshot && this.screenshotCallback) {
+      this.screenshotCallback();
+      this.captureScreenshot = false;
+    }
   }
   async requestFrameOfReferenceTransform(type, options) {
     const matrix = create();
@@ -8147,7 +8157,9 @@ class LookingGlassXRDevice extends XRDevice {
   }
   onWindowResize() {
   }
-}
+};
+let LookingGlassXRDevice = _LookingGlassXRDevice;
+__publicField(LookingGlassXRDevice, "instance", null);
 let SESSION_ID = 0;
 class Session {
   constructor(mode, enabledFeatures) {
@@ -8222,6 +8234,8 @@ class LookingGlassWebXRPolyfill extends WebXRPolyfill {
         this.updateVRButtonUI();
       });
       this.updateVRButtonUI();
+    } else {
+      console.warn("Unable to find VRButton");
     }
   }
   async updateVRButtonUI() {
@@ -8242,12 +8256,12 @@ class LookingGlassWebXRPolyfill extends WebXRPolyfill {
   }
 }
 async function waitForElement(id) {
-  return new Promise((resolve, reject) => {
+  return new Promise((resolve) => {
     const observer = new MutationObserver(function(mutations) {
       mutations.forEach(function(mutation) {
         mutation.addedNodes.forEach(function(node) {
           const el = node;
-          if (el.id == id) {
+          if (el.id === id) {
             resolve(el);
             observer.disconnect();
           }
@@ -8257,7 +8271,7 @@ async function waitForElement(id) {
     observer.observe(document.body, { subtree: false, childList: true });
     setTimeout(() => {
       observer.disconnect();
-      reject(`id:${id} not found`);
+      resolve(null);
     }, 5e3);
   });
 }
