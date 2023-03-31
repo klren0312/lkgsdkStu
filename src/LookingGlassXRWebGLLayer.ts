@@ -17,12 +17,11 @@
 import XRWebGLLayer, { PRIVATE as XRWebGLLayer_PRIVATE } from "@lookingglass/webxr-polyfill/src/api/XRWebGLLayer"
 import { Shader } from "holoplay-core"
 import { getLookingGlassConfig } from "./LookingGlassConfig"
-import { initLookingGlassControlGUI } from "./LookingGlassControls"
 import { moveCanvasToWindow } from "./LookingGlassWindow"
 
 export const PRIVATE = Symbol("LookingGlassXRWebGLLayer")
 
-export type Viewport = {0}
+export type Viewport = { 0 }
 
 export default class LookingGlassXRWebGLLayer extends XRWebGLLayer {
 	constructor(session: any, gl: WebGL2RenderingContext, layerInit: any) {
@@ -46,8 +45,6 @@ export default class LookingGlassXRWebGLLayer extends XRWebGLLayer {
 		let depthStencil, dsConfig
 		// define a pointer to a framebuffer
 		const framebuffer = gl.createFramebuffer()
-		const glEnable = gl.enable.bind(gl)
-		const glDisable = gl.disable.bind(gl)
 
 		const OES_VAO = gl.getExtension("OES_vertex_array_object")
 		const GL_VERTEX_ARRAY_BINDING = 0x85b5
@@ -73,115 +70,143 @@ export default class LookingGlassXRWebGLLayer extends XRWebGLLayer {
 			}
 			depthStencil = gl.createRenderbuffer()
 		}
+		// utility functions for allocating the framebuffer resources
 
-		// sets up the texture based on the quilt height and width
-		const allocateFramebufferAttachments = () => {
-			// create variable to store the current texture binding
-			const oldTextureBinding = gl.getParameter(gl.TEXTURE_BINDING_2D)
-			{
-				// bind the current working texture to the `texture` variable
-				gl.bindTexture(gl.TEXTURE_2D, texture)
-				// initialize the texture with the current framebuffer width and height
-				gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, cfg.framebufferWidth, cfg.framebufferHeight, 0, gl.RGBA, gl.UNSIGNED_BYTE, null)
-				// set the filtering to linear
-				gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR)
-			}
-			// returns the current texture binding
-			gl.bindTexture(gl.TEXTURE_2D, oldTextureBinding)
-
-			// do the same thing as above, but for the depth and stencil buffers.
+		const allocateFramebufferAttachments = (gl, texture, depthStencil, dsConfig, cfg) => {
+			allocateTexture(gl, texture, cfg.framebufferWidth, cfg.framebufferHeight)
 			if (depthStencil) {
-				const oldRenderbufferBinding = gl.getParameter(gl.RENDERBUFFER_BINDING)
-				{
-					gl.bindRenderbuffer(gl.RENDERBUFFER, depthStencil)
-					gl.renderbufferStorage(gl.RENDERBUFFER, dsConfig.format, cfg.framebufferWidth, cfg.framebufferHeight)
-				}
-				gl.bindRenderbuffer(gl.RENDERBUFFER, oldRenderbufferBinding)
+				allocateDepthStencil(gl, depthStencil, dsConfig, cfg.framebufferWidth, cfg.framebufferHeight)
 			}
 		}
-		allocateFramebufferAttachments()
-		cfg.addEventListener("on-config-changed", allocateFramebufferAttachments)
 
-		// gets the current framebuffer, sets the current framebuffer, then copies from the texture to the frame buffer, then write the depth/stencil if exist, then return the framebuffer to the original one
-		const oldFramebufferBinding = gl.getParameter(gl.FRAMEBUFFER_BINDING)
-		{
-			//set currently used framebuffer to the one we just created
+		const allocateTexture = (gl, texture, width, height) => {
+			const oldTextureBinding = gl.getParameter(gl.TEXTURE_BINDING_2D)
+			gl.bindTexture(gl.TEXTURE_2D, texture)
+			gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, width, height, 0, gl.RGBA, gl.UNSIGNED_BYTE, null)
+			gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR)
+			gl.bindTexture(gl.TEXTURE_2D, oldTextureBinding)
+		}
+
+		const allocateDepthStencil = (gl, depthStencil, dsConfig, width, height) => {
+			const oldRenderbufferBinding = gl.getParameter(gl.RENDERBUFFER_BINDING)
+			gl.bindRenderbuffer(gl.RENDERBUFFER, depthStencil)
+			gl.renderbufferStorage(gl.RENDERBUFFER, dsConfig.format, width, height)
+			gl.bindRenderbuffer(gl.RENDERBUFFER, oldRenderbufferBinding)
+		}
+
+		const setupFramebuffer = (gl, framebuffer, texture, dsConfig, depthStencil, config) => {
+			const oldFramebufferBinding = gl.getParameter(gl.FRAMEBUFFER_BINDING)
 			gl.bindFramebuffer(gl.FRAMEBUFFER, framebuffer)
-			//selects the current frame buffer, then write the texture to the framebuffer
 			gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, texture, 0)
-			//if depth or stencil pass exist, do it again for those passes
 			if (config.depth || config.stencil) {
 				gl.framebufferRenderbuffer(gl.FRAMEBUFFER, dsConfig.attachment, gl.RENDERBUFFER, depthStencil)
 			}
+			gl.bindFramebuffer(gl.FRAMEBUFFER, oldFramebufferBinding)
 		}
-		gl.bindFramebuffer(gl.FRAMEBUFFER, oldFramebufferBinding)
+
+		allocateFramebufferAttachments(gl, texture, depthStencil, dsConfig, cfg)
+		cfg.addEventListener("on-config-changed", () => allocateFramebufferAttachments(gl, texture, depthStencil, dsConfig, cfg))
+
+		setupFramebuffer(gl, framebuffer, texture, dsConfig, depthStencil, config)
 
 		// Set up blit from texture to screen.
 
-		const program = gl.createProgram()
-		const vs = gl.createShader(gl.VERTEX_SHADER)
-		const fs = gl.createShader(gl.FRAGMENT_SHADER)
-
-		// if the shaders are invalid exit
-		if (program === null || vs === null || fs === null) {
-			console.error("there was a problem with shader construction")
-			return
+		const vertexShaderSource = `
+		attribute vec2 a_position;
+		varying vec2 v_texcoord;
+		void main() {
+		  gl_Position = vec4(a_position * 2.0 - 1.0, 0.0, 1.0);
+		  v_texcoord = a_position;
 		}
-		gl.attachShader(program, vs)
-		gl.attachShader(program, fs)
-	
+	  `
 
-		{
-			const vsSource = `
-       attribute vec2 a_position;
-       varying vec2 v_texcoord;
-       void main() {
-         gl_Position = vec4(a_position * 2.0 - 1.0, 0.0, 1.0);
-         v_texcoord = a_position;
-       }
-     `
-			gl.shaderSource(vs, vsSource)
-			gl.compileShader(vs)
-			if (!gl.getShaderParameter(vs, gl.COMPILE_STATUS)) console.warn(gl.getShaderInfoLog(vs))
-		}
+		function createShader (gl, type, source) {
+			const shader = gl.createShader(type)
+			gl.shaderSource(shader, source)
+			gl.compileShader(shader)
 
-		let lastGeneratedFSSource
-		let a_location
-		let u_viewType
-
-		// recompile the fragment shader if the config changes
-		const recompileProgram = () => {
-			// use shader from holoplay-core.js
-			const fsSource = Shader(cfg)
-			if (fsSource === lastGeneratedFSSource) return
-			lastGeneratedFSSource = fsSource
-
-			gl.shaderSource(fs, fsSource)
-			gl.compileShader(fs)
-			if (!gl.getShaderParameter(fs, gl.COMPILE_STATUS)) {
-				console.warn(gl.getShaderInfoLog(fs))
-				return
+			if (!gl.getShaderParameter(shader, gl.COMPILE_STATUS)) {
+				console.warn(gl.getShaderInfoLog(shader))
+				return null
 			}
 
+			return shader
+		}
+
+		function setupShaderProgram(gl, vertexShaderSource, fragmentShaderSource) {
+			let program = gl.createProgram()
+			const vs = createShader(gl, gl.VERTEX_SHADER, vertexShaderSource)
+			const fs = createShader(gl, gl.FRAGMENT_SHADER, fragmentShaderSource)
+
+			if (vs === null || fs === null) {
+				console.error("There was a problem with shader construction")
+				return null
+			}
+
+			gl.attachShader(program, vs)
+			gl.attachShader(program, fs)
 			gl.linkProgram(program)
+
 			if (!gl.getProgramParameter(program, gl.LINK_STATUS)) {
 				console.warn(gl.getProgramInfoLog(program))
-				return
+				return null
 			}
 
-			a_location = gl.getAttribLocation(program, "a_position")
-			u_viewType = gl.getUniformLocation(program, "u_viewType")
-			const u_texture = gl.getUniformLocation(program, "u_texture")
-
-			const oldProgram = gl.getParameter(gl.CURRENT_PROGRAM)
-			{
-				gl.useProgram(program)
-				gl.uniform1i(u_texture, 0) // Always use texture unit 0 for u_texture // todo: why
-			}
-			gl.useProgram(oldProgram)
+			return program
 		}
 
-		cfg.addEventListener("on-config-changed", recompileProgram)
+		let currentFs;
+		let lastGeneratedFSSource;
+		let a_location;
+		let u_viewType;
+
+		const recompileFragmentShaderIfNeeded = (gl, cfg, shaderFn) => {
+			const fsSource = shaderFn(cfg);
+			if (fsSource === lastGeneratedFSSource) return;
+			lastGeneratedFSSource = fsSource;
+			
+			const newFs = createShader(gl, gl.FRAGMENT_SHADER, fsSource);
+			if (newFs === null) return;
+			
+			if (currentFs) {
+			  gl.deleteShader(currentFs); // Delete the old shader
+			}
+			currentFs = newFs;
+		  
+			// Create a new program with the updated fragment shader
+			const newProgram = setupShaderProgram(gl, vertexShaderSource, fsSource);
+			if (newProgram === null) {
+			  console.warn("There was a problem with shader construction");
+			  return;
+			}
+		  
+			// Update the attribute and uniform locations
+			a_location = gl.getAttribLocation(newProgram, "a_position");
+			u_viewType = gl.getUniformLocation(newProgram, "u_viewType");
+			const u_texture = gl.getUniformLocation(newProgram, "u_texture");
+		  
+			const oldProgram = gl.getParameter(gl.CURRENT_PROGRAM);
+			{
+			  gl.useProgram(newProgram);
+			  gl.uniform1i(u_texture, 0); // Always use texture unit 0 for u_texture
+			}
+			gl.useProgram(oldProgram);
+		  
+			// Delete the old program and update the reference
+			if (program) {
+			  gl.deleteProgram(program);
+			}
+			program = newProgram;
+		  };
+
+		let program = setupShaderProgram(gl, vertexShaderSource, Shader(cfg))
+		if (program === null) {
+			console.warn("There was a problem with shader construction")
+		}
+
+		cfg.addEventListener("on-config-changed", () => {
+			recompileFragmentShaderIfNeeded(gl, cfg, Shader);
+		  });
 
 		const vao = OES_VAO ? OES_VAO.createVertexArrayOES() : gl.createVertexArray()
 		const vbo = gl.createBuffer()
@@ -219,99 +244,179 @@ export default class LookingGlassXRWebGLLayer extends XRWebGLLayer {
 
 		let origWidth, origHeight
 
+		function blitTextureToDefaultFramebufferIfNeeded() {
+			if (!cfg.appCanvas || !cfg.lkgCanvas) {
+				return
+			}
 
-		const blitTextureToDefaultFramebufferIfNeeded = () => {
-			if (!this[PRIVATE].LookingGlassEnabled) return
-			if (cfg.appCanvas == null || cfg.lkgCanvas == null) return
-			// Make sure the default framebuffer has the correct size (undo any resizing
-			// the host page did, and updating for the latest calibration value).
-			// But store off any resizing the host page DID do, so we can restore it on exit.
-
-			// check the dimensions of the canvas and ensure that we're not capturing
-			if ((cfg.appCanvas.width !== cfg.framebufferWidth || cfg.appCanvas.height !== cfg.framebufferHeight)) {
+			// Update canvas dimensions if needed
+			if (cfg.appCanvas.width !== cfg.framebufferWidth || cfg.appCanvas.height !== cfg.framebufferHeight) {
 				origWidth = cfg.appCanvas.width
 				origHeight = cfg.appCanvas.height
 				cfg.appCanvas.width = cfg.framebufferWidth
 				cfg.appCanvas.height = cfg.framebufferHeight
 			}
 
-			const oldVAO = gl.getParameter(GL_VERTEX_ARRAY_BINDING)
-			const oldCullFace = gl.getParameter(gl.CULL_FACE)
-			const oldBlend = gl.getParameter(gl.BLEND)
-			const oldDepthTest = gl.getParameter(gl.DEPTH_TEST)
-			const oldStencilTest = gl.getParameter(gl.STENCIL_TEST)
-			const oldScissorTest = gl.getParameter(gl.SCISSOR_TEST)
-			const oldViewport = gl.getParameter(gl.VIEWPORT) as Int32Array
-			const oldFramebufferBinding = gl.getParameter(gl.FRAMEBUFFER_BINDING)
-			const oldRenderbufferBinding = gl.getParameter(gl.RENDERBUFFER_BINDING)
-			const oldProgram = gl.getParameter(gl.CURRENT_PROGRAM)
-			const oldActiveTexture = gl.getParameter(gl.ACTIVE_TEXTURE)
-			{
-				const oldTextureBinding = gl.getParameter(gl.TEXTURE_BINDING_2D)
-				{
-					gl.bindFramebuffer(gl.FRAMEBUFFER, null)
-					gl.useProgram(program)
+			// Save the current WebGL state
+			const oldState = saveWebGLState()
 
-					glBindVertexArray(vao)
+			// Set up the WebGL state for rendering
+			setupRenderState()
 
-					gl.activeTexture(gl.TEXTURE0)
-					gl.bindTexture(gl.TEXTURE_2D, texture)
+			// Render the swizzled view for the display
+			renderSubPixelArrangement()
 
-					gl.disable(gl.BLEND)
-					gl.disable(gl.CULL_FACE)
-					gl.disable(gl.DEPTH_TEST)
-					gl.disable(gl.STENCIL_TEST)
-					gl.viewport(0, 0, gl.drawingBufferWidth, gl.drawingBufferHeight)
+			// Clear the Looking Glass Canvas and draw the new image
+			updateLookingGlassCanvas()
 
-					// Render the swizzled view for the display
-					gl.uniform1i(u_viewType, 0)
-					gl.drawArrays(gl.TRIANGLES, 0, 6)
+			// Render the quilt or centered inline view to the canvas
+			renderInlineView()
 
-					// Clear the Looking Glass Canvas before drawing the new image
-					lkgCtx?.clearRect(0, 0, cfg.lkgCanvas.width, cfg.lkgCanvas.height)
-					// if we're not capturing, copy the quilt to the Looking Glass
-					// draw the image from the source canvas which is the framebuffer width and height, to the device canvas which is the device width and height
-					lkgCtx?.drawImage(cfg.appCanvas, 0, 0, cfg.framebufferWidth, cfg.framebufferHeight, 0, 0, cfg.calibration.screenW.value, cfg.calibration.screenH.value)
-					// Render the quilt or centered inline view to the canvas
-					if (cfg.inlineView !== 0) {
-						// If we're capturing, resize the canvas to the framebuffer size
-						if (cfg.capturing && cfg.appCanvas.width !== cfg.framebufferWidth) {
-							cfg.appCanvas.width = cfg.framebufferWidth
-							cfg.appCanvas.height = cfg.framebufferHeight
-							gl.viewport(0, 0, cfg.framebufferHeight, cfg.framebufferWidth)
-						}
-						gl.uniform1i(u_viewType, cfg.inlineView)
-						gl.drawArrays(gl.TRIANGLES, 0, 6)
-					}
-				}
-				gl.bindTexture(gl.TEXTURE_2D, oldTextureBinding)
+			// Restore the WebGL state
+			restoreWebGLState(oldState)
+		}
+
+		// Utility functions to handle WebGL state
+
+		function restoreWebGLState(oldState) {
+			gl.activeTexture(oldState.activeTexture)
+			gl.bindTexture(gl.TEXTURE_2D, oldState.textureBinding)
+			gl.useProgram(oldState.program)
+			gl.bindRenderbuffer(gl.RENDERBUFFER, oldState.renderbufferBinding)
+			gl.bindFramebuffer(gl.FRAMEBUFFER, oldState.framebufferBinding)
+			// gl.viewport(oldViewport[0], oldViewport[1], oldViewport[2], oldViewport[3]);
+
+			if (oldState.scissorTest) {
+				gl.enable(gl.SCISSOR_TEST)
+			} else {
+				gl.disable(gl.SCISSOR_TEST)
 			}
-			gl.activeTexture(oldActiveTexture)
-			gl.useProgram(oldProgram)
-			gl.bindRenderbuffer(gl.RENDERBUFFER, oldRenderbufferBinding)
-			gl.bindFramebuffer(gl.FRAMEBUFFER, oldFramebufferBinding)
-			gl.viewport(oldViewport[0], oldViewport[1], oldViewport[2], oldViewport[3])
-			;(oldScissorTest ? glEnable : glDisable)(gl.SCISSOR_TEST)
-			;(oldStencilTest ? glEnable : glDisable)(gl.STENCIL_TEST)
-			;(oldDepthTest ? glEnable : glDisable)(gl.DEPTH_TEST)
-			;(oldBlend ? glEnable : glDisable)(gl.BLEND)
-			;(oldCullFace ? glEnable : glDisable)(gl.CULL_FACE)
-			glBindVertexArray(oldVAO)
+
+			if (oldState.stencilTest) {
+				gl.enable(gl.STENCIL_TEST)
+			} else {
+				gl.disable(gl.STENCIL_TEST)
+			}
+
+			if (oldState.depthTest) {
+				gl.enable(gl.DEPTH_TEST)
+			} else {
+				gl.disable(gl.DEPTH_TEST)
+			}
+
+			if (oldState.blend) {
+				gl.enable(gl.BLEND)
+			} else {
+				gl.disable(gl.BLEND)
+			}
+
+			if (oldState.cullFace) {
+				gl.enable(gl.CULL_FACE)
+			} else {
+				gl.disable(gl.CULL_FACE)
+			}
+
+			glBindVertexArray(oldState.VAO)
+		}
+
+		/**
+		 * saves the current WebGL state
+		 * @returns {Object} The current WebGL state
+		 */
+		function saveWebGLState() {
+			return {
+				VAO: gl.getParameter(gl.VERTEX_ARRAY_BINDING),
+				cullFace: gl.getParameter(gl.CULL_FACE),
+				blend: gl.getParameter(gl.BLEND),
+				depthTest: gl.getParameter(gl.DEPTH_TEST),
+				stencilTest: gl.getParameter(gl.STENCIL_TEST),
+				scissorTest: gl.getParameter(gl.SCISSOR_TEST),
+				viewport: gl.getParameter(gl.VIEWPORT),
+				framebufferBinding: gl.getParameter(gl.FRAMEBUFFER_BINDING),
+				renderbufferBinding: gl.getParameter(gl.RENDERBUFFER_BINDING),
+				program: gl.getParameter(gl.CURRENT_PROGRAM),
+				activeTexture: gl.getParameter(gl.ACTIVE_TEXTURE),
+				textureBinding: gl.getParameter(gl.TEXTURE_BINDING_2D),
+			}
+		}
+		/**
+		 * Set up the WebGL state for rendering
+		 */
+		function setupRenderState() {
+			gl.bindFramebuffer(gl.FRAMEBUFFER, null)
+			gl.useProgram(program)
+			glBindVertexArray(vao)
+			gl.activeTexture(gl.TEXTURE0)
+			gl.bindTexture(gl.TEXTURE_2D, texture)
+			gl.disable(gl.BLEND)
+			gl.disable(gl.CULL_FACE)
+			gl.disable(gl.DEPTH_TEST)
+			gl.disable(gl.STENCIL_TEST)
+			gl.viewport(0, 0, gl.drawingBufferWidth, gl.drawingBufferHeight)
+		}
+
+		// Utility functions to handle rendering the correct views to the Looking Glass
+
+		/**
+		 * Render the subpixel arrangment to the main canvas so it can be copied to the Looking Glass Canvas
+		 */
+		function renderSubPixelArrangement() {
+			gl.uniform1i(u_viewType, 0)
+			gl.drawArrays(gl.TRIANGLES, 0, 6)
+		}
+
+		/**
+		 * Update the Looking Glass Canvas with the current view from the application
+		 */
+		function updateLookingGlassCanvas() {
+			if (!cfg.lkgCanvas || !cfg.appCanvas) {
+				console.warn("Looking Glass Canvas is not defined")
+				return
+			}
+			lkgCtx?.clearRect(0, 0, cfg.lkgCanvas.width, cfg.lkgCanvas.height)
+			lkgCtx?.drawImage(
+				cfg.appCanvas,
+				0,
+				0,
+				cfg.framebufferWidth,
+				cfg.framebufferHeight,
+				0,
+				0,
+				cfg.calibration.screenW.value,
+				cfg.calibration.screenH.value
+			)
+		}
+
+		/**
+		 * renderInlineView overrides the subpixel arrangement view in the main canvas with either the single view or quilt view
+		 */
+		function renderInlineView() {
+			if (!cfg.appCanvas) {
+				console.warn("Looking Glass Canvas is not defined")
+				return
+			}
+			if (cfg.inlineView !== 0) {
+				if (cfg.capturing && cfg.appCanvas.width !== cfg.framebufferWidth) {
+					cfg.appCanvas.width = cfg.framebufferWidth
+					cfg.appCanvas.height = cfg.framebufferHeight
+					gl.viewport(0, 0, cfg.framebufferHeight, cfg.framebufferWidth)
+				}
+				gl.uniform1i(u_viewType, cfg.inlineView)
+				gl.drawArrays(gl.TRIANGLES, 0, 6)
+			}
 		}
 
 		window.addEventListener("unload", () => {
 			if (cfg.popup) cfg.popup.close()
 			cfg.popup = null
 		})
-		recompileProgram()
-		// moveCanvasToWindow(true, onbeforeunload)
 
 		this[PRIVATE] = {
 			LookingGlassEnabled: false,
 			framebuffer,
 			clearFramebuffer,
 			blitTextureToDefaultFramebufferIfNeeded,
-			moveCanvasToWindow
+			moveCanvasToWindow,
 		}
 	}
 
@@ -323,5 +428,5 @@ export default class LookingGlassXRWebGLLayer extends XRWebGLLayer {
 	}
 	get framebufferHeight() {
 		return getLookingGlassConfig().framebufferHeight
-		}
 	}
+}
