@@ -6766,8 +6766,8 @@ function Shader(cfg) {
   const float tilesX   = ${cfg.quiltWidth};
   const float tilesY   = ${cfg.quiltHeight};
   const vec2 quiltViewPortion = vec2(
-    ${cfg.quiltWidth * cfg.tileWidth / cfg.framebufferWidth},
-    ${cfg.quiltHeight * cfg.tileHeight / cfg.framebufferHeight});
+    ${cfg.quiltWidth * (cfg.framebufferWidth / cfg.quiltWidth) / cfg.framebufferWidth},
+    ${cfg.quiltHeight * (cfg.framebufferHeight / cfg.quiltHeight) / cfg.framebufferHeight});
   vec2 texArr(vec3 uvz) {
     float z = floor(uvz.z * numViews);
     float x = (mod(z, tilesX) + uvz.x) / tilesX;
@@ -7376,6 +7376,20 @@ function initLookingGlassControlGUI() {
     screenshotbutton.id = "screenshotbutton";
     c.appendChild(screenshotbutton);
     screenshotbutton.innerText = "Save Hologram";
+    const copybutton = document.createElement("button");
+    copybutton.style.display = "block";
+    copybutton.style.margin = "auto";
+    copybutton.style.width = "100%";
+    copybutton.style.height = "35px";
+    copybutton.style.padding = "4px";
+    copybutton.style.marginBottom = "8px";
+    copybutton.style.borderRadius = "8px";
+    copybutton.id = "copybutton";
+    c.appendChild(copybutton);
+    copybutton.innerText = "Copy Config";
+    copybutton.addEventListener("click", () => {
+      copyConfigToClipboard(cfg);
+    });
     const help = document.createElement("div");
     c.appendChild(help);
     help.style.width = "290px";
@@ -7541,6 +7555,28 @@ function initLookingGlassControlGUI() {
     return c;
   }
 }
+function copyConfigToClipboard(cfg) {
+  let targetX = cfg.targetX;
+  let targetY = cfg.targetY;
+  let targetZ = cfg.targetZ;
+  let fovy = `${Math.round(cfg.fovy / Math.PI * 180)} * Math.PI / 180`;
+  let targetDiam = cfg.targetDiam;
+  let trackballX = cfg.trackballX;
+  let trackballY = cfg.trackballY;
+  let depthiness = cfg.depthiness;
+  const camera = {
+    targetX,
+    targetY,
+    targetZ,
+    fovy,
+    targetDiam,
+    trackballX,
+    trackballY,
+    depthiness
+  };
+  let config = JSON.stringify(camera, null, 4);
+  navigator.clipboard.writeText(config);
+}
 let controls;
 const moveCanvasToWindow = (enabled, onbeforeunload) => {
   const cfg = getLookingGlassConfig();
@@ -7636,8 +7672,6 @@ class LookingGlassXRWebGLLayer extends XRWebGLLayer {
     const texture = gl.createTexture();
     let depthStencil, dsConfig;
     const framebuffer = gl.createFramebuffer();
-    const glEnable = gl.enable.bind(gl);
-    const glDisable = gl.disable.bind(gl);
     const OES_VAO = gl.getExtension("OES_vertex_array_object");
     const GL_VERTEX_ARRAY_BINDING = 34229;
     const glBindVertexArray = OES_VAO ? OES_VAO.bindVertexArrayOES.bind(OES_VAO) : gl.bindVertexArray.bind(gl);
@@ -7660,87 +7694,114 @@ class LookingGlassXRWebGLLayer extends XRWebGLLayer {
       }
       depthStencil = gl.createRenderbuffer();
     }
-    const allocateFramebufferAttachments = () => {
-      const oldTextureBinding = gl.getParameter(gl.TEXTURE_BINDING_2D);
-      {
-        gl.bindTexture(gl.TEXTURE_2D, texture);
-        gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, cfg.framebufferWidth, cfg.framebufferHeight, 0, gl.RGBA, gl.UNSIGNED_BYTE, null);
-        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
-      }
-      gl.bindTexture(gl.TEXTURE_2D, oldTextureBinding);
-      if (depthStencil) {
-        const oldRenderbufferBinding = gl.getParameter(gl.RENDERBUFFER_BINDING);
-        {
-          gl.bindRenderbuffer(gl.RENDERBUFFER, depthStencil);
-          gl.renderbufferStorage(gl.RENDERBUFFER, dsConfig.format, cfg.framebufferWidth, cfg.framebufferHeight);
-        }
-        gl.bindRenderbuffer(gl.RENDERBUFFER, oldRenderbufferBinding);
+    const allocateFramebufferAttachments = (gl2, texture2, depthStencil2, dsConfig2, cfg2) => {
+      allocateTexture(gl2, texture2, cfg2.framebufferWidth, cfg2.framebufferHeight);
+      if (depthStencil2) {
+        allocateDepthStencil(gl2, depthStencil2, dsConfig2, cfg2.framebufferWidth, cfg2.framebufferHeight);
       }
     };
-    allocateFramebufferAttachments();
-    cfg.addEventListener("on-config-changed", allocateFramebufferAttachments);
-    const oldFramebufferBinding = gl.getParameter(gl.FRAMEBUFFER_BINDING);
-    {
-      gl.bindFramebuffer(gl.FRAMEBUFFER, framebuffer);
-      gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, texture, 0);
-      if (config.depth || config.stencil) {
-        gl.framebufferRenderbuffer(gl.FRAMEBUFFER, dsConfig.attachment, gl.RENDERBUFFER, depthStencil);
+    const allocateTexture = (gl2, texture2, width, height) => {
+      const oldTextureBinding = gl2.getParameter(gl2.TEXTURE_BINDING_2D);
+      gl2.bindTexture(gl2.TEXTURE_2D, texture2);
+      gl2.texImage2D(gl2.TEXTURE_2D, 0, gl2.RGBA, width, height, 0, gl2.RGBA, gl2.UNSIGNED_BYTE, null);
+      gl2.texParameteri(gl2.TEXTURE_2D, gl2.TEXTURE_MIN_FILTER, gl2.LINEAR);
+      gl2.bindTexture(gl2.TEXTURE_2D, oldTextureBinding);
+    };
+    const allocateDepthStencil = (gl2, depthStencil2, dsConfig2, width, height) => {
+      const oldRenderbufferBinding = gl2.getParameter(gl2.RENDERBUFFER_BINDING);
+      gl2.bindRenderbuffer(gl2.RENDERBUFFER, depthStencil2);
+      gl2.renderbufferStorage(gl2.RENDERBUFFER, dsConfig2.format, width, height);
+      gl2.bindRenderbuffer(gl2.RENDERBUFFER, oldRenderbufferBinding);
+    };
+    const setupFramebuffer = (gl2, framebuffer2, texture2, dsConfig2, depthStencil2, config2) => {
+      const oldFramebufferBinding = gl2.getParameter(gl2.FRAMEBUFFER_BINDING);
+      gl2.bindFramebuffer(gl2.FRAMEBUFFER, framebuffer2);
+      gl2.framebufferTexture2D(gl2.FRAMEBUFFER, gl2.COLOR_ATTACHMENT0, gl2.TEXTURE_2D, texture2, 0);
+      if (config2.depth || config2.stencil) {
+        gl2.framebufferRenderbuffer(gl2.FRAMEBUFFER, dsConfig2.attachment, gl2.RENDERBUFFER, depthStencil2);
       }
+      gl2.bindFramebuffer(gl2.FRAMEBUFFER, oldFramebufferBinding);
+    };
+    allocateFramebufferAttachments(gl, texture, depthStencil, dsConfig, cfg);
+    cfg.addEventListener("on-config-changed", () => allocateFramebufferAttachments(gl, texture, depthStencil, dsConfig, cfg));
+    setupFramebuffer(gl, framebuffer, texture, dsConfig, depthStencil, config);
+    const vertexShaderSource = `
+		attribute vec2 a_position;
+		varying vec2 v_texcoord;
+		void main() {
+		  gl_Position = vec4(a_position * 2.0 - 1.0, 0.0, 1.0);
+		  v_texcoord = a_position;
+		}
+	  `;
+    function createShader(gl2, type, source) {
+      const shader = gl2.createShader(type);
+      gl2.shaderSource(shader, source);
+      gl2.compileShader(shader);
+      if (!gl2.getShaderParameter(shader, gl2.COMPILE_STATUS)) {
+        console.warn(gl2.getShaderInfoLog(shader));
+        return null;
+      }
+      return shader;
     }
-    gl.bindFramebuffer(gl.FRAMEBUFFER, oldFramebufferBinding);
-    const program = gl.createProgram();
-    const vs = gl.createShader(gl.VERTEX_SHADER);
-    const fs = gl.createShader(gl.FRAGMENT_SHADER);
-    if (program === null || vs === null || fs === null) {
-      console.error("there was a problem with shader construction");
-      return;
+    function setupShaderProgram(gl2, vertexShaderSource2, fragmentShaderSource) {
+      let program2 = gl2.createProgram();
+      const vs = createShader(gl2, gl2.VERTEX_SHADER, vertexShaderSource2);
+      const fs = createShader(gl2, gl2.FRAGMENT_SHADER, fragmentShaderSource);
+      if (vs === null || fs === null) {
+        console.error("There was a problem with shader construction");
+        return null;
+      }
+      gl2.attachShader(program2, vs);
+      gl2.attachShader(program2, fs);
+      gl2.linkProgram(program2);
+      if (!gl2.getProgramParameter(program2, gl2.LINK_STATUS)) {
+        console.warn(gl2.getProgramInfoLog(program2));
+        return null;
+      }
+      return program2;
     }
-    gl.attachShader(program, vs);
-    gl.attachShader(program, fs);
-    {
-      const vsSource = `
-       attribute vec2 a_position;
-       varying vec2 v_texcoord;
-       void main() {
-         gl_Position = vec4(a_position * 2.0 - 1.0, 0.0, 1.0);
-         v_texcoord = a_position;
-       }
-     `;
-      gl.shaderSource(vs, vsSource);
-      gl.compileShader(vs);
-      if (!gl.getShaderParameter(vs, gl.COMPILE_STATUS))
-        console.warn(gl.getShaderInfoLog(vs));
-    }
+    let currentFs;
     let lastGeneratedFSSource;
     let a_location;
     let u_viewType;
-    const recompileProgram = () => {
-      const fsSource = Shader(cfg);
+    const recompileFragmentShaderIfNeeded = (gl2, cfg2, shaderFn) => {
+      const fsSource = shaderFn(cfg2);
       if (fsSource === lastGeneratedFSSource)
         return;
       lastGeneratedFSSource = fsSource;
-      gl.shaderSource(fs, fsSource);
-      gl.compileShader(fs);
-      if (!gl.getShaderParameter(fs, gl.COMPILE_STATUS)) {
-        console.warn(gl.getShaderInfoLog(fs));
+      const newFs = createShader(gl2, gl2.FRAGMENT_SHADER, fsSource);
+      if (newFs === null)
+        return;
+      if (currentFs) {
+        gl2.deleteShader(currentFs);
+      }
+      currentFs = newFs;
+      const newProgram = setupShaderProgram(gl2, vertexShaderSource, fsSource);
+      if (newProgram === null) {
+        console.warn("There was a problem with shader construction");
         return;
       }
-      gl.linkProgram(program);
-      if (!gl.getProgramParameter(program, gl.LINK_STATUS)) {
-        console.warn(gl.getProgramInfoLog(program));
-        return;
-      }
-      a_location = gl.getAttribLocation(program, "a_position");
-      u_viewType = gl.getUniformLocation(program, "u_viewType");
-      const u_texture = gl.getUniformLocation(program, "u_texture");
-      const oldProgram = gl.getParameter(gl.CURRENT_PROGRAM);
+      a_location = gl2.getAttribLocation(newProgram, "a_position");
+      u_viewType = gl2.getUniformLocation(newProgram, "u_viewType");
+      const u_texture = gl2.getUniformLocation(newProgram, "u_texture");
+      const oldProgram = gl2.getParameter(gl2.CURRENT_PROGRAM);
       {
-        gl.useProgram(program);
-        gl.uniform1i(u_texture, 0);
+        gl2.useProgram(newProgram);
+        gl2.uniform1i(u_texture, 0);
       }
-      gl.useProgram(oldProgram);
+      gl2.useProgram(oldProgram);
+      if (program) {
+        gl2.deleteProgram(program);
+      }
+      program = newProgram;
     };
-    cfg.addEventListener("on-config-changed", recompileProgram);
+    let program = setupShaderProgram(gl, vertexShaderSource, Shader(cfg));
+    if (program === null) {
+      console.warn("There was a problem with shader construction");
+    }
+    cfg.addEventListener("on-config-changed", () => {
+      recompileFragmentShaderIfNeeded(gl, cfg, Shader);
+    });
     const vao = OES_VAO ? OES_VAO.createVertexArrayOES() : gl.createVertexArray();
     const vbo = gl.createBuffer();
     const oldBufferBinding = gl.getParameter(gl.ARRAY_BUFFER_BINDING);
@@ -7768,75 +7829,116 @@ class LookingGlassXRWebGLLayer extends XRWebGLLayer {
       gl.clearDepth(currentClearDepth);
       gl.clearStencil(currentClearStencil);
     };
-    const blitTextureToDefaultFramebufferIfNeeded = () => {
-      if (!this[PRIVATE].LookingGlassEnabled)
+    function blitTextureToDefaultFramebufferIfNeeded() {
+      if (!cfg.appCanvas || !cfg.lkgCanvas) {
         return;
-      if (cfg.appCanvas == null || cfg.lkgCanvas == null)
-        return;
+      }
       if (cfg.appCanvas.width !== cfg.framebufferWidth || cfg.appCanvas.height !== cfg.framebufferHeight) {
         cfg.appCanvas.width;
         cfg.appCanvas.height;
         cfg.appCanvas.width = cfg.framebufferWidth;
         cfg.appCanvas.height = cfg.framebufferHeight;
       }
-      const oldVAO2 = gl.getParameter(GL_VERTEX_ARRAY_BINDING);
-      const oldCullFace = gl.getParameter(gl.CULL_FACE);
-      const oldBlend = gl.getParameter(gl.BLEND);
-      const oldDepthTest = gl.getParameter(gl.DEPTH_TEST);
-      const oldStencilTest = gl.getParameter(gl.STENCIL_TEST);
-      const oldScissorTest = gl.getParameter(gl.SCISSOR_TEST);
-      const oldViewport = gl.getParameter(gl.VIEWPORT);
-      const oldFramebufferBinding2 = gl.getParameter(gl.FRAMEBUFFER_BINDING);
-      const oldRenderbufferBinding = gl.getParameter(gl.RENDERBUFFER_BINDING);
-      const oldProgram = gl.getParameter(gl.CURRENT_PROGRAM);
-      const oldActiveTexture = gl.getParameter(gl.ACTIVE_TEXTURE);
-      {
-        const oldTextureBinding = gl.getParameter(gl.TEXTURE_BINDING_2D);
-        {
-          gl.bindFramebuffer(gl.FRAMEBUFFER, null);
-          gl.useProgram(program);
-          glBindVertexArray(vao);
-          gl.activeTexture(gl.TEXTURE0);
-          gl.bindTexture(gl.TEXTURE_2D, texture);
-          gl.disable(gl.BLEND);
-          gl.disable(gl.CULL_FACE);
-          gl.disable(gl.DEPTH_TEST);
-          gl.disable(gl.STENCIL_TEST);
-          gl.viewport(0, 0, gl.drawingBufferWidth, gl.drawingBufferHeight);
-          gl.uniform1i(u_viewType, 0);
-          gl.drawArrays(gl.TRIANGLES, 0, 6);
-          lkgCtx == null ? void 0 : lkgCtx.clearRect(0, 0, cfg.lkgCanvas.width, cfg.lkgCanvas.height);
-          lkgCtx == null ? void 0 : lkgCtx.drawImage(cfg.appCanvas, 0, 0, cfg.framebufferWidth, cfg.framebufferHeight, 0, 0, cfg.calibration.screenW.value, cfg.calibration.screenH.value);
-          if (cfg.inlineView !== 0) {
-            if (cfg.capturing && cfg.appCanvas.width !== cfg.framebufferWidth) {
-              cfg.appCanvas.width = cfg.framebufferWidth;
-              cfg.appCanvas.height = cfg.framebufferHeight;
-              gl.viewport(0, 0, cfg.framebufferHeight, cfg.framebufferWidth);
-            }
-            gl.uniform1i(u_viewType, cfg.inlineView);
-            gl.drawArrays(gl.TRIANGLES, 0, 6);
-          }
-        }
-        gl.bindTexture(gl.TEXTURE_2D, oldTextureBinding);
+      const oldState = saveWebGLState();
+      setupRenderState();
+      renderSubPixelArrangement();
+      updateLookingGlassCanvas();
+      renderInlineView();
+      restoreWebGLState(oldState);
+    }
+    function restoreWebGLState(oldState) {
+      gl.activeTexture(oldState.activeTexture);
+      gl.bindTexture(gl.TEXTURE_2D, oldState.textureBinding);
+      gl.useProgram(oldState.program);
+      gl.bindRenderbuffer(gl.RENDERBUFFER, oldState.renderbufferBinding);
+      gl.bindFramebuffer(gl.FRAMEBUFFER, oldState.framebufferBinding);
+      if (oldState.scissorTest) {
+        gl.enable(gl.SCISSOR_TEST);
+      } else {
+        gl.disable(gl.SCISSOR_TEST);
       }
-      gl.activeTexture(oldActiveTexture);
-      gl.useProgram(oldProgram);
-      gl.bindRenderbuffer(gl.RENDERBUFFER, oldRenderbufferBinding);
-      gl.bindFramebuffer(gl.FRAMEBUFFER, oldFramebufferBinding2);
-      gl.viewport(oldViewport[0], oldViewport[1], oldViewport[2], oldViewport[3]);
-      (oldScissorTest ? glEnable : glDisable)(gl.SCISSOR_TEST);
-      (oldStencilTest ? glEnable : glDisable)(gl.STENCIL_TEST);
-      (oldDepthTest ? glEnable : glDisable)(gl.DEPTH_TEST);
-      (oldBlend ? glEnable : glDisable)(gl.BLEND);
-      (oldCullFace ? glEnable : glDisable)(gl.CULL_FACE);
-      glBindVertexArray(oldVAO2);
-    };
+      if (oldState.stencilTest) {
+        gl.enable(gl.STENCIL_TEST);
+      } else {
+        gl.disable(gl.STENCIL_TEST);
+      }
+      if (oldState.depthTest) {
+        gl.enable(gl.DEPTH_TEST);
+      } else {
+        gl.disable(gl.DEPTH_TEST);
+      }
+      if (oldState.blend) {
+        gl.enable(gl.BLEND);
+      } else {
+        gl.disable(gl.BLEND);
+      }
+      if (oldState.cullFace) {
+        gl.enable(gl.CULL_FACE);
+      } else {
+        gl.disable(gl.CULL_FACE);
+      }
+      glBindVertexArray(oldState.VAO);
+    }
+    function saveWebGLState() {
+      return {
+        VAO: gl.getParameter(gl.VERTEX_ARRAY_BINDING),
+        cullFace: gl.getParameter(gl.CULL_FACE),
+        blend: gl.getParameter(gl.BLEND),
+        depthTest: gl.getParameter(gl.DEPTH_TEST),
+        stencilTest: gl.getParameter(gl.STENCIL_TEST),
+        scissorTest: gl.getParameter(gl.SCISSOR_TEST),
+        viewport: gl.getParameter(gl.VIEWPORT),
+        framebufferBinding: gl.getParameter(gl.FRAMEBUFFER_BINDING),
+        renderbufferBinding: gl.getParameter(gl.RENDERBUFFER_BINDING),
+        program: gl.getParameter(gl.CURRENT_PROGRAM),
+        activeTexture: gl.getParameter(gl.ACTIVE_TEXTURE),
+        textureBinding: gl.getParameter(gl.TEXTURE_BINDING_2D)
+      };
+    }
+    function setupRenderState() {
+      gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+      gl.useProgram(program);
+      glBindVertexArray(vao);
+      gl.activeTexture(gl.TEXTURE0);
+      gl.bindTexture(gl.TEXTURE_2D, texture);
+      gl.disable(gl.BLEND);
+      gl.disable(gl.CULL_FACE);
+      gl.disable(gl.DEPTH_TEST);
+      gl.disable(gl.STENCIL_TEST);
+      gl.viewport(0, 0, gl.drawingBufferWidth, gl.drawingBufferHeight);
+    }
+    function renderSubPixelArrangement() {
+      gl.uniform1i(u_viewType, 0);
+      gl.drawArrays(gl.TRIANGLES, 0, 6);
+    }
+    function updateLookingGlassCanvas() {
+      if (!cfg.lkgCanvas || !cfg.appCanvas) {
+        console.warn("Looking Glass Canvas is not defined");
+        return;
+      }
+      lkgCtx == null ? void 0 : lkgCtx.clearRect(0, 0, cfg.lkgCanvas.width, cfg.lkgCanvas.height);
+      lkgCtx == null ? void 0 : lkgCtx.drawImage(cfg.appCanvas, 0, 0, cfg.framebufferWidth, cfg.framebufferHeight, 0, 0, cfg.calibration.screenW.value, cfg.calibration.screenH.value);
+    }
+    function renderInlineView() {
+      if (!cfg.appCanvas) {
+        console.warn("Looking Glass Canvas is not defined");
+        return;
+      }
+      if (cfg.inlineView !== 0) {
+        if (cfg.capturing && cfg.appCanvas.width !== cfg.framebufferWidth) {
+          cfg.appCanvas.width = cfg.framebufferWidth;
+          cfg.appCanvas.height = cfg.framebufferHeight;
+          gl.viewport(0, 0, cfg.framebufferHeight, cfg.framebufferWidth);
+        }
+        gl.uniform1i(u_viewType, cfg.inlineView);
+        gl.drawArrays(gl.TRIANGLES, 0, 6);
+      }
+    }
     window.addEventListener("unload", () => {
       if (cfg.popup)
         cfg.popup.close();
       cfg.popup = null;
     });
-    recompileProgram();
     this[PRIVATE] = {
       LookingGlassEnabled: false,
       framebuffer,

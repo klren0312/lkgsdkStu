@@ -8,8 +8,8 @@
   "module": "./dist/webxr.js",
   "exports": {
     ".": {
-      "import": "./dist/@lookingglass/webxr.js",
-      "require": "./dist/@lookingglass/webxr.umd.cjs"
+      "import": "./dist/webxr.js",
+      "require": "./dist/webxr.umd.cjs"
     }
   },
   "version": "0.4.0",
