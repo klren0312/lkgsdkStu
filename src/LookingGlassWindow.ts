@@ -75,6 +75,9 @@ export const moveCanvasToWindow = (enabled: boolean, onbeforeunload) => {
 		config.popup = window.open("", "new", features)
 		if (config.popup) {
 			config.popup.document.body.style.background = "black"
+			// ensure that the popup window is not zoomed
+			config.popup.document.body.style.transform = "1.0"
+			preventZoom(config)
 			config.popup.document.body.appendChild(lkgCanvas)
 			console.assert(onbeforeunload)
 			config.popup.onbeforeunload = onbeforeunload
@@ -89,6 +92,9 @@ function openPopup(cfg: LookingGlassConfig, lkgCanvas: HTMLCanvasElement, onbefo
 		if (cfg.popup) {
 			cfg.popup.document.title = "Looking Glass Window (fullscreen me on Looking Glass!)"
 			cfg.popup.document.body.style.background = "black"
+			// ensure that the popup window is not zoomed
+			cfg.popup.document.body.style.transform = "1.0"
+			preventZoom(cfg)
 			cfg.popup.document.body.appendChild(lkgCanvas)
 			console.assert(onbeforeunload)
 			cfg.popup.onbeforeunload = onbeforeunload
@@ -106,5 +112,17 @@ function openPopup(cfg: LookingGlassConfig, lkgCanvas: HTMLCanvasElement, onbefo
 			cfg.popup.onbeforeunload = null
 			cfg.popup.close()
 			cfg.popup = null
+		}
+	}
+
+	// prevent ctrl + and ctrl - on popup window
+
+	function preventZoom(cfg) {
+		if (cfg.popup) {
+			cfg.popup.document.addEventListener("keydown", (e) => {
+				if (e.ctrlKey && (e.key === "=" || e.key === "-" || e.key === "+")) {
+					e.preventDefault()
+				}
+			})
 		}
 	}
