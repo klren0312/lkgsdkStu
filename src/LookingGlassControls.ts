@@ -178,7 +178,7 @@ export function initLookingGlassControlGUI() {
 			{
 				label: "depthiness",
 				title:
-					'exaggerates depth by multiplying the width of the view cone (as reported by the firmware) - can somewhat compensate for depthiness lost using higher fov. 1.25 seems to be most physically accurate on Looking Glass 8.9".',
+					'exaggerates depth by multiplying the width of the view cone (as reported by the firmware) - can somewhat compensate for depthiness lost using higher fov.',
 				fixRange: (v) => Math.max(0, v),
 				stringify: (v) => `${v.toFixed(2)}x`,
 			}

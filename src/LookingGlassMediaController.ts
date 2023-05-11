@@ -3,6 +3,7 @@ import LookingGlassXRDevice from "./LookingGlassXRDevice"
 
 export async function LookingGlassMediaController() {
 	const cfg = getLookingGlassConfig()
+	let currentInlineView = 2 // we change this value later when the screenshot capture starts.
 
 	// the function to download the image from the canvas
 	function downloadImage() {
@@ -19,6 +20,9 @@ export async function LookingGlassMediaController() {
 				window.URL.revokeObjectURL(url)
 			} catch (error) {
 				console.error("Error while capturing canvas data:", error)
+			} finally {
+				// Reset inlineView value to its initial value
+				cfg.inlineView = currentInlineView
 			}
 		}
 	}
@@ -27,27 +31,21 @@ export async function LookingGlassMediaController() {
 	// add screenshot button listener, this calls the downloadImage function only at the end of the frame loop
 	if (screenshotButton) {
 		screenshotButton.addEventListener("click", () => {
+			currentInlineView = cfg.inlineView
 			const xrDevice = LookingGlassXRDevice.getInstance()
 			if (!xrDevice) {
 				console.warn("LookingGlassXRDevice not initialized")
 				return
 			}
+
+			// set inlineView to quilt before capturing the screenshot
+			cfg.inlineView = 2
 			xrDevice.captureScreenshot = true
-			xrDevice.screenshotCallback = downloadImage
+
+			// set the screenshotCallback to downloadImage after the next frame is rendered
+			setTimeout(() => {
+				xrDevice.screenshotCallback = downloadImage
+			}, 100)
 		})
 	}
 }
-
-// make request and cancel generic to support most browsers
-const idleOptions = { timeout: 1000 }
-const request = window.requestIdleCallback || window.requestAnimationFrame
-const cancel = window.cancelIdleCallback || window.cancelAnimationFrame
-
-// controllable promise
-const resolveWhenIdle = {
-	request: request,
-	cancel: cancel,
-	promise: (num) => new Promise((resolve) => request(resolve, Object.assign({}, idleOptions, num))),
-}
-
-export { resolveWhenIdle }

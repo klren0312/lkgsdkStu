@@ -6770,8 +6770,8 @@ host this content on a secure origin for the best user experience.
   const float tilesX   = ${cfg.quiltWidth};
   const float tilesY   = ${cfg.quiltHeight};
   const vec2 quiltViewPortion = vec2(
-    ${cfg.quiltWidth * (cfg.framebufferWidth / cfg.quiltWidth) / cfg.framebufferWidth},
-    ${cfg.quiltHeight * (cfg.framebufferHeight / cfg.quiltHeight) / cfg.framebufferHeight});
+    ${cfg.quiltWidth * cfg.tileWidth / cfg.framebufferWidth},
+    ${cfg.quiltHeight * cfg.tileHeight / cfg.framebufferHeight});
   vec2 texArr(vec3 uvz) {
     float z = floor(uvz.z * numViews);
     float x = (mod(z, tilesX) + uvz.x) / tilesX;
@@ -6795,13 +6795,21 @@ host this content on a secure origin for the best user experience.
     // Flip UVs if necessary
     nuv.x = (1.0 - flipX) * nuv.x + flipX * (1.0 - nuv.x);
     nuv.y = (1.0 - flipY) * nuv.y + flipY * (1.0 - nuv.y);
+    vec3 views = nuv;
     for (int i = 0; i < 3; i++) {
       nuv.z = (v_texcoord.x + float(i) * subp + v_texcoord.y * tilt) * pitch - center;
       nuv.z = mod(nuv.z + ceil(abs(nuv.z)), 1.0);
       nuv.z = (1.0 - invView) * nuv.z + invView * (1.0 - nuv.z);
+      views[i] = nuv.z;
       rgb[i] = texture2D(u_texture, texArr(vec3(v_texcoord.x, v_texcoord.y, nuv.z)));
     }
     gl_FragColor = vec4(rgb[0].r, rgb[1].g, rgb[2].b, 1);
+
+    // black: 0.0 -> 0.06, gradient to color: 0.06 -> 0.15, color: 0.15 -> 0.85,
+    // gradient to black: 0.85 -> 0.94, black: 0.94 -> 1.0
+    vec3 dimValues = min(-0.7932489 + 14.0647 * views - 14.0647 * views * views, 1.0);
+    vec4 dim = vec4(dimValues, 1.0);
+    gl_FragColor *= dim;
   }
 `;
   }
@@ -7289,6 +7297,7 @@ host this content on a secure origin for the best user experience.
   }
   async function LookingGlassMediaController() {
     const cfg = getLookingGlassConfig();
+    let currentInlineView = 2;
     function downloadImage() {
       if (cfg.appCanvas != null) {
         try {
@@ -7303,19 +7312,25 @@ host this content on a secure origin for the best user experience.
           window.URL.revokeObjectURL(url);
         } catch (error) {
           console.error("Error while capturing canvas data:", error);
+        } finally {
+          cfg.inlineView = currentInlineView;
         }
       }
     }
     const screenshotButton = document.getElementById("screenshotbutton");
     if (screenshotButton) {
       screenshotButton.addEventListener("click", () => {
+        currentInlineView = cfg.inlineView;
         const xrDevice = LookingGlassXRDevice.getInstance();
         if (!xrDevice) {
           console.warn("LookingGlassXRDevice not initialized");
           return;
         }
+        cfg.inlineView = 2;
         xrDevice.captureScreenshot = true;
-        xrDevice.screenshotCallback = downloadImage;
+        setTimeout(() => {
+          xrDevice.screenshotCallback = downloadImage;
+        }, 100);
       });
     }
   }
@@ -7483,7 +7498,7 @@ host this content on a secure origin for the best user experience.
       });
       addControl("depthiness", { type: "range", min: 0, max: 2, step: 0.01 }, {
         label: "depthiness",
-        title: 'exaggerates depth by multiplying the width of the view cone (as reported by the firmware) - can somewhat compensate for depthiness lost using higher fov. 1.25 seems to be most physically accurate on Looking Glass 8.9".',
+        title: "exaggerates depth by multiplying the width of the view cone (as reported by the firmware) - can somewhat compensate for depthiness lost using higher fov.",
         fixRange: (v) => Math.max(0, v),
         stringify: (v) => `${v.toFixed(2)}x`
       });
@@ -7558,25 +7573,17 @@ host this content on a secure origin for the best user experience.
     }
   }
   function copyConfigToClipboard(cfg) {
-    let targetX = cfg.targetX;
-    let targetY = cfg.targetY;
-    let targetZ = cfg.targetZ;
-    let fovy = `${Math.round(cfg.fovy / Math.PI * 180)} * Math.PI / 180`;
-    let targetDiam = cfg.targetDiam;
-    let trackballX = cfg.trackballX;
-    let trackballY = cfg.trackballY;
-    let depthiness = cfg.depthiness;
     const camera = {
-      targetX,
-      targetY,
-      targetZ,
-      fovy,
-      targetDiam,
-      trackballX,
-      trackballY,
-      depthiness
+      targetX: cfg.targetX,
+      targetY: cfg.targetY,
+      targetZ: cfg.targetZ,
+      fovy: `${Math.round(cfg.fovy / Math.PI * 180)} * Math.PI / 180`,
+      targetDiam: cfg.targetDiam,
+      trackballX: cfg.trackballX,
+      trackballY: cfg.trackballY,
+      depthiness: cfg.depthiness
     };
-    let config = JSON.stringify(camera, null, 4);
+    let config = JSON.stringify(camera, null, 4).replace(/"/g, "").replace(/{/g, "").replace(/}/g, "");
     navigator.clipboard.writeText(config);
   }
   let controls;
@@ -7633,6 +7640,8 @@ host this content on a secure origin for the best user experience.
       config.popup = window.open("", "new", features);
       if (config.popup) {
         config.popup.document.body.style.background = "black";
+        config.popup.document.body.style.transform = "1.0";
+        preventZoom(config);
         config.popup.document.body.appendChild(lkgCanvas);
         console.assert(onbeforeunload);
         config.popup.onbeforeunload = onbeforeunload;
@@ -7644,6 +7653,8 @@ host this content on a secure origin for the best user experience.
     if (cfg.popup) {
       cfg.popup.document.title = "Looking Glass Window (fullscreen me on Looking Glass!)";
       cfg.popup.document.body.style.background = "black";
+      cfg.popup.document.body.style.transform = "1.0";
+      preventZoom(cfg);
       cfg.popup.document.body.appendChild(lkgCanvas);
       console.assert(onbeforeunload);
       cfg.popup.onbeforeunload = onbeforeunload;
@@ -7656,6 +7667,15 @@ host this content on a secure origin for the best user experience.
       cfg.popup.onbeforeunload = null;
       cfg.popup.close();
       cfg.popup = null;
+    }
+  }
+  function preventZoom(cfg) {
+    if (cfg.popup) {
+      cfg.popup.document.addEventListener("keydown", (e) => {
+        if (e.ctrlKey && (e.key === "=" || e.key === "-" || e.key === "+")) {
+          e.preventDefault();
+        }
+      });
     }
   }
   const PRIVATE = Symbol("LookingGlassXRWebGLLayer");
@@ -7797,6 +7817,7 @@ host this content on a secure origin for the best user experience.
         }
         program = newProgram;
       };
+      console.log(Shader(cfg));
       let program = setupShaderProgram(gl, vertexShaderSource, Shader(cfg));
       if (program === null) {
         console.warn("There was a problem with shader construction");
