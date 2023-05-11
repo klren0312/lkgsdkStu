@@ -285,28 +285,26 @@ export function initLookingGlassControlGUI() {
 		return c
 	}
 }
-
+/**
+ * copy the current configuration values to the clipboard
+ * @param cfg 
+ */
 function copyConfigToClipboard(cfg) {
-
-	let targetX = cfg.targetX
-	let targetY = cfg.targetY
-	let targetZ = cfg.targetZ
-	let fovy = `${Math.round((cfg.fovy / Math.PI) * 180)} * Math.PI / 180`
-	let targetDiam = cfg.targetDiam
-	let trackballX = cfg.trackballX
-	let trackballY = cfg.trackballY
-	let depthiness = cfg.depthiness
-	const camera = {
-		targetX,
-		targetY,
-		targetZ,
-		fovy,
-		targetDiam,
-		trackballX,
-		trackballY,
-		depthiness,
-	}
-
-	let config = JSON.stringify(camera, null, 4)
-	navigator.clipboard.writeText(config)
+    const camera = {
+        targetX: cfg.targetX,
+        targetY: cfg.targetY,
+        targetZ: cfg.targetZ,
+        fovy: `${Math.round((cfg.fovy / Math.PI) * 180)} * Math.PI / 180`,
+        targetDiam: cfg.targetDiam,
+        trackballX: cfg.trackballX,
+        trackballY: cfg.trackballY,
+        depthiness: cfg.depthiness,
+    }
+    
+    let config = JSON.stringify(camera, null, 4)
+        .replace(/"/g, '')
+        .replace(/{/g, '')
+        .replace(/}/g, '');
+    
+    navigator.clipboard.writeText(config);
 }

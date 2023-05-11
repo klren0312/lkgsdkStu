@@ -198,7 +198,7 @@ export default class LookingGlassXRWebGLLayer extends XRWebGLLayer {
 			}
 			program = newProgram;
 		  };
-
+		console.log(Shader(cfg))
 		let program = setupShaderProgram(gl, vertexShaderSource, Shader(cfg))
 		if (program === null) {
 			console.warn("There was a problem with shader construction")
