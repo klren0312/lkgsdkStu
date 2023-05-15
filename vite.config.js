@@ -29,7 +29,7 @@ export default defineConfig(({ mode }) => {
 					entry: resolve(__dirname, "src/LookingGlassWebXRPolyfill.ts"),
 					name: "Looking Glass WebXR",
 					// the proper extensions will be added
-					fileName: "@lookingglass/bundle/webxr",
+					fileName: "bundle/webxr",
 				},
 				emptyOutDir: false,
 				rollupOptions: {
@@ -59,7 +59,7 @@ export default defineConfig(({ mode }) => {
 					entry: resolve(__dirname, "src/LookingGlassWebXRPolyfill.ts"),
 					name: "Looking Glass WebXR",
 					// the proper extensions will be added
-					fileName: "@lookingglass/webxr",
+					fileName: "webxr",
 				},
 				emptyOutDir: false,
 				rollupOptions: {

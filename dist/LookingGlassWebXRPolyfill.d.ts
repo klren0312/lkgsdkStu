@@ -18,10 +18,13 @@ import { ViewControlArgs } from "./LookingGlassConfig";
 import LookingGlassXRDevice from "./LookingGlassXRDevice";
 export declare class LookingGlassWebXRPolyfill extends WebXRPolyfill {
     private vrButton;
-    device: LookingGlassXRDevice;
+    device: LookingGlassXRDevice | undefined;
     /** true when previewing on Looking Glass */
     isPresenting: boolean;
     constructor(cfg?: Partial<ViewControlArgs>);
+    static init(cfg?: Partial<ViewControlArgs>): Promise<void>;
+    /**Load  the polyfill*/
+    private loadPolyfill;
     /** If a "Enter VR" button exists, let's override it with our own copy */
     private overrideDefaultVRButton;
     /** Refresh the current state of the VRButton */

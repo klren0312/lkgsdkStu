@@ -21,7 +21,7 @@
 		<script src="https://preview.babylonjs.com/gui/babylon.gui.min.js"></script>
 		<script src="https://preview.babylonjs.com/inspector/babylon.inspector.bundle.js"></script>
 		<script type="module">
-			import { LookingGlassWebXRPolyfill } from "../dist/@lookingglass/bundle/webxr.js"
+			import { LookingGlassWebXRPolyfill } from "../dist/bundle/webxr.js"
 	          new LookingGlassWebXRPolyfill({
                     tileHeight: 512,
                     numViews: 45,
@@ -58,7 +58,6 @@
 		</style>
 	</head>
 	<body>
-    <div class="container">
 		<canvas id="renderCanvas"></canvas>
 		<script>
 			var canvas = document.getElementById("renderCanvas")
@@ -347,6 +346,5 @@
 				engine.resize()
 			})
 		</script>
-        <div>
 	</body>
 </html>

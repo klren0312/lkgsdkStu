@@ -17,7 +17,7 @@
 		<script type="module">
 			import * as THREE from "three"
 			import { VRButton } from "three/examples/jsm/webxr/VRButton.js"
-			import { LookingGlassWebXRPolyfill } from "../dist/@lookingglass/bundle/webxr"
+			import { LookingGlassWebXRPolyfill } from "../dist/bundle/webxr.js"
 
 			const renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: "high-performance" })
 			renderer.xr.enabled = true
@@ -27,7 +27,7 @@
 			const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight)
 			camera.position.set(0, 1.3, 3)
 
-			new LookingGlassWebXRPolyfill({
+			LookingGlassWebXRPolyfill.init({
 				tileHeight: 512,
 				numViews: 45,
 				targetY: 0,
@@ -37,7 +37,10 @@
 				inlineView: 2,
 			})
 
-			document.body.appendChild(VRButton.createButton(renderer))
+			setTimeout(function () {
+				renderer.xr.enabled = true
+				document.body.append(VRButton.createButton(renderer))
+			}, 2000)
 
 			const scene = new THREE.Scene()
 

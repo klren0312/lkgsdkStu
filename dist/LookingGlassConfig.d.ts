@@ -31,6 +31,7 @@ export declare type CalibrationArgs = {
     flipImageX: Value;
     flipImageY: Value;
     flipSubp: Value;
+    serial: string;
 };
 export declare enum InlineView {
     /** Show the encoded subpixel matrix */
@@ -42,6 +43,7 @@ export declare enum InlineView {
 }
 export declare type ViewControlArgs = {
     /**
+     * @Deprecated: since 0.4.0 use `quiltResolution` instead
      * Defines the height of the individual quilt view, the width is then set based on the aspect ratio of the connected device.
      * @default 512
      */
@@ -96,11 +98,42 @@ export declare type ViewControlArgs = {
      * @default InlineView.Center
      */
     inlineView: InlineView;
+    /**
+     * A reference to the popup window, this will only exist once the window is opened. Calling before the window is open will fail.
+     * @default Window
+     */
+    popup: Window | null;
+    /**
+     * The current capture state, when capturing is set to true the device width and height is overridden for higher quality capture
+     * @default false
+     */
+    capturing: boolean;
+    /**
+     * A reference to the current XRSession, giving access to the WebXR rendering context, this should be read only unless you like living dangerously
+     */
+    XRSession: any;
+    /**
+     * The current quilt resolution, this is a read only value that is set based on the connected device
+     * @default 3840
+     *
+     */
+    quiltResolution: number;
+    /**
+     * The Canvas on the Looking Glass
+     * @default null
+     */
+    lkgCanvas: HTMLCanvasElement | null;
+    /**
+     * The main webgl context
+     * @default null
+     */
+    appCanvas: HTMLCanvasElement | null;
 };
 declare type LookingGlassConfigEvent = "on-config-changed";
 export declare class LookingGlassConfig extends EventTarget {
     private _calibration;
     private _viewControls;
+    LookingGlassDetected: any;
     constructor(cfg?: Partial<ViewControlArgs>);
     private syncCalibration;
     addEventListener(type: LookingGlassConfigEvent, callback: EventListenerOrEventListenerObject | null, options?: boolean | AddEventListenerOptions | undefined): void;
@@ -109,15 +142,18 @@ export declare class LookingGlassConfig extends EventTarget {
     set calibration(value: Partial<CalibrationArgs>);
     updateViewControls(value: Partial<ViewControlArgs> | undefined): void;
     /**
-     * defines the height of the individual quilt view, the width is then set based on the aspect ratio of the connected device.
+     * @deprecated defines the height of the individual quilt view, the width is then set based on the aspect ratio of the connected device.
      */
     get tileHeight(): number;
-    set tileHeight(v: number);
+    /**
+     * defines the quilt resolution, only change this at start, do not change this after an XRSession has started
+     */
+    get quiltResolution(): number;
+    set quiltResolution(v: number);
     /**
      * defines the number of views to be rendered
      */
     get numViews(): number;
-    set numViews(v: number);
     /**
      * defines the position of the camera on the X-axis
      */
@@ -163,14 +199,25 @@ export declare class LookingGlassConfig extends EventTarget {
      */
     get inlineView(): InlineView;
     set inlineView(v: InlineView);
+    get capturing(): boolean;
+    set capturing(v: boolean);
+    get popup(): Window | null;
+    set popup(v: Window | null);
+    get XRSession(): any;
+    set XRSession(v: any);
+    get lkgCanvas(): HTMLCanvasElement | null;
+    set lkgCanvas(v: HTMLCanvasElement | null);
+    get appCanvas(): HTMLCanvasElement | null;
+    set appCanvas(v: HTMLCanvasElement | null);
     get aspect(): number;
     get tileWidth(): number;
     get framebufferWidth(): number;
-    get quiltWidth(): number;
-    get quiltHeight(): number;
+    get quiltWidth(): 5 | 8;
+    get quiltHeight(): 6 | 9;
     get framebufferHeight(): number;
     get viewCone(): number;
     get tilt(): number;
+    set tilt(windowHeight: number);
     get subp(): number;
     get pitch(): number;
 }

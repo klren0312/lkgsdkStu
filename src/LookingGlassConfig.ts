@@ -36,6 +36,7 @@ export type CalibrationArgs = {
 	flipImageX: Value
 	flipImageY: Value
 	flipSubp: Value
+	serial: string
 }
 
 export enum InlineView {
@@ -49,6 +50,7 @@ export enum InlineView {
 
 export type ViewControlArgs = {
 	/**
+	 * @Deprecated: since 0.4.0 use `quiltResolution` instead
 	 * Defines the height of the individual quilt view, the width is then set based on the aspect ratio of the connected device.
 	 * @default 512
 	 */
@@ -103,6 +105,36 @@ export type ViewControlArgs = {
 	 * @default InlineView.Center
 	 */
 	inlineView: InlineView
+	/**
+	 * A reference to the popup window, this will only exist once the window is opened. Calling before the window is open will fail. 
+	 * @default Window
+	 */
+	popup: Window | null
+	/**
+	 * The current capture state, when capturing is set to true the device width and height is overridden for higher quality capture
+	 * @default false
+	 */
+	capturing: boolean
+	/**
+	 * A reference to the current XRSession, giving access to the WebXR rendering context, this should be read only unless you like living dangerously
+	 */
+	XRSession: any
+	/**
+	 * The current quilt resolution, this is a read only value that is set based on the connected device
+	 * @default 3840
+	 * 
+	 */
+	quiltResolution: number
+	/**
+	 * The Canvas on the Looking Glass
+	 * @default null
+	 */
+	lkgCanvas: HTMLCanvasElement | null
+	/**
+	 * The main webgl context
+	 * @default null
+	 */
+	appCanvas: HTMLCanvasElement | null
 }
 
 type LookingGlassConfigEvent = "on-config-changed"
@@ -123,12 +155,13 @@ export class LookingGlassConfig extends EventTarget {
 		flipImageX: { value: 0 },
 		flipImageY: { value: 0 },
 		flipSubp: { value: 0 },
+		serial: "LKG-DEFAULT-#####"
 	}
 
 	// Config defaults
 	private _viewControls: ViewControlArgs = {
 		tileHeight: 512,
-		numViews: 45,
+		numViews: 48,
 		trackballX: 0,
 		trackballY: 0,
 		targetX: 0,
@@ -138,7 +171,14 @@ export class LookingGlassConfig extends EventTarget {
 		fovy: (13.0 / 180) * Math.PI,
 		depthiness: 1.25,
 		inlineView: InlineView.Center,
+		capturing: false,
+		quiltResolution: 3840,
+		popup: null, 
+		XRSession: null,
+		lkgCanvas: null, 
+		appCanvas: null
 	}
+	LookingGlassDetected: any
 
 	constructor(cfg?: Partial<ViewControlArgs>) {
 		super()
@@ -150,17 +190,14 @@ export class LookingGlassConfig extends EventTarget {
 		const client = new HoloPlayCore.Client(
 			(msg) => {
 				if (msg.devices.length < 1) {
-					console.error("No Looking Glass devices found!")
+					console.log("No Looking Glass devices found")
 					return
 				}
 				if (msg.devices.length > 1) {
-					console.warn("More than one Looking Glass device found... using the first one")
+					console.log("More than one Looking Glass device found... using the first one")
 				}
 				this.calibration = msg.devices[0].calibration
 			},
-			(err) => {
-				console.error("Error creating Looking Glass client:", err)
-			}
 		)
 	}
 
@@ -201,25 +238,29 @@ export class LookingGlassConfig extends EventTarget {
 	// configurable
 
 	/**
-	 * defines the height of the individual quilt view, the width is then set based on the aspect ratio of the connected device.
+	 * @deprecated defines the height of the individual quilt view, the width is then set based on the aspect ratio of the connected device.
 	 */
 	public get tileHeight(): number {
-		return this._viewControls.tileHeight
+		return Math.round(this.framebufferHeight / this.quiltHeight)
 	}
 
-	set tileHeight(v: number) {
-		this.updateViewControls({ tileHeight: v })
+	/**
+	 * defines the quilt resolution, only change this at start, do not change this after an XRSession has started
+	 */
+
+    public get quiltResolution(): number {
+		return this._viewControls.quiltResolution
+	}
+
+	set quiltResolution(v: number) {
+		this.updateViewControls({ quiltResolution: v })
 	}
 
 	/**
 	 * defines the number of views to be rendered
 	 */
 	get numViews() {
-		return this._viewControls.numViews
-	}
-
-	set numViews(v) {
-		this.updateViewControls({ numViews: v })
+		return (this.quiltWidth * this.quiltHeight)
 	}
 
 	/**
@@ -321,31 +362,97 @@ export class LookingGlassConfig extends EventTarget {
 		this.updateViewControls({ inlineView: v })
 	}
 
+	get capturing() {
+		return this._viewControls.capturing
+	}
+
+	set capturing(v : boolean) {
+		this.updateViewControls({ capturing: v })
+	}
+
+	get popup() {
+		return this._viewControls.popup
+	}
+
+	set popup(v : Window | null) {
+		this.updateViewControls({ popup: v })
+	}
+
+	get XRSession() {
+		return this._viewControls.XRSession
+	}
+
+	set XRSession(v) {
+		this.updateViewControls({XRSession: v})
+	}
+
+	get lkgCanvas() {
+		return this._viewControls.lkgCanvas
+	}
+
+	set lkgCanvas(v) {
+		this.updateViewControls({lkgCanvas: v})
+	}
+
+	get appCanvas() {
+		return this._viewControls.appCanvas
+	}
+
+	set appCanvas(v) {
+		this.updateViewControls({appCanvas: v})
+	}
+
 	// Computed
 
 	public get aspect() {
-		return this._calibration.screenW.value / this._calibration.screenH.value
+		return (this._calibration.screenW.value / this._calibration.screenH.value)
 	}
 
 	public get tileWidth() {
-		return Math.round(this.tileHeight * this.aspect)
+		return Math.round(this.framebufferWidth / this.quiltWidth)
 	}
 
 	public get framebufferWidth() {
-		const numPixels = this.tileWidth * this.tileHeight * this.numViews
-		return 2 ** Math.ceil(Math.log2(Math.max(Math.sqrt(numPixels), this.tileWidth)))
+		if (this._calibration.screenW.value < 7000) return this._viewControls.quiltResolution
+		else return 7680
 	}
 
+	// number of columns
 	public get quiltWidth() {
-		return Math.floor(this.framebufferWidth / this.tileWidth)
+		if (this.calibration.screenW.value == 1536) {
+			return 8
+		}
+		else if (this.calibration.screenW.value == 3840) {
+			return 5
+
+		}
+		else if (this.calibration.screenW.value > 7000) {
+			return 5
+		}
+		else {
+			return 8
+		}
 	}
 
 	public get quiltHeight() {
-		return Math.ceil(this.numViews / this.quiltWidth)
+		if (this.calibration.screenW.value == 1536) {
+			return 6
+		}
+		else if (this.calibration.screenW.value == 3840) {
+			return 9
+
+		}
+		else if (this.calibration.screenW.value > 7000) {
+			return 9
+		}
+		else {
+			return 6
+		}
 	}
 
 	public get framebufferHeight() {
-		return 2 ** Math.ceil(Math.log2(this.quiltHeight * this.tileHeight))
+		if (this._calibration.screenW.value < 7000) return this._viewControls.quiltResolution
+		else return 4320
 	}
 
 	public get viewCone() {
@@ -357,6 +464,10 @@ export class LookingGlassConfig extends EventTarget {
 			(this._calibration.screenH.value / (this._calibration.screenW.value * this._calibration.slope.value)) *
 			(this._calibration.flipImageX.value ? -1 : 1)
 		)
+	}
+
+	public set tilt(windowHeight) {
+		windowHeight
 	}
 
 	public get subp() {

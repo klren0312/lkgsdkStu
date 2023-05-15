@@ -22,18 +22,24 @@ import LookingGlassXRDevice from "./LookingGlassXRDevice"
 import LookingGlassXRWebGLLayer from "./LookingGlassXRWebGLLayer"
 
 export class LookingGlassWebXRPolyfill extends WebXRPolyfill {
-	private vrButton: HTMLButtonElement | undefined
-	public device: LookingGlassXRDevice
+	private vrButton: HTMLButtonElement | null | undefined
+	public device: LookingGlassXRDevice | undefined
 	/** true when previewing on Looking Glass */
 	public isPresenting: boolean = false
 
 	constructor(cfg?: Partial<ViewControlArgs>) {
 		super()
-
 		// Init the configuration
 		updateLookingGlassConfig(cfg)
+		this.loadPolyfill()
+	}
 
-		// Replace Enter VR button with custom Looking Glass button
+	static async init(cfg?: Partial<ViewControlArgs>) {
+			new LookingGlassWebXRPolyfill(cfg)
+	}
+
+	/**Load  the polyfill*/
+	private async loadPolyfill() {
 		this.overrideDefaultVRButton()
 
 		console.warn('Looking Glass WebXR "polyfill" overriding native WebXR API.')
@@ -56,7 +62,7 @@ export class LookingGlassWebXRPolyfill extends WebXRPolyfill {
 	private async overrideDefaultVRButton() {
 		this.vrButton = await waitForElement<HTMLButtonElement>("VRButton")
 
-		if (this.vrButton) {
+		if (this.vrButton && this.device) {
 			this.device.addEventListener("@@webxr-polyfill/vr-present-start", () => {
 				this.isPresenting = true
 				this.updateVRButtonUI()
@@ -72,6 +78,8 @@ export class LookingGlassWebXRPolyfill extends WebXRPolyfill {
 			})
 
 			this.updateVRButtonUI()
+		} else {
+			console.warn("Unable to find VRButton")
 		}
 	}
 
@@ -82,11 +90,10 @@ export class LookingGlassWebXRPolyfill extends WebXRPolyfill {
 			await delay(100)
 			if (this.isPresenting) {
 				this.vrButton.innerHTML = "EXIT LOOKING GLASS"
-			}
-			else {
+			} else {
 				this.vrButton.innerHTML = "ENTER LOOKING GLASS"
 			}
-			
+
 			const width = 220
 			this.vrButton.style.width = `${width}px`
 			this.vrButton.style.left = `calc(50% - ${width / 2}px)`
@@ -99,32 +106,32 @@ export class LookingGlassWebXRPolyfill extends WebXRPolyfill {
 }
 
 /** Wait for an HTMLElement with a specific id to be added to the page */
-async function waitForElement<T extends HTMLElement>(id: string): Promise<T> {
-	return new Promise<T>((resolve, reject) => {
-		const observer = new MutationObserver(function (mutations) {
-			mutations.forEach(function (mutation) {
-				mutation.addedNodes.forEach(function (node) {
-					const el = node as T
-					if (el.id == id) {
-						resolve(el)
-						observer.disconnect()
-					}
-				})
-			})
-		})
+async function waitForElement<T extends HTMLElement>(id: string): Promise<T | null> {
+    return new Promise<T | null>((resolve) => {
+        const observer = new MutationObserver(function (mutations) {
+            mutations.forEach(function (mutation) {
+                mutation.addedNodes.forEach(function (node) {
+                    const el = node as T
+                    if (el.id === id) {
+                        resolve(el)
+                        observer.disconnect()
+                    }
+                });
+            });
+        });
 
-		observer.observe(document.body, { subtree: false, childList: true })
+        observer.observe(document.body, { subtree: false, childList: true });
 
-		// Disconnect the observer after 5 seconds if we dont find the element
-		setTimeout(() => {
-			observer.disconnect()
-			reject(`id:${id} not found`)
-		}, 5000)
-	})
+        // Disconnect the observer after 5 seconds if we don't find the element
+        setTimeout(() => {
+            observer.disconnect();
+            resolve(null); // Resolve with null instead of rejecting
+        }, 5000);
+    });
 }
 
 function delay(ms: number) {
-	return new Promise( resolve => setTimeout(resolve, ms) );
+	return new Promise((resolve) => setTimeout(resolve, ms))
 }
 
 /**

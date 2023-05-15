@@ -1,5 +1,6 @@
 {
   "name": "@lookingglass/webxr",
+  "type": "module",
   "files": [
     "dist"
   ],
@@ -7,11 +8,11 @@
   "module": "./dist/webxr.js",
   "exports": {
     ".": {
-      "import": "./dist/@lookingglass/webxr.js",
-      "require": "./dist/@lookingglass/webxr.umd.cjs"
+      "import": "./dist/webxr.js",
+      "require": "./dist/webxr.umd.cjs"
     }
   },
-  "version": "0.3.1",
+  "version": "0.4.0-alpha.4",
   "license": "Apache-2.0",
   "private": false,
   "description": "Official WebXR implementation for Looking Glass Holographic Displays.",
@@ -20,7 +21,7 @@
     "url": "git+https://github.com/Looking-Glass/looking-glass-webxr.git"
   },
   "scripts": {
-    "dev": "vite build --mode dev && vite --mode dev",
+    "dev": "vite build --mode dev && vite --mode dev --host",
     "build": "vite build --mode build",
     "production": "vite build --mode dev && vite build --mode build"
   },
@@ -34,7 +35,8 @@
     "three": "^0.146.0",
     "tslib": "^2.4.1",
     "typescript": "^4.8.4",
-    "vite": "^3.1.2"
+    "vite": "^3.1.2",
+    "webgl-strict-types": "^1.0.5"
   },
   "dependencies": {
     "@lookingglass/webxr-polyfill": "^0.1.1",

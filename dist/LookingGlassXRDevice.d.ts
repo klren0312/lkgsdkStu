@@ -15,7 +15,9 @@
  */
 import XRDevice from '@lookingglass/webxr-polyfill/src/devices/XRDevice';
 export default class LookingGlassXRDevice extends XRDevice {
+    static instance: LookingGlassXRDevice | null;
     constructor(global: any);
+    static getInstance(): LookingGlassXRDevice | null;
     onBaseLayerSet(sessionId: any, layer: any): void;
     isSessionSupported(mode: any): boolean;
     isFeatureSupported(featureDescriptor: any): boolean;

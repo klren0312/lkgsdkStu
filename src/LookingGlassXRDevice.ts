@@ -21,6 +21,8 @@ import { PRIVATE as LookingGlassXRWebGLLayer_PRIVATE } from './LookingGlassXRWeb
 import { DefaultEyeHeight, getLookingGlassConfig } from './LookingGlassConfig';
 
 export default class LookingGlassXRDevice extends XRDevice {
+  static instance: LookingGlassXRDevice | null = null;
+
   constructor(global) {
     super(global);
 
@@ -32,18 +34,37 @@ export default class LookingGlassXRDevice extends XRDevice {
     this.inlineInverseViewMatrix = mat4.create();
     this.LookingGlassProjectionMatrices = [];
     this.LookingGlassInverseViewMatrices = [];
+    this.captureScreenshot = false;
+    this.screenshotCallback = null;
+
+    if (!LookingGlassXRDevice.instance) {
+      LookingGlassXRDevice.instance = this;
+  }
+}
+
+  static getInstance() {
+    return LookingGlassXRDevice.instance;
   }
 
   onBaseLayerSet(sessionId, layer) {
     const session = this.sessions.get(sessionId);
     session.baseLayer = layer;
+    const cfg = getLookingGlassConfig();
 
     const baseLayerPrivate = layer[LookingGlassXRWebGLLayer_PRIVATE];
     baseLayerPrivate.LookingGlassEnabled = session.immersive;
     if (session.immersive) {
-      baseLayerPrivate.moveCanvasToWindow(true, () => {
-        this.endSession(sessionId);
-      });
+      cfg.XRSession = this.sessions.get(sessionId)
+      //create the window and pass in the session reference
+      if (cfg.popup == null) {
+        baseLayerPrivate.moveCanvasToWindow(true, () => {
+          this.endSession(sessionId);
+        });
+      }
+      else {
+        console.warn('attempted to assign baselayer twice?')
+      }
+
     }
   }
 
@@ -129,6 +150,8 @@ export default class LookingGlassXRDevice extends XRDevice {
 
       const baseLayerPrivate = session.baseLayer[LookingGlassXRWebGLLayer_PRIVATE];
       baseLayerPrivate.clearFramebuffer();
+      //if session is not immersive, we need to set the projection matrix and view matrix for the inline session 
+      // Note: I think this breaks three.js when the session is ended. We should *try* to grab the camera position before entering the session if possible. 
     } else {
       const gl = session.baseLayer.context;
 
@@ -146,8 +169,13 @@ export default class LookingGlassXRDevice extends XRDevice {
   onFrameEnd(sessionId) {
     const session = this.sessions.get(sessionId);
     session.baseLayer[LookingGlassXRWebGLLayer_PRIVATE].blitTextureToDefaultFramebufferIfNeeded();
-  }
 
+    if (this.captureScreenshot && this.screenshotCallback) {
+      this.screenshotCallback();
+      this.captureScreenshot = false;
+    }
+  }
+// Looking Glass WebXR Library requires local to be set when requesting an XR session.
   async requestFrameOfReferenceTransform(type, options) {
     const matrix = mat4.create();
     switch (type) {
@@ -165,6 +193,7 @@ export default class LookingGlassXRDevice extends XRDevice {
   endSession(sessionId) {
     const session = this.sessions.get(sessionId);
     if (session.immersive && session.baseLayer) {
+      // close the window and destroy the controls on the end of session
       session.baseLayer[LookingGlassXRWebGLLayer_PRIVATE].moveCanvasToWindow(false);
       this.dispatchEvent('@@webxr-polyfill/vr-present-end', sessionId);
     }
@@ -195,6 +224,7 @@ export default class LookingGlassXRDevice extends XRDevice {
     return undefined;
   }
 
+  // get the current view and determine where on the quilt to render it. 
   getViewport(sessionId, eye, layer, target, viewIndex) {
     if (viewIndex === undefined) {
       const session = this.sessions.get(sessionId);
@@ -208,11 +238,11 @@ export default class LookingGlassXRDevice extends XRDevice {
       const cfg = getLookingGlassConfig();
       const col = viewIndex % cfg.quiltWidth;
       const row = Math.floor(viewIndex / cfg.quiltWidth);
-
-      target.x = cfg.tileWidth * col;
-      target.y = cfg.tileHeight * row;
-      target.width = cfg.tileWidth;
-      target.height = cfg.tileHeight;
+      // determine where to draw the current viewIndex to in the quilt
+      target.x = (cfg.framebufferWidth / cfg.quiltWidth) * col;
+      target.y = (cfg.framebufferHeight / cfg.quiltHeight) * row;
+      target.width = cfg.framebufferWidth / cfg.quiltWidth;
+      target.height = cfg.framebufferHeight / cfg.quiltHeight;
     }
     return true;
   }
