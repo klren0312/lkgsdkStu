@@ -27,12 +27,12 @@ export type CalibrationArgs = {
 	pitch: Value
 	slope: Value
 	center: Value
-	viewCone: Value
+	viewCone: Value // 视锥
 	invView: Value
 	verticalAngle: Value
 	DPI: Value
-	screenW: Value
-	screenH: Value
+	screenW: Value // 屏幕宽度
+	screenH: Value // 屏幕高度
 	flipImageX: Value
 	flipImageY: Value
 	flipSubp: Value
@@ -52,7 +52,7 @@ export type ViewControlArgs = {
 	/**
 	 * @Deprecated: since 0.4.0 use `quiltResolution` instead
 	 * Defines the height of the individual quilt view, the width is then set based on the aspect ratio of the connected device.
-	 * 视图高度, 根据设备比例来计算宽度
+	 * 多视点视图高度, 根据设备比例来计算宽度
 	 * @default 512
 	 */
 	tileHeight: number
@@ -134,7 +134,7 @@ export type ViewControlArgs = {
 	XRSession: any
 	/**
 	 * The current quilt resolution, this is a read only value that is set based on the connected device
-	 * 分辨率, 根据连接设备设置
+	 * 多视点图分辨率, 根据连接设备设置
 	 * @default 3840
 	 * 
 	 */
@@ -263,6 +263,7 @@ export class LookingGlassConfig extends EventTarget {
 
 	/**
 	 * defines the quilt resolution, only change this at start, do not change this after an XRSession has started
+	 * 定义多视点图分辨率, 只在开始时修改, 开始后不再修改
 	 */
 
 	public get quiltResolution(): number {
@@ -275,6 +276,7 @@ export class LookingGlassConfig extends EventTarget {
 
 	/**
 	 * defines the number of views to be rendered
+	 * 被渲染的视点数
 	 */
 	get numViews() {
 		return (this.quiltWidth * this.quiltHeight)
@@ -282,6 +284,7 @@ export class LookingGlassConfig extends EventTarget {
 
 	/**
 	 * defines the position of the camera on the X-axis
+	 * 相机离X距离
 	 */
 	get targetX() {
 		return this._viewControls.targetX
@@ -293,6 +296,7 @@ export class LookingGlassConfig extends EventTarget {
 
 	/**
 	 * defines the position of the camera on the Y-axis
+	 * 相机离y轴距离
 	 */
 	get targetY() {
 		return this._viewControls.targetY
@@ -303,7 +307,8 @@ export class LookingGlassConfig extends EventTarget {
 	}
 
 	/**
-	 * defines the position of the camera on the X-axis
+	 * defines the position of the camera on the Z-axis
+	 * 相机离z轴距离
 	 */
 	get targetZ() {
 		return this._viewControls.targetZ
@@ -315,6 +320,7 @@ export class LookingGlassConfig extends EventTarget {
 
 	/**
 	 * defines the rotation of the camera on the X-axis
+	 * 相机沿x轴旋转角度
 	 */
 	get trackballX() {
 		return this._viewControls.trackballX
@@ -326,6 +332,7 @@ export class LookingGlassConfig extends EventTarget {
 
 	/**
 	 * defines the rotation of the camera on the Y-axis
+	 * 相机沿y轴旋转角度
 	 */
 	get trackballY() {
 		return this._viewControls.trackballY
@@ -337,6 +344,7 @@ export class LookingGlassConfig extends EventTarget {
 
 	/**
 	 * defines the size of the camera, this makes your scene bigger or smaller without changing the focus.
+	 * 相机大小, 改变聚焦场景大小
 	 */
 	get targetDiam() {
 		return this._viewControls.targetDiam
@@ -348,6 +356,7 @@ export class LookingGlassConfig extends EventTarget {
 
 	/**
 	 * defines the vertical FOV of your camera (defined in radians)
+	 * 定义相机垂直视角(弧度值)
 	 */
 	get fovy() {
 		return this._viewControls.fovy
@@ -359,6 +368,7 @@ export class LookingGlassConfig extends EventTarget {
 
 	/**
 	 * modifies to the view frustum to increase or decrease the perceived depth of the scene.
+	 * 增加或减少场景深度
 	 */
 	get depthiness() {
 		return this._viewControls.depthiness
@@ -370,6 +380,7 @@ export class LookingGlassConfig extends EventTarget {
 
 	/**
 	 * changes how the original canvas on your main web page is displayed, can show the encoded subpixel matrix, a single centered view, or a quilt view.
+	 * 视图类型
 	 */
 	get inlineView() {
 		return this._viewControls.inlineView
@@ -435,11 +446,12 @@ export class LookingGlassConfig extends EventTarget {
 	}
 
 	// number of columns
+	// 列数
 	public get quiltWidth() {
-		if (this.calibration.screenW.value == 1536) {
+		if (this.calibration.screenW.value == 1536) { // 2048 x 1536 2K
 			return 8
 		}
-		else if (this.calibration.screenW.value == 3840) {
+		else if (this.calibration.screenW.value == 3840) { // 3840 x 2160 4K
 			return 5
 
 		}
@@ -451,6 +463,7 @@ export class LookingGlassConfig extends EventTarget {
 		}
 	}
 
+	// 行数
 	public get quiltHeight() {
 		if (this.calibration.screenW.value == 1536) {
 			return 6
