@@ -5,7 +5,7 @@ export async function LookingGlassMediaController() {
 	const cfg = getLookingGlassConfig()
 	let currentInlineView = 2 // we change this value later when the screenshot capture starts.
 
-	// the function to download the image from the canvas
+	// canvas导出图片下载
 	function downloadImage() {
 		if (cfg.appCanvas != null) {
 			try {

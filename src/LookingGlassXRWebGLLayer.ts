@@ -46,8 +46,8 @@ export default class LookingGlassXRWebGLLayer extends XRWebGLLayer {
 		// define a pointer to a framebuffer
 		const framebuffer = gl.createFramebuffer()
 
-		const OES_VAO = gl.getExtension("OES_vertex_array_object")
-		const GL_VERTEX_ARRAY_BINDING = 0x85b5
+		const OES_VAO = gl.getExtension("OES_vertex_array_object") // 顶点插件
+		const GL_VERTEX_ARRAY_BINDING = 0x85b5 // VERTEX_ARRAY_BINDING
 		const glBindVertexArray = OES_VAO ? OES_VAO.bindVertexArrayOES.bind(OES_VAO) : gl.bindVertexArray.bind(gl)
 
 		// create the definition for the depth stencil buffer
@@ -79,6 +79,7 @@ export default class LookingGlassXRWebGLLayer extends XRWebGLLayer {
 			}
 		}
 
+		// 初始化fbo贴图
 		const allocateTexture = (gl, texture, width, height) => {
 			const oldTextureBinding = gl.getParameter(gl.TEXTURE_BINDING_2D)
 			gl.bindTexture(gl.TEXTURE_2D, texture)
@@ -87,6 +88,7 @@ export default class LookingGlassXRWebGLLayer extends XRWebGLLayer {
 			gl.bindTexture(gl.TEXTURE_2D, oldTextureBinding)
 		}
 
+		// 分配深度缓冲
 		const allocateDepthStencil = (gl, depthStencil, dsConfig, width, height) => {
 			const oldRenderbufferBinding = gl.getParameter(gl.RENDERBUFFER_BINDING)
 			gl.bindRenderbuffer(gl.RENDERBUFFER, depthStencil)
@@ -94,6 +96,7 @@ export default class LookingGlassXRWebGLLayer extends XRWebGLLayer {
 			gl.bindRenderbuffer(gl.RENDERBUFFER, oldRenderbufferBinding)
 		}
 
+		// 初始化fbo
 		const setupFramebuffer = (gl, framebuffer, texture, dsConfig, depthStencil, config) => {
 			const oldFramebufferBinding = gl.getParameter(gl.FRAMEBUFFER_BINDING)
 			gl.bindFramebuffer(gl.FRAMEBUFFER, framebuffer)
@@ -120,6 +123,7 @@ export default class LookingGlassXRWebGLLayer extends XRWebGLLayer {
 		}
 	  `
 
+		// 创建shader
 		function createShader (gl, type, source) {
 			const shader = gl.createShader(type)
 			gl.shaderSource(shader, source)
@@ -133,6 +137,7 @@ export default class LookingGlassXRWebGLLayer extends XRWebGLLayer {
 			return shader
 		}
 
+		// shader链接program
 		function setupShaderProgram(gl, vertexShaderSource, fragmentShaderSource) {
 			let program = gl.createProgram()
 			const vs = createShader(gl, gl.VERTEX_SHADER, vertexShaderSource)
@@ -160,8 +165,9 @@ export default class LookingGlassXRWebGLLayer extends XRWebGLLayer {
 		let a_location;
 		let u_viewType;
 
+		// 重新编译fragmentshader
 		const recompileFragmentShaderIfNeeded = (gl, cfg, shaderFn) => {
-			const fsSource = shaderFn(cfg);
+			const fsSource = shaderFn(cfg); // 通过配置生成shader代码
 			if (fsSource === lastGeneratedFSSource) return;
 			lastGeneratedFSSource = fsSource;
 			
@@ -182,7 +188,7 @@ export default class LookingGlassXRWebGLLayer extends XRWebGLLayer {
 		  
 			// Update the attribute and uniform locations
 			a_location = gl.getAttribLocation(newProgram, "a_position");
-			u_viewType = gl.getUniformLocation(newProgram, "u_viewType");
+			u_viewType = gl.getUniformLocation(newProgram, "u_viewType"); // 视图类型
 			const u_texture = gl.getUniformLocation(newProgram, "u_texture");
 		  
 			const oldProgram = gl.getParameter(gl.CURRENT_PROGRAM);
@@ -197,21 +203,23 @@ export default class LookingGlassXRWebGLLayer extends XRWebGLLayer {
 			  gl.deleteProgram(program);
 			}
 			program = newProgram;
-		  };
+		};
 		console.log(Shader(cfg))
 		let program = setupShaderProgram(gl, vertexShaderSource, Shader(cfg))
 		if (program === null) {
 			console.warn("There was a problem with shader construction")
 		}
 
+		// 配置修改, 重新编译fragmentshader
 		cfg.addEventListener("on-config-changed", () => {
 			recompileFragmentShaderIfNeeded(gl, cfg, Shader);
-		  });
+		});
 
 		const vao = OES_VAO ? OES_VAO.createVertexArrayOES() : gl.createVertexArray()
 		const vbo = gl.createBuffer()
 		const oldBufferBinding = gl.getParameter(gl.ARRAY_BUFFER_BINDING)
 		const oldVAO = gl.getParameter(GL_VERTEX_ARRAY_BINDING)
+		// 设置平面
 		{
 			glBindVertexArray(vao)
 			gl.bindBuffer(gl.ARRAY_BUFFER, vbo)
@@ -359,6 +367,7 @@ export default class LookingGlassXRWebGLLayer extends XRWebGLLayer {
 
 		/**
 		 * Render the subpixel arrangment to the main canvas so it can be copied to the Looking Glass Canvas
+		 * 渲染交织图
 		 */
 		function renderSubPixelArrangement() {
 			gl.uniform1i(u_viewType, 0)
@@ -374,6 +383,7 @@ export default class LookingGlassXRWebGLLayer extends XRWebGLLayer {
 				return
 			}
 			lkgCtx?.clearRect(0, 0, cfg.lkgCanvas.width, cfg.lkgCanvas.height)
+			// drawImage(image, sx, sy, sWidth, sHeight, dx, dy, dWidth, dHeight);
 			lkgCtx?.drawImage(
 				cfg.appCanvas,
 				0,
@@ -389,6 +399,7 @@ export default class LookingGlassXRWebGLLayer extends XRWebGLLayer {
 
 		/**
 		 * renderInlineView overrides the subpixel arrangement view in the main canvas with either the single view or quilt view
+		 * 绘制多视点图
 		 */
 		function renderInlineView() {
 			if (!cfg.appCanvas) {

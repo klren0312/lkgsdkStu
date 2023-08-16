@@ -29,11 +29,11 @@ export default class LookingGlassXRDevice extends XRDevice {
     this.sessions = new Map();
 
     this.viewSpaces = [];
-    this.basePoseMatrix = mat4.create();
-    this.inlineProjectionMatrix = mat4.create();
-    this.inlineInverseViewMatrix = mat4.create();
-    this.LookingGlassProjectionMatrices = [];
-    this.LookingGlassInverseViewMatrices = [];
+    this.basePoseMatrix = mat4.create(); // 基础姿态矩阵
+    this.inlineProjectionMatrix = mat4.create(); // 投影矩阵
+    this.inlineInverseViewMatrix = mat4.create(); // 视图矩阵
+    this.LookingGlassProjectionMatrices = []; // lkg投影矩阵
+    this.LookingGlassInverseViewMatrices = []; // lkg视图矩阵
     this.captureScreenshot = false;
     this.screenshotCallback = null;
 
@@ -60,11 +60,9 @@ export default class LookingGlassXRDevice extends XRDevice {
         baseLayerPrivate.moveCanvasToWindow(true, () => {
           this.endSession(sessionId);
         });
-      }
-      else {
+      } else {
         console.warn('attempted to assign baselayer twice?')
       }
-
     }
   }
 
@@ -112,8 +110,9 @@ export default class LookingGlassXRDevice extends XRDevice {
 
     if (session.immersive) {
       const tanHalfFovy = Math.tan(0.5 * cfg.fovy);
-      // Distance from frustum's vertex to target.
+      //焦距
       const focalDistance = 0.5 * cfg.targetDiam / tanHalfFovy;
+      // 修正平面偏差
       const clipPlaneBias = focalDistance - cfg.targetDiam;
 
       const mPose = this.basePoseMatrix;
@@ -275,7 +274,7 @@ export default class LookingGlassXRDevice extends XRDevice {
 let SESSION_ID = 0;
 class Session {
 	public mode: any;
-	public immersive: boolean;
+	public immersive: boolean; // 是否沉浸式
 	public id: any;
 	public baseLayer: any;
 	public inlineVerticalFieldOfView: number
