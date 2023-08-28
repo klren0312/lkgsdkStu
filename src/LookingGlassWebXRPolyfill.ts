@@ -63,12 +63,12 @@ export class LookingGlassWebXRPolyfill extends WebXRPolyfill {
 		this.vrButton = await waitForElement<HTMLButtonElement>("VRButton")
 
 		if (this.vrButton && this.device) {
-			this.device.addEventListener("@@@lookingglass/webxr-polyfill/vr-present-start", () => {
+			this.device.addEventListener("@@webxr-polyfill/vr-present-start", () => {
 				this.isPresenting = true
 				this.updateVRButtonUI()
 			})
 
-			this.device.addEventListener("@@@lookingglass/webxr-polyfill/vr-present-end", () => {
+			this.device.addEventListener("@@webxr-polyfill/vr-present-end", () => {
 				this.isPresenting = false
 				this.updateVRButtonUI()
 			})
