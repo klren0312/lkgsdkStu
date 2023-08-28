@@ -26,11 +26,11 @@ export type Viewport = { 0 }
 export default class LookingGlassXRWebGLLayer extends XRWebGLLayer {
 	constructor(session: any, gl: WebGL2RenderingContext, layerInit: any) {
 		super(session, gl, layerInit)
-		// call the Looking Glass config class
+		// 获取配置信息
 		const cfg = getLookingGlassConfig()
-		// create a reference to the existing canvas
+		// 创建对当前canvas的引用
 		cfg.appCanvas = gl.canvas as HTMLCanvasElement
-		// create a new canvas element to be used later when we open the Looking Glass window
+		// 创建一个新的canvas节点, 来给预览窗口使用
 		cfg.lkgCanvas = document.createElement("canvas")
 		cfg.lkgCanvas.tabIndex = 0
 		const lkgCtx = cfg.lkgCanvas.getContext("2d", { alpha: false })
@@ -38,19 +38,19 @@ export default class LookingGlassXRWebGLLayer extends XRWebGLLayer {
 			this.requestFullscreen()
 		})
 
-		// Set up framebuffer/texture.
+		// 设置 framebuffer/texture.
 
 		const config = this[XRWebGLLayer_PRIVATE].config
 		const texture = gl.createTexture()
 		let depthStencil, dsConfig
-		// define a pointer to a framebuffer
+		// 定义指向framebuffer的指针
 		const framebuffer = gl.createFramebuffer()
 
 		const OES_VAO = gl.getExtension("OES_vertex_array_object") // 顶点插件
 		const GL_VERTEX_ARRAY_BINDING = 0x85b5 // VERTEX_ARRAY_BINDING
 		const glBindVertexArray = OES_VAO ? OES_VAO.bindVertexArrayOES.bind(OES_VAO) : gl.bindVertexArray.bind(gl)
 
-		// create the definition for the depth stencil buffer
+		// 创建深度模板缓冲区
 		if (config.depth || config.stencil) {
 			if (config.depth && config.stencil) {
 				dsConfig = {
@@ -70,8 +70,9 @@ export default class LookingGlassXRWebGLLayer extends XRWebGLLayer {
 			}
 			depthStencil = gl.createRenderbuffer()
 		}
-		// utility functions for allocating the framebuffer resources
 
+		// 用于分配 framebuffer 资源的实用函数
+		// utility functions for allocating the framebuffer resources
 		const allocateFramebufferAttachments = (gl, texture, depthStencil, dsConfig, cfg) => {
 			allocateTexture(gl, texture, cfg.framebufferWidth, cfg.framebufferHeight)
 			if (depthStencil) {
@@ -79,7 +80,7 @@ export default class LookingGlassXRWebGLLayer extends XRWebGLLayer {
 			}
 		}
 
-		// 初始化fbo贴图
+		// 分配fbo贴图
 		const allocateTexture = (gl, texture, width, height) => {
 			const oldTextureBinding = gl.getParameter(gl.TEXTURE_BINDING_2D)
 			gl.bindTexture(gl.TEXTURE_2D, texture)
@@ -108,10 +109,13 @@ export default class LookingGlassXRWebGLLayer extends XRWebGLLayer {
 		}
 
 		allocateFramebufferAttachments(gl, texture, depthStencil, dsConfig, cfg)
+
+		// 配置修改监听
 		cfg.addEventListener("on-config-changed", () => allocateFramebufferAttachments(gl, texture, depthStencil, dsConfig, cfg))
 
 		setupFramebuffer(gl, framebuffer, texture, dsConfig, depthStencil, config)
 
+		// 设置从纹理到屏幕的位点
 		// Set up blit from texture to screen.
 
 		const vertexShaderSource = `
@@ -230,6 +234,7 @@ export default class LookingGlassXRWebGLLayer extends XRWebGLLayer {
 		glBindVertexArray(oldVAO)
 		gl.bindBuffer(gl.ARRAY_BUFFER, oldBufferBinding)
 
+		// 清除framebuffer
 		const clearFramebuffer = () => {
 			console.assert(this[PRIVATE].LookingGlassEnabled)
 
@@ -257,7 +262,7 @@ export default class LookingGlassXRWebGLLayer extends XRWebGLLayer {
 				return
 			}
 
-			// Update canvas dimensions if needed
+			// 修改canvas大小
 			if (cfg.appCanvas.width !== cfg.framebufferWidth || cfg.appCanvas.height !== cfg.framebufferHeight) {
 				origWidth = cfg.appCanvas.width
 				origHeight = cfg.appCanvas.height
@@ -265,27 +270,26 @@ export default class LookingGlassXRWebGLLayer extends XRWebGLLayer {
 				cfg.appCanvas.height = cfg.framebufferHeight
 			}
 
-			// Save the current WebGL state
+			// 保存当前WebGL状态
 			const oldState = saveWebGLState()
 
-			// Set up the WebGL state for rendering
+			// 设置渲染的WebGL状态 Set up the WebGL state for rendering
 			setupRenderState()
 
-			// Render the swizzled view for the display
+			// 交织图渲染
 			renderSubPixelArrangement()
 
-			// Clear the Looking Glass Canvas and draw the new image
+			// 清空预览canvas, 绘制新图片
 			updateLookingGlassCanvas()
 
-			// Render the quilt or centered inline view to the canvas
+			// 在canvas上渲染多视点图或者中间视点图
 			renderInlineView()
 
-			// Restore the WebGL state
+			// 恢复webGL状态
 			restoreWebGLState(oldState)
 		}
 
-		// Utility functions to handle WebGL state
-
+		// 处理WebGL状态
 		function restoreWebGLState(oldState) {
 			gl.activeTexture(oldState.activeTexture)
 			gl.bindTexture(gl.TEXTURE_2D, oldState.textureBinding)
@@ -328,7 +332,7 @@ export default class LookingGlassXRWebGLLayer extends XRWebGLLayer {
 		}
 
 		/**
-		 * saves the current WebGL state
+		 * 保存当前WebGL状态
 		 * @returns {Object} The current WebGL state
 		 */
 		function saveWebGLState() {
@@ -348,7 +352,7 @@ export default class LookingGlassXRWebGLLayer extends XRWebGLLayer {
 			}
 		}
 		/**
-		 * Set up the WebGL state for rendering
+		 * 设置渲染的 WebGL 状态
 		 */
 		function setupRenderState() {
 			gl.bindFramebuffer(gl.FRAMEBUFFER, null)
@@ -367,7 +371,7 @@ export default class LookingGlassXRWebGLLayer extends XRWebGLLayer {
 
 		/**
 		 * Render the subpixel arrangment to the main canvas so it can be copied to the Looking Glass Canvas
-		 * 渲染交织图
+		 * 渲染交织图的底图
 		 */
 		function renderSubPixelArrangement() {
 			gl.uniform1i(u_viewType, 0)
@@ -376,6 +380,7 @@ export default class LookingGlassXRWebGLLayer extends XRWebGLLayer {
 
 		/**
 		 * Update the Looking Glass Canvas with the current view from the application
+		 * 更新预览窗口canvas
 		 */
 		function updateLookingGlassCanvas() {
 			if (!cfg.lkgCanvas || !cfg.appCanvas) {

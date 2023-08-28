@@ -32,8 +32,8 @@ export default class LookingGlassXRDevice extends XRDevice {
     this.basePoseMatrix = mat4.create(); // 基础姿态矩阵
     this.inlineProjectionMatrix = mat4.create(); // 投影矩阵
     this.inlineInverseViewMatrix = mat4.create(); // 视图矩阵
-    this.LookingGlassProjectionMatrices = []; // lkg投影矩阵
-    this.LookingGlassInverseViewMatrices = []; // lkg视图矩阵
+    this.LookingGlassProjectionMatrices = []; // 预览窗口投影矩阵
+    this.LookingGlassInverseViewMatrices = []; // 预览窗口视图矩阵
     this.captureScreenshot = false;
     this.screenshotCallback = null;
 
@@ -91,7 +91,7 @@ export default class LookingGlassXRDevice extends XRDevice {
     const session = new Session(mode, enabledFeatures);
     this.sessions.set(session.id, session);
     if (immersive) {
-      this.dispatchEvent('@@webxr-polyfill/vr-present-start', session.id);
+      this.dispatchEvent('@@@lookingglass/webxr-polyfill/vr-present-start', session.id);
     }
     return Promise.resolve(session.id);
   }
@@ -194,7 +194,7 @@ export default class LookingGlassXRDevice extends XRDevice {
     if (session.immersive && session.baseLayer) {
       // close the window and destroy the controls on the end of session
       session.baseLayer[LookingGlassXRWebGLLayer_PRIVATE].moveCanvasToWindow(false);
-      this.dispatchEvent('@@webxr-polyfill/vr-present-end', sessionId);
+      this.dispatchEvent('@@@lookingglass/webxr-polyfill/vr-present-end', sessionId);
     }
     session.ended = true;
   }

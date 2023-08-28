@@ -41,7 +41,8 @@
   "dependencies": {
     "@lookingglass/webxr-polyfill": "^0.1.1",
     "gl-matrix": "^2.8.1",
-    "holoplay-core": "^0.0.9"
+    "holoplay-core": "^0.0.9",
+    "webxr-polyfill": "^2.0.3"
   },
   "bugs": {
     "url": "https://github.com/Looking-Glass/looking-glass-webxr/issues"

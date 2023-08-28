@@ -24,7 +24,7 @@ import LookingGlassXRWebGLLayer from "./LookingGlassXRWebGLLayer"
 export class LookingGlassWebXRPolyfill extends WebXRPolyfill {
 	private vrButton: HTMLButtonElement | null | undefined
 	public device: LookingGlassXRDevice | undefined
-	/** true when previewing on Looking Glass */
+	/** 在Looking Glass中预览时, 设置为true */
 	public isPresenting: boolean = false
 
 	constructor(cfg?: Partial<ViewControlArgs>) {
@@ -58,22 +58,23 @@ export class LookingGlassWebXRPolyfill extends WebXRPolyfill {
 		})
 	}
 
-	/** If a "Enter VR" button exists, let's override it with our own copy */
+	/** 如果存在"Enter VR" 按钮, 则重写按钮 */
 	private async overrideDefaultVRButton() {
 		this.vrButton = await waitForElement<HTMLButtonElement>("VRButton")
 
 		if (this.vrButton && this.device) {
-			this.device.addEventListener("@@webxr-polyfill/vr-present-start", () => {
+			this.device.addEventListener("@@@lookingglass/webxr-polyfill/vr-present-start", () => {
 				this.isPresenting = true
 				this.updateVRButtonUI()
 			})
 
-			this.device.addEventListener("@@webxr-polyfill/vr-present-end", () => {
+			this.device.addEventListener("@@@lookingglass/webxr-polyfill/vr-present-end", () => {
 				this.isPresenting = false
 				this.updateVRButtonUI()
 			})
 
 			this.vrButton.addEventListener("click", (ev: MouseEvent) => {
+				console.log('button click', ev)
 				this.updateVRButtonUI()
 			})
 
@@ -83,7 +84,7 @@ export class LookingGlassWebXRPolyfill extends WebXRPolyfill {
 		}
 	}
 
-	/** Refresh the current state of the VRButton */
+	/** 修改vrbutton样式 */
 	private async updateVRButtonUI() {
 		if (this.vrButton) {
 			// Hack: Need to delay slightly in order to properly update
@@ -122,7 +123,7 @@ async function waitForElement<T extends HTMLElement>(id: string): Promise<T | nu
 
         observer.observe(document.body, { subtree: false, childList: true });
 
-        // Disconnect the observer after 5 seconds if we don't find the element
+        // 如果没找到节点, 则在5秒后断开监听
         setTimeout(() => {
             observer.disconnect();
             resolve(null); // Resolve with null instead of rejecting
