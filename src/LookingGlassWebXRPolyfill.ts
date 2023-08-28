@@ -50,6 +50,7 @@ export class LookingGlassWebXRPolyfill extends WebXRPolyfill {
 
 		this.injected = true
 
+		// 加载模拟的xr设备
 		this.device = new LookingGlassXRDevice(this.global)
 		this.xr = new XRSystem(Promise.resolve(this.device))
 		Object.defineProperty(this.global.navigator, "xr", {

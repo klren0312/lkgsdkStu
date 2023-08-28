@@ -209,12 +209,13 @@ export default class LookingGlassXRWebGLLayer extends XRWebGLLayer {
 			program = newProgram;
 		};
 		console.log(Shader(cfg))
+		// 根据配置生成fragmentshader 并设置program
 		let program = setupShaderProgram(gl, vertexShaderSource, Shader(cfg))
 		if (program === null) {
 			console.warn("There was a problem with shader construction")
 		}
 
-		// 配置修改, 重新编译fragmentshader
+		// 监听, 当配置修改时, 重新编译fragmentshader
 		cfg.addEventListener("on-config-changed", () => {
 			recompileFragmentShaderIfNeeded(gl, cfg, Shader);
 		});
@@ -223,7 +224,7 @@ export default class LookingGlassXRWebGLLayer extends XRWebGLLayer {
 		const vbo = gl.createBuffer()
 		const oldBufferBinding = gl.getParameter(gl.ARRAY_BUFFER_BINDING)
 		const oldVAO = gl.getParameter(GL_VERTEX_ARRAY_BINDING)
-		// 设置平面
+		// 设置交织图平面顶点, 使用顶点插件保存到vao
 		{
 			glBindVertexArray(vao)
 			gl.bindBuffer(gl.ARRAY_BUFFER, vbo)
@@ -231,6 +232,8 @@ export default class LookingGlassXRWebGLLayer extends XRWebGLLayer {
 			gl.enableVertexAttribArray(a_location)
 			gl.vertexAttribPointer(a_location, 2, gl.FLOAT, false, 0, 0)
 		}
+
+		// 将之前的顶点保存到oldVAO
 		glBindVertexArray(oldVAO)
 		gl.bindBuffer(gl.ARRAY_BUFFER, oldBufferBinding)
 
@@ -257,6 +260,7 @@ export default class LookingGlassXRWebGLLayer extends XRWebGLLayer {
 
 		let origWidth, origHeight
 
+		// 如果需要，移动 纹理 到默认的 Framebuffer上
 		function blitTextureToDefaultFramebufferIfNeeded() {
 			if (!cfg.appCanvas || !cfg.lkgCanvas) {
 				return
