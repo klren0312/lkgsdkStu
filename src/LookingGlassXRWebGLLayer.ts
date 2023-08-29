@@ -46,7 +46,8 @@ export default class LookingGlassXRWebGLLayer extends XRWebGLLayer {
 		// 定义指向framebuffer的指针
 		const framebuffer = gl.createFramebuffer()
 
-		const OES_VAO = gl.getExtension("OES_vertex_array_object") // 顶点插件
+		// 使用VAO
+		const OES_VAO = gl.getExtension("OES_vertex_array_object")
 		const GL_VERTEX_ARRAY_BINDING = 0x85b5 // VERTEX_ARRAY_BINDING
 		const glBindVertexArray = OES_VAO ? OES_VAO.bindVertexArrayOES.bind(OES_VAO) : gl.bindVertexArray.bind(gl)
 
@@ -280,7 +281,7 @@ export default class LookingGlassXRWebGLLayer extends XRWebGLLayer {
 			// 设置渲染的WebGL状态 Set up the WebGL state for rendering
 			setupRenderState()
 
-			// 交织图渲染
+			// 交织图底图渲染
 			renderSubPixelArrangement()
 
 			// 清空预览canvas, 绘制新图片
@@ -408,7 +409,7 @@ export default class LookingGlassXRWebGLLayer extends XRWebGLLayer {
 
 		/**
 		 * renderInlineView overrides the subpixel arrangement view in the main canvas with either the single view or quilt view
-		 * 绘制多视点图
+		 * 绘制多视点图或中间视点图
 		 */
 		function renderInlineView() {
 			if (!cfg.appCanvas) {

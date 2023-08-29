@@ -485,7 +485,11 @@ export class LookingGlassConfig extends EventTarget {
 		else return 4320
 	}
 
+	/**
+	 * 视角
+	 */
 	public get viewCone() {
+		// 初始角度乘景深 得到视锥体相对初始角度的缩放比例
 		return ((this._calibration.viewCone.value * this.depthiness) / 180) * Math.PI
 	}
 

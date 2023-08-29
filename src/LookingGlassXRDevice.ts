@@ -109,6 +109,7 @@ export default class LookingGlassXRDevice extends XRDevice {
     const cfg = getLookingGlassConfig();
 
     if (session.immersive) {
+      // 视场角一半的正切值
       const tanHalfFovy = Math.tan(0.5 * cfg.fovy);
       //焦距
       const focalDistance = 0.5 * cfg.targetDiam / tanHalfFovy;
@@ -123,7 +124,9 @@ export default class LookingGlassXRDevice extends XRDevice {
 
       for (let i = 0; i < cfg.numViews; ++i) {
         const fractionAlongViewCone = (i + 0.5) / cfg.numViews - 0.5; // -0.5 < this < 0.5
+        // 
         const tanAngleToThisCamera = Math.tan(cfg.viewCone * fractionAlongViewCone);
+        // 计算相机到中心的距离
         const offsetAlongBaseline = focalDistance * tanAngleToThisCamera;
 
         const mView = (this.LookingGlassInverseViewMatrices[i] = this.LookingGlassInverseViewMatrices[i] || mat4.create());
@@ -223,6 +226,7 @@ export default class LookingGlassXRDevice extends XRDevice {
     return undefined;
   }
 
+  // 获取当前视图, 并决定在多视点图哪个位置渲染他
   // get the current view and determine where on the quilt to render it. 
   getViewport(sessionId, eye, layer, target, viewIndex) {
     if (viewIndex === undefined) {
