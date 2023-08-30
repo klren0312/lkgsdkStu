@@ -6,6 +6,7 @@ let controls
 // this is the function responsible for opening the Looking Glass window and initializing the controls
 /**
  * 打开预览框, 初始化交互控制
+ * @param {boolean} enabled true-开启 false-销毁
  */
 export const moveCanvasToWindow = (enabled: boolean, onbeforeunload) => {
 	const cfg = getLookingGlassConfig()

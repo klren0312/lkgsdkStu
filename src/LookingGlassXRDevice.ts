@@ -51,6 +51,7 @@ export default class LookingGlassXRDevice extends XRDevice {
     session.baseLayer = layer;
     const cfg = getLookingGlassConfig();
 
+    // lkg layer
     const baseLayerPrivate = layer[LookingGlassXRWebGLLayer_PRIVATE];
     baseLayerPrivate.LookingGlassEnabled = session.immersive;
     if (session.immersive) {
@@ -133,16 +134,27 @@ export default class LookingGlassXRDevice extends XRDevice {
         mat4.translate(mView, mPose, [offsetAlongBaseline, 0, 0]);
         mat4.invert(mView, mView);
 
-        // depthNear/Far are the distances from the view origin to the near/far planes.
-        // l/r/t/b/n/f are as in the usual OpenGL perspective matrix formulation.
+        // `depthNear`和`depthFar`是从视图原点到近裁剪面和远裁剪面的距离。
+        // l/r/t/b/n/f 是OpenGL透视矩阵
+        /*
+        * @param left 裁切平面左侧坐标
+        * @param right 裁切平面右侧坐标
+        * @param bottom 裁切平面底部坐标
+        * @param top 裁切平面顶部坐标
+        * @param near 距离近裁切平面的距离。此值必须为正数。
+        * @param far 距离远裁切平面的距离。此值必须为正数。
+        */
         const n = Math.max(clipPlaneBias + renderState.depthNear, 0.01);
         const f = clipPlaneBias + renderState.depthFar;
         const halfYRange = n * tanHalfFovy;
-        const t = halfYRange, b = -halfYRange;
+        const t = halfYRange;
+        const b = -halfYRange;
         const midpointX = n * -tanAngleToThisCamera;
         const halfXRange = cfg.aspect * halfYRange;
-        const r = midpointX + halfXRange, l = midpointX - halfXRange;
+        const r = midpointX + halfXRange;
+        const l = midpointX - halfXRange;
         const mProj = (this.LookingGlassProjectionMatrices[i] = this.LookingGlassProjectionMatrices[i] || mat4.create());
+        // 透视投影矩阵
         mat4.set(mProj,
           2 * n / (r - l), 0, 0, 0,
           0, 2 * n / (t - b), 0, 0,
@@ -152,7 +164,7 @@ export default class LookingGlassXRDevice extends XRDevice {
 
       const baseLayerPrivate = session.baseLayer[LookingGlassXRWebGLLayer_PRIVATE];
       baseLayerPrivate.clearFramebuffer();
-      //if session is not immersive, we need to set the projection matrix and view matrix for the inline session 
+      // 如果会话不是沉浸式的，我们需要为内联会话设置投影矩阵和视图矩阵
       // Note: I think this breaks three.js when the session is ended. We should *try* to grab the camera position before entering the session if possible. 
     } else {
       const gl = session.baseLayer.context;
@@ -170,6 +182,7 @@ export default class LookingGlassXRDevice extends XRDevice {
 
   onFrameEnd(sessionId) {
     const session = this.sessions.get(sessionId);
+    // 贴图渲染
     session.baseLayer[LookingGlassXRWebGLLayer_PRIVATE].blitTextureToDefaultFramebufferIfNeeded();
 
     if (this.captureScreenshot && this.screenshotCallback) {
@@ -177,8 +190,9 @@ export default class LookingGlassXRDevice extends XRDevice {
       this.captureScreenshot = false;
     }
   }
-// Looking Glass WebXR Library requires local to be set when requesting an XR session.
-  async requestFrameOfReferenceTransform(type, options) {
+  // Looking Glass WebXR Library requires local to be set when requesting an XR session.
+  // 需要在请求XR session时, 设置local
+  async requestFrameOfReferenceTransform(type, _options) {
     const matrix = mat4.create();
     switch (type) {
       case 'viewer':
@@ -195,7 +209,7 @@ export default class LookingGlassXRDevice extends XRDevice {
   endSession(sessionId) {
     const session = this.sessions.get(sessionId);
     if (session.immersive && session.baseLayer) {
-      // close the window and destroy the controls on the end of session
+      // 关闭窗口, 在会话结束时销毁控件
       session.baseLayer[LookingGlassXRWebGLLayer_PRIVATE].moveCanvasToWindow(false);
       this.dispatchEvent('@@@lookingglass/webxr-polyfill/vr-present-end', sessionId);
     }
@@ -228,7 +242,7 @@ export default class LookingGlassXRDevice extends XRDevice {
 
   // 获取当前视图, 并决定在多视点图哪个位置渲染他
   // get the current view and determine where on the quilt to render it. 
-  getViewport(sessionId, eye, layer, target, viewIndex) {
+  getViewport(sessionId, _eye, _layer, target, viewIndex) {
     if (viewIndex === undefined) {
       const session = this.sessions.get(sessionId);
       const gl = session.baseLayer.context;
@@ -250,7 +264,7 @@ export default class LookingGlassXRDevice extends XRDevice {
     return true;
   }
 
-  getProjectionMatrix(eye, viewIndex) {
+  getProjectionMatrix(_eye, viewIndex) {
     if (viewIndex === undefined) { return this.inlineProjectionMatrix; }
     return this.LookingGlassProjectionMatrices[viewIndex] || mat4.create();
   }
@@ -270,7 +284,7 @@ export default class LookingGlassXRDevice extends XRDevice {
 
   getInputSources() { return []; }
 
-  getInputPose(inputSource, coordinateSystem, poseType) { return null; }
+  getInputPose(_inputSource, _coordinateSystem, _poseType) { return null; }
 
   onWindowResize() { }
 };
