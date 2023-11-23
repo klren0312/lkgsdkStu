@@ -16,7 +16,7 @@
 
 import XRDevice from '@lookingglass/webxr-polyfill/src/devices/XRDevice';
 import XRSpace from '@lookingglass/webxr-polyfill/src/api/XRSpace'
-import { mat4 } from 'gl-matrix';
+import { mat4, vec3 } from 'gl-matrix';
 import { PRIVATE as LookingGlassXRWebGLLayer_PRIVATE } from './LookingGlassXRWebGLLayer';
 import { DefaultEyeHeight, getLookingGlassConfig } from './LookingGlassConfig';
 
@@ -108,58 +108,22 @@ export default class LookingGlassXRDevice extends XRDevice {
   onFrameStart(sessionId, renderState) {
     const session = this.sessions.get(sessionId);
     const cfg = getLookingGlassConfig();
-
+    const dz = 10
+    const dc = this.getCameraDis(48, dz, 52)
     if (session.immersive) {
-      // 视场角一半的正切值
-      const tanHalfFovy = Math.tan(0.5 * cfg.fovy);
-      //焦距
-      const focalDistance = 0.5 * cfg.targetDiam / tanHalfFovy;
-      // 修正平面偏差
-      const clipPlaneBias = focalDistance - cfg.targetDiam;
-
-      const mPose = this.basePoseMatrix;
-      mat4.fromTranslation(mPose, [cfg.targetX, cfg.targetY, cfg.targetZ]);
-      mat4.rotate(mPose, mPose, cfg.trackballX, [0, 1, 0]);
-      mat4.rotate(mPose, mPose, -cfg.trackballY, [1, 0, 0]);
-      mat4.translate(mPose, mPose, [0, 0, focalDistance]);
-
+      let index = 0
       for (let i = 0; i < cfg.numViews; ++i) {
-        const fractionAlongViewCone = (i + 0.5) / cfg.numViews - 0.5; // -0.5 < this < 0.5
-        // 
-        const tanAngleToThisCamera = Math.tan(cfg.viewCone * fractionAlongViewCone);
-        // 计算相机到中心的距离
-        const offsetAlongBaseline = focalDistance * tanAngleToThisCamera;
-
-        const mView = (this.LookingGlassInverseViewMatrices[i] = this.LookingGlassInverseViewMatrices[i] || mat4.create());
-        mat4.translate(mView, mPose, [offsetAlongBaseline, 0, 0]);
-        mat4.invert(mView, mView);
-
-        // `depthNear`和`depthFar`是从视图原点到近裁剪面和远裁剪面的距离。
-        // l/r/t/b/n/f 是OpenGL透视矩阵
-        /*
-        * @param left 裁切平面左侧坐标
-        * @param right 裁切平面右侧坐标
-        * @param bottom 裁切平面底部坐标
-        * @param top 裁切平面顶部坐标
-        * @param near 距离近裁切平面的距离。此值必须为正数。
-        * @param far 距离远裁切平面的距离。此值必须为正数。
-        */
-        const n = Math.max(clipPlaneBias + renderState.depthNear, 0.01);
-        const f = clipPlaneBias + renderState.depthFar;
-        const halfYRange = n * tanHalfFovy;
-        const t = halfYRange;
-        const b = -halfYRange;
-        const midpointX = n * -tanAngleToThisCamera;
-        const halfXRange = cfg.aspect * halfYRange;
-        const r = midpointX + halfXRange;
-        const l = midpointX - halfXRange;
+        let currentX = -dc * 24 + index * dc
+        if (currentX > dc * 24) {
+            currentX = -dc * 24
+            index = 0
+        }
+        const eye = vec3.fromValues(currentX, 0, dz)
+        const center = vec3.fromValues(currentX, 0, 0)
+        const up = vec3.fromValues(0, 1, 0)
         const mProj = (this.LookingGlassProjectionMatrices[i] = this.LookingGlassProjectionMatrices[i] || mat4.create());
-        // 透视投影矩阵
-        mat4.set(mProj,
-          2 * n / (r - l), 0, 0, 0,
-          0, 2 * n / (t - b), 0, 0,
-          (r + l) / (r - l), (t + b) / (t - b), -(f + n) / (f - n), -1,
-          0, 0, -2 * f * n / (f - n), 0);
+        mat4.lookAt(mProj, eye, center, up)
+        mat4.perspective(mProj, cfg.fovy, 1536 / 2048, 1, 20)
       }
 
       const baseLayerPrivate = session.baseLayer[LookingGlassXRWebGLLayer_PRIVATE];
@@ -178,6 +142,18 @@ export default class LookingGlassXRDevice extends XRDevice {
       mat4.fromTranslation(this.basePoseMatrix, [0, DefaultEyeHeight, 0]);
       mat4.invert(this.inlineInverseViewMatrix, this.basePoseMatrix);
     }
+  }
+  /**
+ * 计算相机间距
+ * @param {number} viewNums 视点数
+ * @param {number} dz 相机到物体中心点距离
+ * @param {number} deg 物体到左右两边相机的夹角
+ * @returns 
+ */
+  getCameraDis(viewNums, dz, deg) {
+    const dr = 2 * dz * Math.tan((deg / 2) * Math.PI/180)
+    const dc = dr / (viewNums - 1)
+    return dc
   }
 
   onFrameEnd(sessionId) {

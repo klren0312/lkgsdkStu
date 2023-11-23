@@ -135,7 +135,7 @@ export function initLookingGlassControlGUI() {
 				}
 			}
 	
-			let updateNumberText = (value) => {}
+			let updateNumberText = (_value) => {}
 	
 			if (stringify) {
 				const numberText = document.createElement("span")

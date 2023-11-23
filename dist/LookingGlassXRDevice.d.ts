@@ -26,16 +26,16 @@ export default class LookingGlassXRDevice extends XRDevice {
     cancelAnimationFrame(handle: any): void;
     onFrameStart(sessionId: any, renderState: any): void;
     onFrameEnd(sessionId: any): void;
-    requestFrameOfReferenceTransform(type: any, options: any): Promise<any>;
+    requestFrameOfReferenceTransform(type: any, _options: any): Promise<any>;
     endSession(sessionId: any): void;
     doesSessionSupportReferenceSpace(sessionId: any, type: any): any;
     getViewSpaces(mode: any): any[] | undefined;
-    getViewport(sessionId: any, eye: any, layer: any, target: any, viewIndex: any): boolean;
-    getProjectionMatrix(eye: any, viewIndex: any): any;
+    getViewport(sessionId: any, _eye: any, _layer: any, target: any, viewIndex: any): boolean;
+    getProjectionMatrix(_eye: any, viewIndex: any): any;
     getBasePoseMatrix(): any[];
     getBaseViewMatrix(): any[];
     _getViewMatrixByIndex(viewIndex: any): any;
     getInputSources(): never[];
-    getInputPose(inputSource: any, coordinateSystem: any, poseType: any): null;
+    getInputPose(_inputSource: any, _coordinateSystem: any, _poseType: any): null;
     onWindowResize(): void;
 }

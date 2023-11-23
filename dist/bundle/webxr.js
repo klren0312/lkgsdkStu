@@ -50,7 +50,7 @@ class EventTarget$1 {
     }
   }
 }
-const EPSILON$1 = 1e-6;
+const EPSILON = 1e-6;
 let ARRAY_TYPE$1 = typeof Float32Array !== "undefined" ? Float32Array : Array;
 function create$5() {
   let out = new ARRAY_TYPE$1(16);
@@ -544,7 +544,7 @@ function slerp(out, a, b, t) {
     bz = -bz;
     bw = -bw;
   }
-  if (1 - cosom > EPSILON$1) {
+  if (1 - cosom > EPSILON) {
     omega = Math.acos(cosom);
     sinom = Math.sin(omega);
     scale0 = Math.sin((1 - t) * omega) / sinom;
@@ -2460,7 +2460,7 @@ var cardboardVrDisplay = { exports: {} };
           get: function get() {
             return self2.bufferWidth;
           },
-          set: function set2(value) {
+          set: function set(value) {
             self2.bufferWidth = value;
             self2.realCanvasWidth.set.call(canvas, value);
             self2.onResize();
@@ -2472,7 +2472,7 @@ var cardboardVrDisplay = { exports: {} };
           get: function get() {
             return self2.bufferHeight;
           },
-          set: function set2(value) {
+          set: function set(value) {
             self2.bufferHeight = value;
             self2.realCanvasHeight.set.call(canvas, value);
             self2.onResize();
@@ -2977,7 +2977,7 @@ var cardboardVrDisplay = { exports: {} };
     };
     Vector3.prototype = {
       constructor: Vector3,
-      set: function set2(x, y, z) {
+      set: function set(x, y, z) {
         this.x = x;
         this.y = y;
         this.z = z;
@@ -3046,7 +3046,7 @@ var cardboardVrDisplay = { exports: {} };
     };
     Quaternion.prototype = {
       constructor: Quaternion,
-      set: function set2(x, y, z, w) {
+      set: function set(x, y, z, w) {
         this.x = x;
         this.y = y;
         this.z = z;
@@ -7052,7 +7052,6 @@ function updateLookingGlassConfig(viewControls) {
     lkgConfig.updateViewControls(viewControls);
   }
 }
-var EPSILON = 1e-6;
 var ARRAY_TYPE = typeof Float32Array !== "undefined" ? Float32Array : Array;
 function create() {
   var out = new ARRAY_TYPE(16);
@@ -7074,25 +7073,6 @@ function create() {
   out[5] = 1;
   out[10] = 1;
   out[15] = 1;
-  return out;
-}
-function set(out, m00, m01, m02, m03, m10, m11, m12, m13, m20, m21, m22, m23, m30, m31, m32, m33) {
-  out[0] = m00;
-  out[1] = m01;
-  out[2] = m02;
-  out[3] = m03;
-  out[4] = m10;
-  out[5] = m11;
-  out[6] = m12;
-  out[7] = m13;
-  out[8] = m20;
-  out[9] = m21;
-  out[10] = m22;
-  out[11] = m23;
-  out[12] = m30;
-  out[13] = m31;
-  out[14] = m32;
-  out[15] = m33;
   return out;
 }
 function invert(out, a) {
@@ -7133,109 +7113,6 @@ function invert(out, a) {
   out[13] = (a00 * b09 - a01 * b07 + a02 * b06) * det;
   out[14] = (a31 * b01 - a30 * b03 - a32 * b00) * det;
   out[15] = (a20 * b03 - a21 * b01 + a22 * b00) * det;
-  return out;
-}
-function translate(out, a, v) {
-  var x = v[0], y = v[1], z = v[2];
-  var a00 = void 0, a01 = void 0, a02 = void 0, a03 = void 0;
-  var a10 = void 0, a11 = void 0, a12 = void 0, a13 = void 0;
-  var a20 = void 0, a21 = void 0, a22 = void 0, a23 = void 0;
-  if (a === out) {
-    out[12] = a[0] * x + a[4] * y + a[8] * z + a[12];
-    out[13] = a[1] * x + a[5] * y + a[9] * z + a[13];
-    out[14] = a[2] * x + a[6] * y + a[10] * z + a[14];
-    out[15] = a[3] * x + a[7] * y + a[11] * z + a[15];
-  } else {
-    a00 = a[0];
-    a01 = a[1];
-    a02 = a[2];
-    a03 = a[3];
-    a10 = a[4];
-    a11 = a[5];
-    a12 = a[6];
-    a13 = a[7];
-    a20 = a[8];
-    a21 = a[9];
-    a22 = a[10];
-    a23 = a[11];
-    out[0] = a00;
-    out[1] = a01;
-    out[2] = a02;
-    out[3] = a03;
-    out[4] = a10;
-    out[5] = a11;
-    out[6] = a12;
-    out[7] = a13;
-    out[8] = a20;
-    out[9] = a21;
-    out[10] = a22;
-    out[11] = a23;
-    out[12] = a00 * x + a10 * y + a20 * z + a[12];
-    out[13] = a01 * x + a11 * y + a21 * z + a[13];
-    out[14] = a02 * x + a12 * y + a22 * z + a[14];
-    out[15] = a03 * x + a13 * y + a23 * z + a[15];
-  }
-  return out;
-}
-function rotate(out, a, rad, axis) {
-  var x = axis[0], y = axis[1], z = axis[2];
-  var len2 = Math.sqrt(x * x + y * y + z * z);
-  var s = void 0, c = void 0, t = void 0;
-  var a00 = void 0, a01 = void 0, a02 = void 0, a03 = void 0;
-  var a10 = void 0, a11 = void 0, a12 = void 0, a13 = void 0;
-  var a20 = void 0, a21 = void 0, a22 = void 0, a23 = void 0;
-  var b00 = void 0, b01 = void 0, b02 = void 0;
-  var b10 = void 0, b11 = void 0, b12 = void 0;
-  var b20 = void 0, b21 = void 0, b22 = void 0;
-  if (len2 < EPSILON) {
-    return null;
-  }
-  len2 = 1 / len2;
-  x *= len2;
-  y *= len2;
-  z *= len2;
-  s = Math.sin(rad);
-  c = Math.cos(rad);
-  t = 1 - c;
-  a00 = a[0];
-  a01 = a[1];
-  a02 = a[2];
-  a03 = a[3];
-  a10 = a[4];
-  a11 = a[5];
-  a12 = a[6];
-  a13 = a[7];
-  a20 = a[8];
-  a21 = a[9];
-  a22 = a[10];
-  a23 = a[11];
-  b00 = x * x * t + c;
-  b01 = y * x * t + z * s;
-  b02 = z * x * t - y * s;
-  b10 = x * y * t - z * s;
-  b11 = y * y * t + c;
-  b12 = z * y * t + x * s;
-  b20 = x * z * t + y * s;
-  b21 = y * z * t - x * s;
-  b22 = z * z * t + c;
-  out[0] = a00 * b00 + a10 * b01 + a20 * b02;
-  out[1] = a01 * b00 + a11 * b01 + a21 * b02;
-  out[2] = a02 * b00 + a12 * b01 + a22 * b02;
-  out[3] = a03 * b00 + a13 * b01 + a23 * b02;
-  out[4] = a00 * b10 + a10 * b11 + a20 * b12;
-  out[5] = a01 * b10 + a11 * b11 + a21 * b12;
-  out[6] = a02 * b10 + a12 * b11 + a22 * b12;
-  out[7] = a03 * b10 + a13 * b11 + a23 * b12;
-  out[8] = a00 * b20 + a10 * b21 + a20 * b22;
-  out[9] = a01 * b20 + a11 * b21 + a21 * b22;
-  out[10] = a02 * b20 + a12 * b21 + a22 * b22;
-  out[11] = a03 * b20 + a13 * b21 + a23 * b22;
-  if (a !== out) {
-    out[12] = a[12];
-    out[13] = a[13];
-    out[14] = a[14];
-    out[15] = a[15];
-  }
   return out;
 }
 function fromTranslation(out, v) {
@@ -7454,7 +7331,7 @@ function initLookingGlassControlGUI() {
           updateExternally((oldValue) => oldValue + Math.sign(ev.deltaX - ev.deltaY) * attrs.step);
         };
       }
-      let updateNumberText = (value) => {
+      let updateNumberText = (_value) => {
       };
       if (stringify) {
         const numberText = document.createElement("span");
@@ -8032,7 +7909,7 @@ const _LookingGlassXRDevice = class extends XRDevice {
     const session = new Session(mode, enabledFeatures);
     this.sessions.set(session.id, session);
     if (immersive) {
-      this.dispatchEvent("@@webxr-polyfill/vr-present-start", session.id);
+      this.dispatchEvent("@@@lookingglass/webxr-polyfill/vr-present-start", session.id);
     }
     return Promise.resolve(session.id);
   }
@@ -8044,42 +7921,14 @@ const _LookingGlassXRDevice = class extends XRDevice {
   }
   onFrameStart(sessionId, renderState) {
     const session = this.sessions.get(sessionId);
-    const cfg = getLookingGlassConfig();
-    if (session.immersive) {
-      const tanHalfFovy = Math.tan(0.5 * cfg.fovy);
-      const focalDistance = 0.5 * cfg.targetDiam / tanHalfFovy;
-      const clipPlaneBias = focalDistance - cfg.targetDiam;
-      const mPose = this.basePoseMatrix;
-      fromTranslation(mPose, [cfg.targetX, cfg.targetY, cfg.targetZ]);
-      rotate(mPose, mPose, cfg.trackballX, [0, 1, 0]);
-      rotate(mPose, mPose, -cfg.trackballY, [1, 0, 0]);
-      translate(mPose, mPose, [0, 0, focalDistance]);
-      for (let i = 0; i < cfg.numViews; ++i) {
-        const fractionAlongViewCone = (i + 0.5) / cfg.numViews - 0.5;
-        const tanAngleToThisCamera = Math.tan(cfg.viewCone * fractionAlongViewCone);
-        const offsetAlongBaseline = focalDistance * tanAngleToThisCamera;
-        const mView = this.LookingGlassInverseViewMatrices[i] = this.LookingGlassInverseViewMatrices[i] || create();
-        translate(mView, mPose, [offsetAlongBaseline, 0, 0]);
-        invert(mView, mView);
-        const n = Math.max(clipPlaneBias + renderState.depthNear, 0.01);
-        const f = clipPlaneBias + renderState.depthFar;
-        const halfYRange = n * tanHalfFovy;
-        const t = halfYRange, b = -halfYRange;
-        const midpointX = n * -tanAngleToThisCamera;
-        const halfXRange = cfg.aspect * halfYRange;
-        const r = midpointX + halfXRange, l = midpointX - halfXRange;
-        const mProj = this.LookingGlassProjectionMatrices[i] = this.LookingGlassProjectionMatrices[i] || create();
-        set(mProj, 2 * n / (r - l), 0, 0, 0, 0, 2 * n / (t - b), 0, 0, (r + l) / (r - l), (t + b) / (t - b), -(f + n) / (f - n), -1, 0, 0, -2 * f * n / (f - n), 0);
-      }
-      const baseLayerPrivate = session.baseLayer[PRIVATE];
-      baseLayerPrivate.clearFramebuffer();
-    } else {
-      const gl = session.baseLayer.context;
-      const aspect = gl.drawingBufferWidth / gl.drawingBufferHeight;
-      perspective(this.inlineProjectionMatrix, renderState.inlineVerticalFieldOfView, aspect, renderState.depthNear, renderState.depthFar);
-      fromTranslation(this.basePoseMatrix, [0, DefaultEyeHeight, 0]);
-      invert(this.inlineInverseViewMatrix, this.basePoseMatrix);
-    }
+    getLookingGlassConfig();
+    const gl = session.baseLayer.context;
+    console.log(session.immersive, gl);
+    const aspect = gl.drawingBufferWidth / gl.drawingBufferHeight;
+    perspective(this.inlineProjectionMatrix, renderState.inlineVerticalFieldOfView, aspect, renderState.depthNear, renderState.depthFar);
+    fromTranslation(this.basePoseMatrix, [0, DefaultEyeHeight, 0]);
+    invert(this.inlineInverseViewMatrix, this.basePoseMatrix);
+    return;
   }
   onFrameEnd(sessionId) {
     const session = this.sessions.get(sessionId);
@@ -8089,7 +7938,7 @@ const _LookingGlassXRDevice = class extends XRDevice {
       this.captureScreenshot = false;
     }
   }
-  async requestFrameOfReferenceTransform(type, options) {
+  async requestFrameOfReferenceTransform(type, _options) {
     const matrix = create();
     switch (type) {
       case "viewer":
@@ -8106,7 +7955,7 @@ const _LookingGlassXRDevice = class extends XRDevice {
     const session = this.sessions.get(sessionId);
     if (session.immersive && session.baseLayer) {
       session.baseLayer[PRIVATE].moveCanvasToWindow(false);
-      this.dispatchEvent("@@webxr-polyfill/vr-present-end", sessionId);
+      this.dispatchEvent("@@@lookingglass/webxr-polyfill/vr-present-end", sessionId);
     }
     session.ended = true;
   }
@@ -8128,7 +7977,7 @@ const _LookingGlassXRDevice = class extends XRDevice {
     }
     return void 0;
   }
-  getViewport(sessionId, eye, layer, target, viewIndex) {
+  getViewport(sessionId, _eye, _layer, target, viewIndex) {
     if (viewIndex === void 0) {
       const session = this.sessions.get(sessionId);
       const gl = session.baseLayer.context;
@@ -8147,7 +7996,7 @@ const _LookingGlassXRDevice = class extends XRDevice {
     }
     return true;
   }
-  getProjectionMatrix(eye, viewIndex) {
+  getProjectionMatrix(_eye, viewIndex) {
     if (viewIndex === void 0) {
       return this.inlineProjectionMatrix;
     }
@@ -8165,7 +8014,7 @@ const _LookingGlassXRDevice = class extends XRDevice {
   getInputSources() {
     return [];
   }
-  getInputPose(inputSource, coordinateSystem, poseType) {
+  getInputPose(_inputSource, _coordinateSystem, _poseType) {
     return null;
   }
   onWindowResize() {
@@ -8244,6 +8093,7 @@ class LookingGlassWebXRPolyfill extends WebXRPolyfill {
         this.updateVRButtonUI();
       });
       this.vrButton.addEventListener("click", (ev) => {
+        console.log("button click", ev);
         this.updateVRButtonUI();
       });
       this.updateVRButtonUI();

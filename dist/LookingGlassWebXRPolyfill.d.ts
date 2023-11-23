@@ -19,15 +19,15 @@ import LookingGlassXRDevice from "./LookingGlassXRDevice";
 export declare class LookingGlassWebXRPolyfill extends WebXRPolyfill {
     private vrButton;
     device: LookingGlassXRDevice | undefined;
-    /** true when previewing on Looking Glass */
+    /** 在Looking Glass中预览时, 设置为true */
     isPresenting: boolean;
     constructor(cfg?: Partial<ViewControlArgs>);
     static init(cfg?: Partial<ViewControlArgs>): Promise<void>;
     /**Load  the polyfill*/
     private loadPolyfill;
-    /** If a "Enter VR" button exists, let's override it with our own copy */
+    /** 如果存在"Enter VR" 按钮, 则重写按钮 */
     private overrideDefaultVRButton;
-    /** Refresh the current state of the VRButton */
+    /** 修改vrbutton样式 */
     private updateVRButtonUI;
     update(cfg: Partial<ViewControlArgs>): void;
 }
