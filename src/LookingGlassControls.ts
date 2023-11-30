@@ -1,7 +1,7 @@
 import { getLookingGlassConfig } from "./LookingGlassConfig"
 import { LookingGlassMediaController } from "./LookingGlassMediaController"
 
-//lkgCanvas is stored in the Looking Glass config after being created. 
+//lkgCanvas 在被创建前存储looking glass配置
 export function initLookingGlassControlGUI() {
 	const cfg = getLookingGlassConfig()
 	console.log(cfg, 'for debugging purposes')
@@ -286,7 +286,7 @@ export function initLookingGlassControlGUI() {
 	}
 }
 /**
- * copy the current configuration values to the clipboard
+ * 复制当前配置到剪切板
  * @param cfg 
  */
 function copyConfigToClipboard(cfg) {
