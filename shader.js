@@ -3,16 +3,16 @@ const shader = `
   uniform int u_viewType; // 视图类型
   uniform sampler2D u_texture; // 多视点图当贴图传入
   varying vec2 v_texcoord;
-  const float pitch    = ${cfg.pitch};
-  const float tilt     = ${cfg.tilt};
+  const float pitch    = ${cfg.pitch}; // 间距
+  const float tilt     = ${cfg.tilt}; // 倾角
   const float center   = ${cfg.calibration.center.value};
   const float invView  = ${cfg.calibration.invView.value};
   const float flipX    = ${cfg.calibration.flipImageX.value};
   const float flipY    = ${cfg.calibration.flipImageY.value};
   const float subp     = ${cfg.subp};
-  const float numViews = ${cfg.numViews};
-  const float tilesX   = ${cfg.quiltWidth};
-  const float tilesY   = ${cfg.quiltHeight};
+  const float numViews = ${cfg.numViews}; // 视点数
+  const float tilesX   = ${cfg.quiltWidth}; // 多视点图宽度
+  const float tilesY   = ${cfg.quiltHeight}; // 多视点图高度
   const vec2 quiltViewPortion = vec2(
     ${cfg.quiltWidth * cfg.tileWidth / cfg.framebufferWidth},
     ${cfg.quiltHeight * cfg.tileHeight / cfg.framebufferHeight});
