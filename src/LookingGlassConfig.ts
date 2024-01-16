@@ -158,18 +158,18 @@ export class LookingGlassConfig extends EventTarget {
 	// 校准默认值
 	private _calibration: CalibrationArgs = {
 		configVersion: "1.0",
-		pitch: { value: 45 },
-		slope: { value: -5 },
+		pitch: { value: 45 }, // 光栅节距
+		slope: { value: -5 }, // 光栅斜率
 		center: { value: -0.5 },
-		viewCone: { value: 40 },
+		viewCone: { value: 40 }, // 视场角
 		invView: { value: 1 },
-		verticalAngle: { value: 0 },
-		DPI: { value: 338 },
-		screenW: { value: 250 },
-		screenH: { value: 250 },
-		flipImageX: { value: 0 },
-		flipImageY: { value: 0 },
-		flipSubp: { value: 0 },
+		verticalAngle: { value: 0 }, // 垂直角度
+		DPI: { value: 338 }, // 屏幕DPI
+		screenW: { value: 250 }, // 屏幕宽度
+		screenH: { value: 250 }, // 屏幕高度
+		flipImageX: { value: 0 }, // 图片x轴翻转
+		flipImageY: { value: 0 }, // 图片y轴翻转
+		flipSubp: { value: 0 }, // 翻转
 		serial: "LKG-DEFAULT-#####"
 	}
 
@@ -509,6 +509,7 @@ export class LookingGlassConfig extends EventTarget {
 	}
 
 	public get pitch() {
+		// 屏幕宽度像素值转成英寸
 		const screenInches = this._calibration.screenW.value / this._calibration.DPI.value
 		return this._calibration.pitch.value * screenInches * Math.cos(Math.atan(1.0 / this._calibration.slope.value))
 	}
