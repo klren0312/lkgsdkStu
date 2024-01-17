@@ -232,6 +232,7 @@ export default class LookingGlassXRDevice extends XRDevice {
       const col = viewIndex % cfg.quiltWidth;
       const row = Math.floor(viewIndex / cfg.quiltWidth);
       // determine where to draw the current viewIndex to in the quilt
+      // 确定当前视图索引绘制到多视点图中的位置
       target.x = (cfg.framebufferWidth / cfg.quiltWidth) * col;
       target.y = (cfg.framebufferHeight / cfg.quiltHeight) * row;
       target.width = cfg.framebufferWidth / cfg.quiltWidth;

@@ -1,4 +1,4 @@
-import { getLookingGlassConfig, LookingGlassConfig } from './LookingGlassConfig';
+import { getLookingGlassConfig, LookingGlassConfig } from './LookingGlassConfig'
 import { initLookingGlassControlGUI } from "./LookingGlassControls"
 
 let controls
@@ -16,42 +16,45 @@ export const moveCanvasToWindow = (enabled: boolean, onbeforeunload) => {
 		return
 	}
 	else if(enabled == false) {
-	 closeWindow(cfg, controls)
+	 	closeWindow(cfg, controls)
 	}
 	else {
+		// initialize the Looking Glass Controls, pass references to both Canvas elements
+		// 初始化lkg的控制器
+		if (controls == null) {
+			controls = initLookingGlassControlGUI() as Node
+		}
 
-	// initialize the Looking Glass Controls, pass references to both Canvas elements
-	if (controls == null) {
-		// 拖拽交互配置
-		controls = initLookingGlassControlGUI() as Node
-	}
+		cfg.lkgCanvas.style.position = "fixed"
+		cfg.lkgCanvas.style.bottom = "0"
+		cfg.lkgCanvas.style.left = "0"
 
-	cfg.lkgCanvas.style.position = "fixed"
-	cfg.lkgCanvas.style.bottom = "0"
-	cfg.lkgCanvas.style.left = "0"
+		cfg.lkgCanvas.width = cfg.calibration.screenW.value
+		cfg.lkgCanvas.height = cfg.calibration.screenH.value
 
-	cfg.lkgCanvas.width = cfg.calibration.screenW.value
-	cfg.lkgCanvas.height = cfg.calibration.screenH.value
+		document.body.appendChild(controls)
 
-	document.body.appendChild(controls)
-	const screenPlacement = "getScreenDetails" in window
-	console.log(screenPlacement, 'Screen placement API exists')
-	try {
-	} catch {
-		console.log("user did not allow window placement, using normal popup instead")
-	}
-	if (screenPlacement) {
-		// use chrome's screen placement to automatically position the window.
-		placeWindow(cfg.lkgCanvas, cfg, onbeforeunload)
-	} else {
-		// open a normal pop up window, user will need to move it to the Looking Glass
-		openPopup(cfg, cfg.lkgCanvas, onbeforeunload)
-	}
+		// 获取浏览器 管理所有显示器上的窗口 的权限
+		const screenPlacement = "getScreenDetails" in window
+		console.log(screenPlacement, 'Screen placement API exists')
+		try {
+		} catch {
+			console.log("user did not allow window placement, using normal popup instead")
+		}
+		if (screenPlacement) {
+			// use chrome's screen placement to automatically position the window.
+			// 使用谷歌浏览器的屏幕定位来自动将窗口定位到lkg屏幕上
+			placeWindow(cfg.lkgCanvas, cfg, onbeforeunload)
+		} else {
+			// open a normal pop up window, user will need to move it to the Looking Glass
+			// 使用原生的弹窗, 用户需要自己把窗口移动到lkg屏幕上
+			openPopup(cfg, cfg.lkgCanvas, onbeforeunload)
+		}
 		// destroy the window
 	}
 }
 	// if chromium, use the Screen Placement API to automatically place the window in the correct location, compensate for address bar
-	// 将预览的canvas移到子窗口
+	// 如果是chromium 使用屏幕定位API来自定将窗口定位到正确的位置, 需要考虑地址栏
 	async function placeWindow(lkgCanvas: HTMLCanvasElement, config: LookingGlassConfig, onbeforeunload: any) {
 		const screenDetails = await (window as any).getScreenDetails() // 获取所有显示器屏幕
 		console.log(screenDetails)

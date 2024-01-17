@@ -22,6 +22,7 @@ export async function LookingGlassMediaController() {
 				console.error("Error while capturing canvas data:", error)
 			} finally {
 				// Reset inlineView value to its initial value
+				// 重置视图为初始值
 				cfg.inlineView = currentInlineView
 			}
 		}
@@ -29,6 +30,7 @@ export async function LookingGlassMediaController() {
 
 	const screenshotButton = document.getElementById("screenshotbutton") as HTMLButtonElement | null
 	// add screenshot button listener, this calls the downloadImage function only at the end of the frame loop
+	// 添加截图按钮的监听
 	if (screenshotButton) {
 		screenshotButton.addEventListener("click", () => {
 			currentInlineView = cfg.inlineView

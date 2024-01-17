@@ -7,21 +7,25 @@ const shader = `
   const float tilt     = ${cfg.tilt}; // 倾角
   const float center   = ${cfg.calibration.center.value};
   const float invView  = ${cfg.calibration.invView.value};
-  const float flipX    = ${cfg.calibration.flipImageX.value};
-  const float flipY    = ${cfg.calibration.flipImageY.value};
-  const float subp     = ${cfg.subp};
+  const float flipX    = ${cfg.calibration.flipImageX.value}; // x轴翻转
+  const float flipY    = ${cfg.calibration.flipImageY.value}; // y轴翻转
+  const float subp     = ${cfg.subp}; // 采样倍率
   const float numViews = ${cfg.numViews}; // 视点数
   const float tilesX   = ${cfg.quiltWidth}; // 多视点图宽度
   const float tilesY   = ${cfg.quiltHeight}; // 多视点图高度
+  // 多视点图中单个视点大小占整个帧缓冲区的比例大小
   const vec2 quiltViewPortion = vec2(
     ${cfg.quiltWidth * cfg.tileWidth / cfg.framebufferWidth},
     ${cfg.quiltHeight * cfg.tileHeight / cfg.framebufferHeight});
+  
+  // 根据uvz坐标返回纹理坐标
   vec2 texArr(vec3 uvz) {
-    float z = floor(uvz.z * numViews);
+    float z = floor(uvz.z * numViews); // 
     float x = (mod(z, tilesX) + uvz.x) / tilesX;
     float y = (floor(z / tilesX) + uvz.y) / tilesY;
     return vec2(x, y) * quiltViewPortion;
   }
+  // 重新映射
   float remap(float value, float from1, float to1, float from2, float to2) {
     return (value - from1) / (to1 - from1) * (to2 - from2) + from2;
   }
@@ -39,6 +43,7 @@ const shader = `
     vec4 rgb[3];
     vec3 nuv = vec3(v_texcoord.xy, 0.0);
     // Flip UVs if necessary
+    // 如果必要的话, 翻转uv坐标
     nuv.x = (1.0 - flipX) * nuv.x + flipX * (1.0 - nuv.x);
     nuv.y = (1.0 - flipY) * nuv.y + flipY * (1.0 - nuv.y);
     for (int i = 0; i < 3; i++) {

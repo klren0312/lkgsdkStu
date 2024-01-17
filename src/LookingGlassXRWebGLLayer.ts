@@ -34,6 +34,7 @@ export default class LookingGlassXRWebGLLayer extends XRWebGLLayer {
 		cfg.lkgCanvas = document.createElement("canvas")
 		cfg.lkgCanvas.tabIndex = 0
 		const lkgCtx = cfg.lkgCanvas.getContext("2d", { alpha: false })
+		// 双击全屏
 		cfg.lkgCanvas.addEventListener("dblclick", function () {
 			this.requestFullscreen()
 		})
@@ -72,8 +73,16 @@ export default class LookingGlassXRWebGLLayer extends XRWebGLLayer {
 			depthStencil = gl.createRenderbuffer()
 		}
 
-		// 用于分配 framebuffer 资源的实用函数
 		// utility functions for allocating the framebuffer resources
+		/**
+		 * 分配帧缓冲附件
+		 * 
+		 * @param gl WebGL上下文
+		 * @param texture 图像纹理
+		 * @param depthStencil 深度缓冲区
+		 * @param dsConfig 深度缓冲区配置
+		 * @param cfg 配置信息
+		 */
 		const allocateFramebufferAttachments = (gl, texture, depthStencil, dsConfig, cfg) => {
 			allocateTexture(gl, texture, cfg.framebufferWidth, cfg.framebufferHeight)
 			if (depthStencil) {
@@ -123,6 +132,7 @@ export default class LookingGlassXRWebGLLayer extends XRWebGLLayer {
 		attribute vec2 a_position;
 		varying vec2 v_texcoord;
 		void main() {
+			// 归一化, 将顶点坐标从 [-1, 1] -> [0, 1]
 		  gl_Position = vec4(a_position * 2.0 - 1.0, 0.0, 1.0);
 		  v_texcoord = a_position;
 		}
@@ -246,6 +256,8 @@ export default class LookingGlassXRWebGLLayer extends XRWebGLLayer {
 			// should be false and then framebuffer should be marked as opaque.
 			// The buffers attached to an opaque framebuffer must be cleared prior to the
 			// processing of each XR animation frame.
+			// 如果会话不是即时渲染, XRWebGLLayer的组合禁用标志应为false, 并且帧缓冲区应该被标记为不透明
+			// 绑定到不透明帧缓冲的缓冲区, 在处理每个XR动画帧之前必须被清除
 			gl.bindFramebuffer(gl.FRAMEBUFFER, this.framebuffer)
 			const currentClearColor = gl.getParameter(gl.COLOR_CLEAR_VALUE)
 			const currentClearDepth = gl.getParameter(gl.DEPTH_CLEAR_VALUE)
@@ -261,7 +273,7 @@ export default class LookingGlassXRWebGLLayer extends XRWebGLLayer {
 
 		let origWidth, origHeight
 
-		// 如果需要，移动 纹理 到默认的 Framebuffer上
+		// 如果需要将纹理渲染到默认的帧缓冲区上
 		function blitTextureToDefaultFramebufferIfNeeded() {
 			if (!cfg.appCanvas || !cfg.lkgCanvas) {
 				return
@@ -409,7 +421,7 @@ export default class LookingGlassXRWebGLLayer extends XRWebGLLayer {
 
 		/**
 		 * renderInlineView overrides the subpixel arrangement view in the main canvas with either the single view or quilt view
-		 * 绘制多视点图或中间视点图
+		 * 绘制即时渲染视图到主canvas
 		 */
 		function renderInlineView() {
 			if (!cfg.appCanvas) {

@@ -1,7 +1,7 @@
 import { getLookingGlassConfig } from "./LookingGlassConfig"
 import { LookingGlassMediaController } from "./LookingGlassMediaController"
 
-//lkgCanvas 在被创建前存储looking glass配置
+// lkg gui控制器 用来控制一些可变参数
 export function initLookingGlassControlGUI() {
 	const cfg = getLookingGlassConfig()
 	console.log(cfg, 'for debugging purposes')
@@ -9,6 +9,7 @@ export function initLookingGlassControlGUI() {
 	console.warn('window placement called without a valid XR Session!')
 	}
 	else {
+		// 创建控制器框
 		const styleElement = document.createElement("style")
 		document.head.appendChild(styleElement)
 		styleElement.sheet?.insertRule("#LookingGlassWebXRControls * { all: revert; font-family: sans-serif }")
@@ -106,16 +107,20 @@ export function initLookingGlassControlGUI() {
 	
 			// The source of truth for the control value is in cfg, not the element's
 			// 'value' field. The text next to the control shows the real value.
+			// 控件的值来自于配置文件, 而不是控件本身
+			// 控件旁边文本显示的是真实数值
 			const updateValue = (newValue) => {
-				cfg[name] = newValue
-				updateNumberText(newValue)
+				cfg[name] = newValue // 修改cfg值
+				updateNumberText(newValue) // 更新文本
 			}
 			control.oninput = () => {
 				// Only in oninput do we actually read the control's value.
+				// 只有在oninput事件中才能真正读取控件的值
 				const newValue = attrs.type === "range" ? parseFloat(control.value) : attrs.type === "checkbox" ? control.checked : control.value
 				updateValue(newValue)
 			}
 	
+			// 外部更新
 			const updateExternally = (callback) => {
 				let newValue = callback(cfg[name])
 				if (opts.fixRange) {
@@ -195,10 +200,12 @@ export function initLookingGlassControlGUI() {
 			}
 		)
 	
+		// 禁用右键
 		cfg.lkgCanvas.oncontextmenu = (ev) => {
 			ev.preventDefault()
 		}
 	
+		// 鼠标滚轮监听 放大缩小
 		cfg.lkgCanvas.addEventListener("wheel", (ev) => {
 			const old = cfg.targetDiam
 			const GAMMA = 1.1
@@ -206,10 +213,12 @@ export function initLookingGlassControlGUI() {
 			return (cfg.targetDiam = Math.pow(GAMMA, logOld + ev.deltaY * 0.01))
 		})
 	
+		// 鼠标移动监听
 		cfg.lkgCanvas.addEventListener("mousemove", (ev) => {
 			const mx = ev.movementX,
 				my = -ev.movementY
 			if (ev.buttons & 2 || (ev.buttons & 1 && (ev.shiftKey || ev.ctrlKey))) {
+				// 如果按住ctrl, shift	则移动目标位置
 				const tx = cfg.trackballX,
 					ty = cfg.trackballY
 				const dx = -Math.cos(tx) * mx + Math.sin(tx) * Math.sin(ty) * my
@@ -219,11 +228,13 @@ export function initLookingGlassControlGUI() {
 				cfg.targetY = cfg.targetY + dy * cfg.targetDiam * 0.001
 				cfg.targetZ = cfg.targetZ + dz * cfg.targetDiam * 0.001
 			} else if (ev.buttons & 1) {
+				// 旋转物体
 				cfg.trackballX = cfg.trackballX - mx * 0.01
 				cfg.trackballY = cfg.trackballY - my * 0.01
 			}
 		})
-	
+
+		// 监听键盘 wasd四个按键, 操作上下左右移动
 		const keys = { w: 0, a: 0, s: 0, d: 0 }
 		cfg.lkgCanvas.addEventListener("keydown", (ev) => {
 			switch (ev.code) {
@@ -260,17 +271,21 @@ export function initLookingGlassControlGUI() {
 	
 		requestAnimationFrame(flyCamera)
 		function flyCamera() {
+			// 计算wasd横向和纵向的输入速度
 			let kx = keys.d - keys.a
 			let ky = keys.w - keys.s
 			if (kx && ky) {
 				kx *= Math.sqrt(0.5)
 				ky *= Math.sqrt(0.5)
 			}
+			// 设置相机移动方向
 			const tx = cfg.trackballX,
 				ty = cfg.trackballY
 			const dx = Math.cos(tx) * kx - Math.sin(tx) * Math.cos(ty) * ky
 			const dy = -Math.sin(ty) * ky
 			const dz = -Math.sin(tx) * kx - Math.cos(tx) * Math.cos(ty) * ky
+
+			// 更新相机位置
 			cfg.targetX = cfg.targetX + dx * cfg.targetDiam * 0.03
 			cfg.targetY = cfg.targetY + dy * cfg.targetDiam * 0.03
 			cfg.targetZ = cfg.targetZ + dz * cfg.targetDiam * 0.03
@@ -278,6 +293,7 @@ export function initLookingGlassControlGUI() {
 		}
 	
 		// start the media controller after the buttons have been initialized
+		// 在按钮初始化后启动媒体控制器
 		setTimeout(() => {
 			LookingGlassMediaController()
 		}, 1000)
