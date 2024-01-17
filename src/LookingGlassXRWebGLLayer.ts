@@ -15,7 +15,7 @@
  */
 
 import XRWebGLLayer, { PRIVATE as XRWebGLLayer_PRIVATE } from "@lookingglass/webxr-polyfill/src/api/XRWebGLLayer"
-import { Shader } from "holoplay-core"
+import { Shader } from "holoplay-core" // 见根目录 shader.js
 import { getLookingGlassConfig } from "./LookingGlassConfig"
 import { moveCanvasToWindow } from "./LookingGlassWindow"
 
@@ -28,8 +28,10 @@ export default class LookingGlassXRWebGLLayer extends XRWebGLLayer {
 		super(session, gl, layerInit)
 		// 获取配置信息
 		const cfg = getLookingGlassConfig()
-		// 创建对当前canvas的引用
+
+		// 主canvas
 		cfg.appCanvas = gl.canvas as HTMLCanvasElement
+
 		// 创建一个新的canvas节点, 来给预览窗口使用
 		cfg.lkgCanvas = document.createElement("canvas")
 		cfg.lkgCanvas.tabIndex = 0
@@ -406,6 +408,7 @@ export default class LookingGlassXRWebGLLayer extends XRWebGLLayer {
 			}
 			lkgCtx?.clearRect(0, 0, cfg.lkgCanvas.width, cfg.lkgCanvas.height)
 			// drawImage(image, sx, sy, sWidth, sHeight, dx, dy, dWidth, dHeight);
+			// 把当前主canvas的截图渲染到lkgcanvas上
 			lkgCtx?.drawImage(
 				cfg.appCanvas,
 				0,
@@ -429,6 +432,7 @@ export default class LookingGlassXRWebGLLayer extends XRWebGLLayer {
 				return
 			}
 			if (cfg.inlineView !== 0) {
+				// 不是交织图视图时, 即使渲染到主canvas
 				if (cfg.capturing && cfg.appCanvas.width !== cfg.framebufferWidth) {
 					cfg.appCanvas.width = cfg.framebufferWidth
 					cfg.appCanvas.height = cfg.framebufferHeight

@@ -6,7 +6,7 @@ export function initLookingGlassControlGUI() {
 	const cfg = getLookingGlassConfig()
 	console.log(cfg, 'for debugging purposes')
 	if (cfg.lkgCanvas == null) {
-	console.warn('window placement called without a valid XR Session!')
+		console.warn('window placement called without a valid XR Session!')
 	}
 	else {
 		// 创建控制器框

@@ -53,45 +53,45 @@ export const moveCanvasToWindow = (enabled: boolean, onbeforeunload) => {
 		// destroy the window
 	}
 }
-	// if chromium, use the Screen Placement API to automatically place the window in the correct location, compensate for address bar
-	// 如果是chromium 使用屏幕定位API来自定将窗口定位到正确的位置, 需要考虑地址栏
-	async function placeWindow(lkgCanvas: HTMLCanvasElement, config: LookingGlassConfig, onbeforeunload: any) {
-		const screenDetails = await (window as any).getScreenDetails() // 获取所有显示器屏幕
-		console.log(screenDetails)
-		//temporary, grab the first monitor ID with "LKG" Todo: make more robust
-		const LKG = screenDetails.screens.filter((screen) => screen.label.includes("LKG"))[0] // 查找是否存在lkg屏幕
-		console.log(LKG, 'monitors')
-		if (LKG === undefined) {
-			console.log("no Looking Glass monitor detected - manually opening popup window")
-			openPopup(config, lkgCanvas, onbeforeunload)
-			return
-		} else {
-			console.log("monitor ID", LKG.label, "serial number", config.calibration)
-			const features = [
-				`left=${LKG.left}`,
-				`top=${LKG.top}`,
-				`width=${LKG.width}`,
-				`height=${LKG.height}`,
-				`menubar=no`,
-				`toolbar=no`,
-				`location=no`,
-				`status=no`,
-				`resizable=yes`,
-				`scrollbars=no`,
-				`fullscreenEnabled=true`,
-			].join(",")
-			config.popup = window.open("", "new", features)
-			if (config.popup) {
-				config.popup.document.body.style.background = "black"
-				// ensure that the popup window is not zoomed
-				config.popup.document.body.style.transform = "1.0"
-				preventZoom(config)
-				config.popup.document.body.appendChild(lkgCanvas)
-				console.assert(onbeforeunload)
-				config.popup.onbeforeunload = onbeforeunload
-			}
+// if chromium, use the Screen Placement API to automatically place the window in the correct location, compensate for address bar
+// 如果是chromium 使用屏幕定位API来自定将窗口定位到正确的位置, 需要考虑地址栏
+async function placeWindow(lkgCanvas: HTMLCanvasElement, config: LookingGlassConfig, onbeforeunload: any) {
+	const screenDetails = await (window as any).getScreenDetails() // 获取所有显示器屏幕
+	console.log(screenDetails)
+	//temporary, grab the first monitor ID with "LKG" Todo: make more robust
+	const LKG = screenDetails.screens.filter((screen) => screen.label.includes("LKG"))[0] // 查找是否存在lkg屏幕
+	console.log(LKG, 'monitors')
+	if (LKG === undefined) {
+		console.log("no Looking Glass monitor detected - manually opening popup window")
+		openPopup(config, lkgCanvas, onbeforeunload)
+		return
+	} else {
+		console.log("monitor ID", LKG.label, "serial number", config.calibration)
+		const features = [
+			`left=${LKG.left}`,
+			`top=${LKG.top}`,
+			`width=${LKG.width}`,
+			`height=${LKG.height}`,
+			`menubar=no`,
+			`toolbar=no`,
+			`location=no`,
+			`status=no`,
+			`resizable=yes`,
+			`scrollbars=no`,
+			`fullscreenEnabled=true`,
+		].join(",")
+		config.popup = window.open("", "new", features)
+		if (config.popup) {
+			config.popup.document.body.style.background = "black"
+			// ensure that the popup window is not zoomed
+			config.popup.document.body.style.transform = "1.0"
+			preventZoom(config)
+			config.popup.document.body.appendChild(lkgCanvas)
+			console.assert(onbeforeunload)
+			config.popup.onbeforeunload = onbeforeunload
 		}
 	}
+}
 
 // 预览弹框
 function openPopup(cfg: LookingGlassConfig, lkgCanvas: HTMLCanvasElement, onbeforeunload: any) {

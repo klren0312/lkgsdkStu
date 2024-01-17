@@ -25,6 +25,14 @@ export default class LookingGlassXRDevice extends XRDevice {
     requestAnimationFrame(callback: any): any;
     cancelAnimationFrame(handle: any): void;
     onFrameStart(sessionId: any, renderState: any): void;
+    /**
+   * 计算相机间距
+   * @param {number} viewNums 视点数
+   * @param {number} dz 相机到物体中心点距离
+   * @param {number} deg 物体到左右两边相机的夹角
+   * @returns
+   */
+    getCameraDis(viewNums: any, dz: any, deg: any): number;
     onFrameEnd(sessionId: any): void;
     requestFrameOfReferenceTransform(type: any, _options: any): Promise<any>;
     endSession(sessionId: any): void;
