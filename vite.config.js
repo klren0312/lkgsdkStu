@@ -59,6 +59,7 @@ export default defineConfig(({ mode }) => {
 					entry: resolve(__dirname, "src/LookingGlassWebXRPolyfill.ts"),
 					name: "Looking Glass WebXR",
 					// the proper extensions will be added
+					// 添加 proper extensions
 					fileName: "webxr",
 				},
 				emptyOutDir: false,
@@ -69,7 +70,9 @@ export default defineConfig(({ mode }) => {
 					output: {
 						sourcemapExcludeSources: true,
 						// Provide global variables to use in the UMD build
+						// 提供全局变量用于使用 UMD 构建
 						// for externalized deps
+						// 外部化不应该被打包到库中的依赖
 						globals: {
 							"@lookingglass/webxr-polyfill/src/WebXRPolyfill": "@lookingglass/webxr-polyfill/src/WebXRPolyfill",
 							"@lookingglass/webxr-polyfill/src/api/index": "@lookingglass/webxr-polyfill/src/api/index",
@@ -88,6 +91,7 @@ export default defineConfig(({ mode }) => {
 		}
 	}
 	// If no argument is passed, build the library normally, without bundling. Note, the mode argument should always be passed in, if this is called there's an error in the package.json
+	// 如果没有参数，正常不进行打包来构建库。注意，mode参数必须传递，如果打印这个错误，说明package.json文件配置错误
 	else {
 		console.log("you didn't pass a build argument in, please make sure the package.json file is configured properly")
 	}
