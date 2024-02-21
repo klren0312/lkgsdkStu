@@ -58,7 +58,9 @@ export const moveCanvasToWindow = (enabled: boolean, onbeforeunload) => {
 async function placeWindow(lkgCanvas: HTMLCanvasElement, config: LookingGlassConfig, onbeforeunload: any) {
 	const screenDetails = await (window as any).getScreenDetails() // 获取所有显示器屏幕
 	console.log(screenDetails)
-	//temporary, grab the first monitor ID with "LKG" Todo: make more robust
+	// temporary, grab the first monitor ID with "LKG"
+	// 临时以“LKG”取出第一个显示器的ID
+	// Todo: make more robust
 	const LKG = screenDetails.screens.filter((screen) => screen.label.includes("LKG"))[0] // 查找是否存在lkg屏幕
 	console.log(LKG, 'monitors')
 	if (LKG === undefined) {
@@ -100,8 +102,11 @@ function openPopup(cfg: LookingGlassConfig, lkgCanvas: HTMLCanvasElement, onbefo
 			cfg.popup.document.title = "Looking Glass Window (fullscreen me on Looking Glass!)"
 			cfg.popup.document.body.style.background = "black"
 			// ensure that the popup window is not zoomed
+			// 保证弹框不缩放
 			cfg.popup.document.body.style.transform = "1.0"
+			// 禁用缩放
 			preventZoom(cfg)
+			// 把交织图放到弹框里渲染
 			cfg.popup.document.body.appendChild(lkgCanvas)
 			console.assert(onbeforeunload)
 			cfg.popup.onbeforeunload = onbeforeunload
@@ -122,7 +127,7 @@ function openPopup(cfg: LookingGlassConfig, lkgCanvas: HTMLCanvasElement, onbefo
 	}
 
 	// prevent ctrl + and ctrl - on popup window
-
+	// 防止 ctrl + ctrl - 的缩放
 	function preventZoom(cfg) {
 		if (cfg.popup) {
 			cfg.popup.document.addEventListener("keydown", (e) => {

@@ -44,9 +44,10 @@ export default class LookingGlassXRWebGLLayer extends XRWebGLLayer {
 		// 设置 framebuffer/texture.
 
 		const config = this[XRWebGLLayer_PRIVATE].config
+		// 创建贴图
 		const texture = gl.createTexture()
 		let depthStencil, dsConfig
-		// 定义指向framebuffer的指针
+		// 创建帧缓冲区
 		const framebuffer = gl.createFramebuffer()
 
 		// 使用VAO
@@ -111,23 +112,26 @@ export default class LookingGlassXRWebGLLayer extends XRWebGLLayer {
 
 		// 初始化fbo
 		const setupFramebuffer = (gl, framebuffer, texture, dsConfig, depthStencil, config) => {
+			// 用于获取当前绑定到帧缓冲对象
 			const oldFramebufferBinding = gl.getParameter(gl.FRAMEBUFFER_BINDING)
 			gl.bindFramebuffer(gl.FRAMEBUFFER, framebuffer)
 			gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, texture, 0)
 			if (config.depth || config.stencil) {
 				gl.framebufferRenderbuffer(gl.FRAMEBUFFER, dsConfig.attachment, gl.RENDERBUFFER, depthStencil)
 			}
+			// 恢复之前的帧缓冲区
 			gl.bindFramebuffer(gl.FRAMEBUFFER, oldFramebufferBinding)
 		}
 
 		allocateFramebufferAttachments(gl, texture, depthStencil, dsConfig, cfg)
 
-		// 配置修改监听
+		// 监听配置修改后 重新分配帧缓冲区
 		cfg.addEventListener("on-config-changed", () => allocateFramebufferAttachments(gl, texture, depthStencil, dsConfig, cfg))
 
+		// 初始化帧缓冲区
 		setupFramebuffer(gl, framebuffer, texture, dsConfig, depthStencil, config)
 
-		// 设置从纹理到屏幕的位点
+		// 顶点着色器shader
 		// Set up blit from texture to screen.
 
 		const vertexShaderSource = `
@@ -186,17 +190,19 @@ export default class LookingGlassXRWebGLLayer extends XRWebGLLayer {
 		const recompileFragmentShaderIfNeeded = (gl, cfg, shaderFn) => {
 			const fsSource = shaderFn(cfg); // 通过配置生成shader代码
 			if (fsSource === lastGeneratedFSSource) return;
+			// 记录最后一次生成的片元着色器shader
 			lastGeneratedFSSource = fsSource;
 			
 			const newFs = createShader(gl, gl.FRAGMENT_SHADER, fsSource);
 			if (newFs === null) return;
 			
 			if (currentFs) {
-			  gl.deleteShader(currentFs); // Delete the old shader
+			  gl.deleteShader(currentFs); // 删除旧的shader
 			}
 			currentFs = newFs;
 		  
 			// Create a new program with the updated fragment shader
+			// 根据新的片元着色器shader 创建新的program
 			const newProgram = setupShaderProgram(gl, vertexShaderSource, fsSource);
 			if (newProgram === null) {
 			  console.warn("There was a problem with shader construction");
@@ -204,31 +210,36 @@ export default class LookingGlassXRWebGLLayer extends XRWebGLLayer {
 			}
 		  
 			// Update the attribute and uniform locations
+			// 更新attribute和uniform
 			a_location = gl.getAttribLocation(newProgram, "a_position");
 			u_viewType = gl.getUniformLocation(newProgram, "u_viewType"); // 视图类型
-			const u_texture = gl.getUniformLocation(newProgram, "u_texture");
+			const u_texture = gl.getUniformLocation(newProgram, "u_texture"); // 多视点贴图
 		  
+			// 保存当前的program
 			const oldProgram = gl.getParameter(gl.CURRENT_PROGRAM);
 			{
+				// 将多视点贴图传入新的program
 			  gl.useProgram(newProgram);
 			  gl.uniform1i(u_texture, 0); // Always use texture unit 0 for u_texture
 			}
+			// 恢复到之前的program
 			gl.useProgram(oldProgram);
 		  
 			// Delete the old program and update the reference
+			// 删除老的program, 更新成当前的program
 			if (program) {
 			  gl.deleteProgram(program);
 			}
 			program = newProgram;
 		};
 		console.log(Shader(cfg))
-		// 根据配置生成fragmentshader 并设置program
+		// 根据配置生成片元着色器shader 并设置program
 		let program = setupShaderProgram(gl, vertexShaderSource, Shader(cfg))
 		if (program === null) {
 			console.warn("There was a problem with shader construction")
 		}
 
-		// 监听, 当配置修改时, 重新编译fragmentshader
+		// 监听, 当配置修改时, 重新编译片元着色器shader
 		cfg.addEventListener("on-config-changed", () => {
 			recompileFragmentShaderIfNeeded(gl, cfg, Shader);
 		});
@@ -246,7 +257,7 @@ export default class LookingGlassXRWebGLLayer extends XRWebGLLayer {
 			gl.vertexAttribPointer(a_location, 2, gl.FLOAT, false, 0, 0)
 		}
 
-		// 将之前的顶点保存到oldVAO
+		// 恢复到之前的顶点vao
 		glBindVertexArray(oldVAO)
 		gl.bindBuffer(gl.ARRAY_BUFFER, oldBufferBinding)
 
@@ -308,7 +319,7 @@ export default class LookingGlassXRWebGLLayer extends XRWebGLLayer {
 			restoreWebGLState(oldState)
 		}
 
-		// 处理WebGL状态
+		// 恢复WebGL状态到之前保存的状态
 		function restoreWebGLState(oldState) {
 			gl.activeTexture(oldState.activeTexture)
 			gl.bindTexture(gl.TEXTURE_2D, oldState.textureBinding)
@@ -383,10 +394,12 @@ export default class LookingGlassXRWebGLLayer extends XRWebGLLayer {
 			gl.disable(gl.CULL_FACE)
 			gl.disable(gl.DEPTH_TEST)
 			gl.disable(gl.STENCIL_TEST)
+			// 设置视口为当前webgl渲染上下文的宽度和高度
 			gl.viewport(0, 0, gl.drawingBufferWidth, gl.drawingBufferHeight)
 		}
 
 		// Utility functions to handle rendering the correct views to the Looking Glass
+		// 用于在lkg上渲染正确视图的工具方法
 
 		/**
 		 * Render the subpixel arrangment to the main canvas so it can be copied to the Looking Glass Canvas
@@ -424,7 +437,7 @@ export default class LookingGlassXRWebGLLayer extends XRWebGLLayer {
 
 		/**
 		 * renderInlineView overrides the subpixel arrangement view in the main canvas with either the single view or quilt view
-		 * 绘制即时渲染视图到主canvas
+		 * 渲染到主画布上的排列视图，可以是单一视图，也可以是被子视图
 		 */
 		function renderInlineView() {
 			if (!cfg.appCanvas) {
@@ -432,7 +445,7 @@ export default class LookingGlassXRWebGLLayer extends XRWebGLLayer {
 				return
 			}
 			if (cfg.inlineView !== 0) {
-				// 不是交织图视图时, 即使渲染到主canvas
+				// 不是交织图视图时, 渲染到主canvas
 				if (cfg.capturing && cfg.appCanvas.width !== cfg.framebufferWidth) {
 					cfg.appCanvas.width = cfg.framebufferWidth
 					cfg.appCanvas.height = cfg.framebufferHeight
@@ -460,9 +473,11 @@ export default class LookingGlassXRWebGLLayer extends XRWebGLLayer {
 	get framebuffer() {
 		return this[PRIVATE].LookingGlassEnabled ? this[PRIVATE].framebuffer : null
 	}
+	// 获取离屏渲染的宽度
 	get framebufferWidth() {
 		return getLookingGlassConfig().framebufferWidth
 	}
+	// 获取离屏渲染的高度
 	get framebufferHeight() {
 		return getLookingGlassConfig().framebufferHeight
 	}

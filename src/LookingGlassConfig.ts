@@ -48,6 +48,9 @@ export enum InlineView {
 	Quilt = 2,
 }
 
+/**
+ * 控制器参数
+ */
 export type ViewControlArgs = {
 	/**
 	 * @Deprecated: since 0.4.0 use `quiltResolution` instead
@@ -155,7 +158,7 @@ type LookingGlassConfigEvent = "on-config-changed"
 
 export class LookingGlassConfig extends EventTarget {
 	// Calibration defaults
-	// 校准默认值
+	// 屏幕的校准默认值
 	private _calibration: CalibrationArgs = {
 		configVersion: "1.0",
 		pitch: { value: 45 }, // 光栅节距
@@ -170,7 +173,7 @@ export class LookingGlassConfig extends EventTarget {
 		flipImageX: { value: 0 }, // 图片x轴翻转
 		flipImageY: { value: 0 }, // 图片y轴翻转
 		flipSubp: { value: 0 }, // 翻转
-		serial: "LKG-DEFAULT-#####"
+		serial: "LKG-DEFAULT-#####" // 串口名称
 	}
 
 	// Config defaults
@@ -242,6 +245,10 @@ export class LookingGlassConfig extends EventTarget {
 		this.onConfigChange()
 	}
 
+	/**
+	 * 更新窗口控制器
+	 * @param value 
+	 */
 	public updateViewControls(value: Partial<ViewControlArgs> | undefined) {
 		if (value != undefined) {
 			this._viewControls = {
@@ -276,7 +283,7 @@ export class LookingGlassConfig extends EventTarget {
 
 	/**
 	 * defines the number of views to be rendered
-	 * 被渲染的视点数
+	 * 视点数
 	 */
 	get numViews() {
 		return (this.quiltWidth * this.quiltHeight)
@@ -344,7 +351,7 @@ export class LookingGlassConfig extends EventTarget {
 
 	/**
 	 * defines the size of the camera, this makes your scene bigger or smaller without changing the focus.
-	 * 相机大小, 改变聚焦场景大小
+	 * 相机大小, 改变场景大小 而不改变焦点
 	 */
 	get targetDiam() {
 		return this._viewControls.targetDiam
@@ -432,14 +439,17 @@ export class LookingGlassConfig extends EventTarget {
 
 	// Computed
 
+	// 窗口纵横比
 	public get aspect() {
 		return (this._calibration.screenW.value / this._calibration.screenH.value)
 	}
 
+	// 单视点宽度
 	public get tileWidth() {
 		return Math.round(this.framebufferWidth / this.quiltWidth)
 	}
 
+	// 离屏渲染的多视点宽度
 	public get framebufferWidth() {
 		if (this._calibration.screenW.value < 7000) return this._viewControls.quiltResolution
 		else return 7680
@@ -518,6 +528,10 @@ export class LookingGlassConfig extends EventTarget {
 let globalLkgConfig: LookingGlassConfig | null = null
 
 /** The global LookingGlassConfig */
+/**
+ * 获取全局的屏幕配置
+ * @returns 配置
+ */
 export function getLookingGlassConfig() {
 	if (globalLkgConfig == null) {
 		globalLkgConfig = new LookingGlassConfig()
@@ -526,6 +540,9 @@ export function getLookingGlassConfig() {
 }
 
 /** Update the global LookingGlassConfig's viewControls */
+/**
+ * 更新全局的视图控制配置
+ */
 export function updateLookingGlassConfig(viewControls: Partial<ViewControlArgs> | undefined) {
 	const lkgConfig = getLookingGlassConfig()
 	if (viewControls != undefined) {
