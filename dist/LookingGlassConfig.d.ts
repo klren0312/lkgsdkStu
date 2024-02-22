@@ -41,6 +41,9 @@ export declare enum InlineView {
     /** 多视点图 */
     Quilt = 2
 }
+/**
+ * 控制器参数
+ */
 export type ViewControlArgs = {
     /**
      * @Deprecated: since 0.4.0 use `quiltResolution` instead
@@ -154,6 +157,10 @@ export declare class LookingGlassConfig extends EventTarget {
     private onConfigChange;
     get calibration(): CalibrationArgs;
     set calibration(value: Partial<CalibrationArgs>);
+    /**
+     * 更新窗口控制器
+     * @param value
+     */
     updateViewControls(value: Partial<ViewControlArgs> | undefined): void;
     /**
      * @deprecated defines the height of the individual quilt view, the width is then set based on the aspect ratio of the connected device.
@@ -167,7 +174,7 @@ export declare class LookingGlassConfig extends EventTarget {
     set quiltResolution(v: number);
     /**
      * defines the number of views to be rendered
-     * 被渲染的视点数
+     * 视点数
      */
     get numViews(): number;
     /**
@@ -202,7 +209,7 @@ export declare class LookingGlassConfig extends EventTarget {
     set trackballY(v: number);
     /**
      * defines the size of the camera, this makes your scene bigger or smaller without changing the focus.
-     * 相机大小, 改变聚焦场景大小
+     * 相机大小, 改变场景大小 而不改变焦点
      */
     get targetDiam(): number;
     set targetDiam(v: number);
@@ -250,7 +257,14 @@ export declare class LookingGlassConfig extends EventTarget {
     get pitch(): number;
 }
 /** The global LookingGlassConfig */
+/**
+ * 获取全局的屏幕配置
+ * @returns 配置
+ */
 export declare function getLookingGlassConfig(): LookingGlassConfig;
 /** Update the global LookingGlassConfig's viewControls */
+/**
+ * 更新全局的视图控制配置
+ */
 export declare function updateLookingGlassConfig(viewControls: Partial<ViewControlArgs> | undefined): void;
 export {};

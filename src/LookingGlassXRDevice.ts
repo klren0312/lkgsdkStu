@@ -169,6 +169,10 @@ export default class LookingGlassXRDevice extends XRDevice {
         // 投影矩阵
         // depthNear/Far are the distances from the view origin to the near/far planes.
         // l/r/t/b/n/f are as in the usual OpenGL perspective matrix formulation.
+
+        // n 表示近裁剪面的距离，即视点到最近显示物体的距离。
+        // f 表示远裁剪面的距离，即视点到最远显示物体的距离。
+        // l, r, b, t 分别代表左、右、下、上裁剪面与视点的距离。这些值定义了视锥体的边界。
         // 近平面距离
         const n = Math.max(clipPlaneBias + renderState.depthNear, 0.01);
         // 远平面距离
@@ -177,15 +181,22 @@ export default class LookingGlassXRDevice extends XRDevice {
         const halfYRange = n * tanHalfFovy;
         // 计算近平面上的投影视锥的顶部和底部
         const t = halfYRange, b = -halfYRange;
-        // 中间点的
+        // 确定视锥的左右边界，考虑相机的偏移以确保透视是正确的
         const midpointX = n * -tanAngleToThisCamera;
         const halfXRange = cfg.aspect * halfYRange;
         const r = midpointX + halfXRange, l = midpointX - halfXRange;
+        // 将当前视点的投影矩阵保存到数组中
         const mProj = (this.LookingGlassProjectionMatrices[i] = this.LookingGlassProjectionMatrices[i] || mat4.create());
+        // 设置投影矩阵的值
         mat4.set(mProj,
+          // 控制了水平方向的缩放，保证图像的宽度适应视锥体的宽度。
           2 * n / (r - l), 0, 0, 0,
+          // 控制了垂直方向的缩放，保证图像的高度适应视锥体的高度。
           0, 2 * n / (t - b), 0, 0,
+          // 包含了透视除法的因子，这部分负责将3D坐标转换为2D屏幕坐标，同时根据深度调整大小，以创建远处物体看起来更小的透视效果。
+          // -1 在此处是为了将视锥体内的物体坐标转换到标准化设备坐标（NDC）
           (r + l) / (r - l), (t + b) / (t - b), -(f + n) / (f - n), -1,
+          // 主要用于深度值的线性变换，保证物体的深度值能够正确地映射到深度缓冲区。
           0, 0, -2 * f * n / (f - n), 0);
       }
 
@@ -297,20 +308,39 @@ export default class LookingGlassXRDevice extends XRDevice {
     return true;
   }
 
+  /**
+   * 获取投影矩阵
+   * @param _eye 
+   * @param viewIndex 
+   * @returns 
+   */
   getProjectionMatrix(_eye, viewIndex) {
     if (viewIndex === undefined) { return this.inlineProjectionMatrix; }
     return this.LookingGlassProjectionMatrices[viewIndex] || mat4.create();
   }
 
+  /**
+   * 获取基础姿态矩阵
+   * @returns 
+   */
   getBasePoseMatrix() {
     return this.basePoseMatrix;
   }
 
+  /**
+   * 获取基础视图矩阵
+   * @returns
+   */
   getBaseViewMatrix() {
     // Only used for inline mode.
     return this.inlineInverseViewMatrix;
   }
 
+  /**
+   * 根据视点序号获取视图矩阵
+   * @param viewIndex
+   * @returns 
+   */
   _getViewMatrixByIndex(viewIndex) {
     return (this.LookingGlassInverseViewMatrices[viewIndex] = this.LookingGlassInverseViewMatrices[viewIndex] || mat4.create());
   }
